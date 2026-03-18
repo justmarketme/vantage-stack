@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0b0b0c;
+}
+
+.vs-container {
+  @apply mx-auto max-w-6xl px-4;
+}
+
+.vs-section {
+  @apply py-20 md:py-28;
+}
+
+.vs-section-heading {
+  @apply text-xs md:text-sm uppercase tracking-[0.24em] text-textMuted/80 mb-3 md:mb-4;
+}
+
+.vs-section-title {
+  @apply text-[28px] leading-tight md:text-[34px] md:leading-tight font-heading font-medium;
+}
+
+.vs-gradient-border {
+  position: relative;
+}
+
+.vs-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  padding: 1px;
+  background: radial-gradient(circle at top left, #3b82f6, transparent 50%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.vs-card {
+  @apply rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur px-6 py-6 md:px-7 md:py-7 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-all duration-200 ease-out;
+}
+
+.vs-card-hover {
+  @apply hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(15,23,42,0.85)];
+}
+
+.vs-button-primary {
+  @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium bg-accent text-white shadow-[0_0_0_rgba(56,189,248,0)] transition-all duration-200 ease-out hover:bg-accent/90 hover:shadow-[0_0_24px_rgba(56,189,248,0.65)] hover:-translate-y-[1px] active:translate-y-0;
+}
+
+.vs-button-ghost {
+  @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium border border-white/10 text-textPrimary/90 bg-white/0 shadow-[0_0_0_rgba(148,163,184,0)] transition-all duration-200 ease-out hover:bg-white/5 hover:border-white/30 hover:shadow-[0_0_22px_rgba(148,163,184,0.45)] hover:-translate-y-[1px] active:translate-y-0;
+}
+
+.vs-input {
+  @apply w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-accent/70;
+}
+
+.vs-badge {
+  @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-xs uppercase tracking-[0.16em] text-textMuted;
+}
+
+.vs-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14;
+}
+
+.vs-custom-cursor {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+

@@ -1,0 +1,128 @@
+{
+  "updated_at": "2026-03-19T14:03:22.230Z",
+  "api": {
+    "points": [
+      {
+        "ts": "2026-03-19T14:03:21.972Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 6,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T14:03:13.369Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 1154,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T14:00:20.666Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 484,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T14:00:20.127Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 47,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:59:31.413Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 365,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:59:30.693Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 1573,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:59:23.543Z",
+        "route": "/api/scheduler/dashboard",
+        "method": "GET",
+        "ms": 1063,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:55:33.570Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 2,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:55:33.496Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 1,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:43:23.301Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 1,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:43:23.213Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 3,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:42:43.070Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 1,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:42:42.574Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 3,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-03-19T13:42:26.404Z",
+        "route": "/api/blueprint/submit",
+        "method": "POST",
+        "ms": 200,
+        "ok": false,
+        "status": 500
+      }
+    ]
+  },
+  "checks": {
+    "uptime": {},
+    "third_party": {},
+    "database": {
+      "status": "red",
+      "checked_at": "2026-03-19T14:03:13.299Z",
+      "details": "db error (ensureSchedulerTables): getaddrinfo ENOTFOUND db.tinkmipmxunwvyemhalu.supabase.co"
+    }
+  }
+}

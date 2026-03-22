@@ -1,0 +1,33 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/research-batch",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/morning-briefing",
+      "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/sop-optimization",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-reports",
+      "schedule": "0 8 * * 2"
+    },
+    {
+      "path": "/api/cron/third-party-health",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/uptime-check",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/error-digest",
+      "schedule": "30 7 * * *"
+    }
+  ]
+}
+

@@ -42,9 +42,9 @@ export function Navbar() {
             </div>
           </Link>
           <nav className="hidden items-center gap-8 text-xs md:flex text-textMuted">
-            <a href="#blueprint" className="hover:text-textPrimary transition">
+            <Link href="/blueprint" className="hover:text-textPrimary transition">
               Blueprint
-            </a>
+            </Link>
             <a href="#services" className="hover:text-textPrimary transition">
               Services
             </a>
@@ -57,7 +57,7 @@ export function Navbar() {
           </nav>
           <div className="flex items-center gap-2">
             <Link
-              href="#blueprint"
+              href="/blueprint"
               className="vs-button-primary text-xs whitespace-nowrap"
             >
               Get Blueprint
@@ -68,4 +68,3 @@ export function Navbar() {
     </motion.header>
   );
 }
-

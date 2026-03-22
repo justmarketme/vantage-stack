@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { IsabelWidget } from "../components/IsabelWidget";
 
 export const metadata: Metadata = {
   title: "VantageStack — Business Optimization & Revenue Systems",
@@ -16,8 +17,8 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background text-textPrimary font-body antialiased">
         {children}
+        <IsabelWidget />
       </body>
     </html>
   );
 }
-

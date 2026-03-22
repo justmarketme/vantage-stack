@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-03-18T17:26:44.471Z",
+  "totals": {
+    "tests": 13,
+    "passed": 13,
+    "failed": 0,
+    "pending": 0,
+    "runtimeMs": 5614
+  },
+  "criticalIssues": [],
+  "results": [
+    {
+      "testName": "Report score calculation health score trends upward with better metrics",
+      "status": "passed",
+      "expected": {
+        "lowLtHigh": true
+      },
+      "actual": {
+        "low": 12,
+        "high": 98
+      },
+      "notes": null,
+      "executionTimeMs": 32,
+      "failureMessages": []
+    },
+    {
+      "testName": "Report score calculation handles missing inputs with conservative defaults",
+      "status": "passed",
+      "expected": {
+        "totalBetween": [
+          0,
+          100
+        ]
+      },
+      "actual": {
+        "total": 22,
+        "notes": [
+          "Traffic estimate missing; defaulted traffic score conservatively.",
+          "Speed score missing; defaulted speed score to a mid-range value.",
+          "Backlink/referring-domain data missing; backlink score may be understated."
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "Blueprint form validation valid data passes",
+      "status": "passed",
+      "expected": {
+        "ok": true
+      },
+      "actual": {
+        "ok": true
+      },
+      "notes": null,
+      "executionTimeMs": 22,
+      "failureMessages": []
+    },
+    {
+      "testName": "Blueprint form validation missing fields fails",
+      "status": "passed",
+      "expected": {
+        "ok": false
+      },
+      "actual": {
+        "ok": false,
+        "fields": [
+          "businessName",
+          "industry",
+          "leadSource",
+          "responseSpeed",
+          "biggestChallenge",
+          "name",
+          "email",
+          "phone"
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 8,
+      "failureMessages": []
+    },
+    {
+      "testName": "Blueprint form validation invalid email fails",
+      "status": "passed",
+      "expected": {
+        "ok": false
+      },
+      "actual": {
+        "ok": false,
+        "emailErrors": [
+          "Invalid email"
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "Blueprint form validation invalid URL fails",
+      "status": "passed",
+      "expected": {
+        "ok": false
+      },
+      "actual": {
+        "ok": false,
+        "websiteUrlErrors": [
+          "Invalid url"
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "Cron job scheduling computes next run for daily schedule",
+      "status": "passed",
+      "expected": {
+        "nextIso": "2026-03-18T02:00:00.000Z"
+      },
+      "actual": {
+        "nextIso": "2026-03-18T02:00:00.000Z"
+      },
+      "notes": null,
+      "executionTimeMs": 8,
+      "failureMessages": []
+    },
+    {
+      "testName": "Cron job scheduling rejects unsupported cron expressions",
+      "status": "passed",
+      "expected": {
+        "throws": true
+      },
+      "actual": {
+        "throws": true
+      },
+      "notes": null,
+      "executionTimeMs": 22,
+      "failureMessages": []
+    },
+    {
+      "testName": "Integration: Full delivery flow report generated → Eleven Labs audio → email sent → WhatsApp sent",
+      "status": "passed",
+      "expected": {
+        "emailMessageId": "msg_123",
+        "waSid": "SM123"
+      },
+      "actual": {
+        "emailMessageId": "msg_123",
+        "waSid": "SM123",
+        "audioUrl": "/reports/client-123/report-123.mp3"
+      },
+      "notes": null,
+      "executionTimeMs": 82,
+      "failureMessages": []
+    },
+    {
+      "testName": "Research JSON structuring output matches required sections",
+      "status": "passed",
+      "expected": {
+        "has": [
+          "generated_at",
+          "client",
+          "website-health",
+          "traffic-analysis",
+          "backlink-profile",
+          "competitor-benchmarks",
+          "seo-gaps",
+          "performance-score",
+          "errors"
+        ]
+      },
+      "actual": {
+        "keys": [
+          "generated_at",
+          "client",
+          "website-health",
+          "traffic-analysis",
+          "backlink-profile",
+          "competitor-benchmarks",
+          "seo-gaps",
+          "performance-score",
+          "errors"
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 15,
+      "failureMessages": []
+    },
+    {
+      "testName": "E2E: Complete client journey form submission → research structuring → score → ready for delivery",
+      "status": "passed",
+      "expected": {
+        "scoreRange": [
+          0,
+          100
+        ]
+      },
+      "actual": {
+        "total": 50
+      },
+      "notes": null,
+      "executionTimeMs": 19,
+      "failureMessages": []
+    },
+    {
+      "testName": "Integration: Full research flow Agent 2 research → API calls → JSON output → database storage",
+      "status": "passed",
+      "expected": {
+        "hasSections": true
+      },
+      "actual": {
+        "keys": [
+          "generated_at",
+          "client",
+          "website-health",
+          "traffic-analysis",
+          "backlink-profile",
+          "competitor-benchmarks",
+          "seo-gaps",
+          "performance-score",
+          "errors"
+        ]
+      },
+      "notes": null,
+      "executionTimeMs": 54,
+      "failureMessages": []
+    },
+    {
+      "testName": "Integration: Full Telegram flow command received → database query → response sent (format produced)",
+      "status": "passed",
+      "expected": {
+        "includes": "Acme Co"
+      },
+      "actual": {
+        "textSnippet": "👤 *Acme Co*\n• ID: `client\\_123`\n• Industry: B2B\n• Status: active\n• MRR: $5,000\n"
+      },
+      "notes": null,
+      "executionTimeMs": 92,
+      "failureMessages": []
+    }
+  ]
+}

@@ -38,6 +38,7 @@
     "mcp:sop-generator": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/sop-generator/server.ts",
     "mcp:ceo-coach": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/ceo-coach/server.ts",
     "mcp:crm-orchestrator": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/crm-orchestrator/server.ts",
+    "mcp:design-to-code": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/design-to-code/server.ts",
     "mcp:email-orchestrator": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/email-orchestrator/server.ts",
     "briefing:run": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/run-morning-briefing.ts",
     "telegram:bot": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/telegram-bot.ts"

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Invalid token" }, { status: 400 });
   }
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const th = hashOpaqueToken(parsed.data.token);

@@ -45,7 +45,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     role = parsed.data.role;
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const target = await getMemberById(db, id);
@@ -84,7 +84,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const m = await getMemberById(db, id);

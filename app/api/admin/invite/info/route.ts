@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   if (token.length < 10) {
     return NextResponse.json({ ok: false, error: "Invalid token" }, { status: 400 });
   }
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const inv = await getCrmInvitationByTokenHash(db, hashOpaqueToken(token));

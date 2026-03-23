@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: passwordPolicyError() }, { status: 400 });
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const th = hashOpaqueToken(parsed.data.token);

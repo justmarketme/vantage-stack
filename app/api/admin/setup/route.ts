@@ -23,14 +23,34 @@ const Body = z.object({
   terms_accepted: z.literal(true),
 });
 
+/** Allow slow first connect (Supabase pooler auto-detect) + query. */
+const SETUP_STATUS_MS = 25_000;
+
 export async function GET() {
-  const db = connectCrmDb();
-  if (!db) return NextResponse.json({ ok: false, needs_setup: false, error: "No database" }, { status: 503 });
+  const db = await connectCrmDb();
+  if (!db) {
+    return NextResponse.json(
+      { ok: false, needs_setup: false, error: "No DATABASE_URL (or other CRM DB env) — add it to .env.local" },
+      { status: 503 },
+    );
+  }
   try {
-    const n = await countActiveSuperAdmins(db);
+    const n = await Promise.race([
+      countActiveSuperAdmins(db),
+      new Promise<never>((_, rej) =>
+        setTimeout(() => rej(new Error("Database check timed out — check DATABASE_URL and network")), SETUP_STATUS_MS),
+      ),
+    ]);
     return NextResponse.json({ ok: true, needs_setup: n === 0 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Database error";
+    return NextResponse.json({ ok: false, needs_setup: false, error: msg }, { status: 503 });
   } finally {
-    await db.end({ timeout: 5 });
+    try {
+      await db.end({ timeout: 5 });
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -54,7 +74,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: passwordPolicyError() }, { status: 400 });
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
 
   try {

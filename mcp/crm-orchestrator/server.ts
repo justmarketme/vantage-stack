@@ -102,7 +102,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     if (!parsed.success) {
       return staticOut({ ok: false, error: "validation", issues: parsed.error.issues });
     }
-    const db = connectCrmDb();
+    const db = await connectCrmDb();
     if (!db) return staticOut({ ok: false, error: "missing_database_url" });
     try {
       await ensureCrmSchema(db);

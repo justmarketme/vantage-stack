@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
   }
   const idf = parsed.data.identifier.trim();
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) {
     return NextResponse.json({
       ok: true,

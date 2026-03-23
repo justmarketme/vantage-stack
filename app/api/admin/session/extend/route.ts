@@ -10,7 +10,7 @@ export async function POST() {
   if (!session || session.kind !== "member" || session.auth !== "jwt") {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const m = await getMemberById(db, session.memberId);

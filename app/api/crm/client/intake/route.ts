@@ -23,7 +23,7 @@ async function handler(req: Request) {
     );
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "Missing DATABASE_URL" }, { status: 500 });
 
   try {

@@ -1,4 +1,5 @@
 import postgres, { type Sql } from "postgres";
+import { resolveSupabaseDatabaseUrlForNode } from "./supabase-pooler-resolve";
 
 function env(name: string) {
   return (process.env[name] || "").trim();
@@ -16,10 +17,29 @@ export function getCrmDbUrl(): string | null {
   return url ? url : null;
 }
 
-export function connectCrmDb(): Sql | null {
-  const url = getCrmDbUrl();
+let resolvedCrmConnectionString: Promise<string | null> | null = null;
+
+function memoizedResolvedConnectionString(): Promise<string | null> {
+  resolvedCrmConnectionString ??= (async () => {
+    const raw = getCrmDbUrl();
+    if (!raw) return null;
+    return resolveSupabaseDatabaseUrlForNode(raw);
+  })();
+  return resolvedCrmConnectionString;
+}
+
+/**
+ * Opens a Postgres pool. For Supabase direct `db.<ref>.supabase.co` URLs, resolves to session pooler
+ * (IPv4) on first call unless `SUPABASE_DISABLE_AUTO_POOLER=1` or you set `SUPABASE_POOLER_REGION`.
+ */
+export async function connectCrmDb(): Promise<Sql | null> {
+  const url = await memoizedResolvedConnectionString();
   if (!url) return null;
-  return postgres(url, { max: 5, prepare: false });
+  return postgres(url, {
+    max: 5,
+    prepare: false,
+    connect_timeout: 15,
+  });
 }
 
 /** Idempotent DDL so dev / MCP works before full migrations are applied. */
@@ -188,5 +208,27 @@ export async function ensureCrmSchema(db: Sql) {
     );
     create index if not exists events_client_time_idx on public.events (client_id, timestamp desc);
     create index if not exists events_type_time_idx on public.events (event_type, timestamp desc);
+  `);
+
+  await db.unsafe(`
+    create table if not exists public.client_design_to_code (
+      client_id uuid primary key references public.clients(id) on delete cascade,
+      design_brief text,
+      master_prompt text,
+      claude_last_response text,
+      generated_code_url text,
+      staging_url text,
+      production_url text,
+      github_branch text,
+      status text not null default 'draft',
+      version text not null default '1.0',
+      review_checklist jsonb not null default '{}'::jsonb,
+      discovery_snapshot jsonb not null default '{}'::jsonb,
+      competitor_analysis text,
+      revision_notes text,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+    create index if not exists client_dtc_status_idx on public.client_design_to_code (status);
   `);
 }

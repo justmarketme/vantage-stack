@@ -17,7 +17,7 @@ export async function getSessionFromCookies(): Promise<ParsedSession | null> {
   const parsed = await parseFullAdminSession(token);
   if (!parsed) return null;
   if (parsed.kind === "legacy") return parsed;
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return parsed;
   try {
     const m = await getMemberById(db, parsed.memberId);

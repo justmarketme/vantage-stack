@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing username query" }, { status: 400 });
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const activity = await fetchMemberActivity(db, username, 150);

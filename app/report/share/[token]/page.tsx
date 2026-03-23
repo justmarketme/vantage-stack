@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function PublicReportSharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) {
     return (
       <div className="vs-container py-24 text-textMuted">

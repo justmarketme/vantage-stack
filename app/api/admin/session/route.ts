@@ -28,7 +28,7 @@ export async function GET() {
     });
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) {
     return NextResponse.json({
       ok: true,

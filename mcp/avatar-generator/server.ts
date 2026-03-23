@@ -417,7 +417,7 @@ async function uploadToSupabaseStorage(parsed: z.infer<typeof UploadToSupabaseIn
 }
 
 async function createDraftRecord(parsed: z.infer<typeof CreateDraftRecordInput>): Promise<Record<string, unknown>> {
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) throw new Error("DATABASE_URL (or SUPABASE_DB_URL) required for report_drafts insert.");
   try {
     await ensureCrmSchema(db);
@@ -452,7 +452,7 @@ async function createDraftRecord(parsed: z.infer<typeof CreateDraftRecordInput>)
 
 async function notifyCrm(parsed: z.infer<typeof NotifyCrmInput>): Promise<Record<string, unknown>> {
   const text = `Avatar video ready for review for ${parsed.client_name}`;
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   const details = {
     type: "avatar_explainer_draft",
     report_draft_id: parsed.report_draft_id,

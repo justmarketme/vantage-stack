@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const ua = req.headers.get("user-agent");
   const ip = clientIp(req);
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
 
   /** Legacy env-only password (no username). */
   if (!username && !email && adminPasswordConfigured()) {

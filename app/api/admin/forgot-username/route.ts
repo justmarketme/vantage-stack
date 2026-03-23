@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Invalid email" }, { status: 400 });
   }
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) {
     return NextResponse.json({ ok: true, message: "If an account exists with that email, you'll receive it shortly." });
   }

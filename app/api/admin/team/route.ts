@@ -25,7 +25,7 @@ export async function GET() {
   const gate = await requireAnyPermission("manage_users", "invite_team");
   if (!gate.ok) return gate.response;
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const members = await listTeamMembers(db);
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const db = connectCrmDb();
+  const db = await connectCrmDb();
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
   try {
     const actorId = memberIdFromSession(gate.session);

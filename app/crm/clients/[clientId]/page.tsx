@@ -10,6 +10,9 @@ export default function ClientProfilePage() {
   const clientId = String(params.clientId ?? "");
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [dtc, setDtc] = useState<any>(null);
+  const [dtcLoading, setDtcLoading] = useState(false);
+  const [dtcErr, setDtcErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setErr(null);
@@ -23,9 +26,47 @@ export default function ClientProfilePage() {
     }
   }, [clientId]);
 
+  const loadDtc = useCallback(async () => {
+    if (!clientId) return;
+    setDtcErr(null);
+    try {
+      const res = await fetch(`/api/crm/clients/${clientId}/design-to-code`, { credentials: "same-origin" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Failed to load design-to-code");
+      setDtc(json.design_to_code ?? null);
+    } catch (e: unknown) {
+      setDtcErr(e instanceof Error ? e.message : String(e));
+      setDtc(null);
+    }
+  }, [clientId]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    loadDtc();
+  }, [loadDtc]);
+
+  async function generateDesignBrief() {
+    setDtcErr(null);
+    setDtcLoading(true);
+    try {
+      const res = await fetch(`/api/crm/clients/${clientId}/design-to-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ action: "generate" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Generate failed");
+      await loadDtc();
+    } catch (e: unknown) {
+      setDtcErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDtcLoading(false);
+    }
+  }
 
   async function triggerResearch() {
     const p = data?.profile;
@@ -196,6 +237,74 @@ export default function ClientProfilePage() {
           </ul>
         </section>
       ) : null}
+
+      <section className="vs-card space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-textPrimary">Design → code</h3>
+          <button
+            type="button"
+            onClick={() => generateDesignBrief()}
+            disabled={dtcLoading}
+            className="vs-button-primary text-sm disabled:opacity-50"
+          >
+            {dtcLoading ? "Generating…" : "Generate design brief & master prompt"}
+          </button>
+        </div>
+        {dtcErr ? <p className="text-xs text-rose-300">{dtcErr}</p> : null}
+        <p className="text-xs text-textMuted">
+          Pulls blueprint fields, competitors, notes, and optional discovery snapshot from CRM. Stores markdown brief and master prompt on
+          <code className="mx-1 text-textPrimary/80">client_design_to_code</code>.
+        </p>
+        {dtc?.status ? (
+          <p className="text-xs text-textMuted">
+            Status: <span className="text-textPrimary">{dtc.status}</span>
+            {dtc.version ? (
+              <>
+                {" "}
+                · v{dtc.version}
+              </>
+            ) : null}
+          </p>
+        ) : (
+          <p className="text-xs text-textMuted">No design-to-code record yet — generate to create one.</p>
+        )}
+        {(dtc?.staging_url || dtc?.generated_code_url) && (
+          <div className="text-xs space-y-1 text-textMuted">
+            {dtc.staging_url ? (
+              <div>
+                Staging:{" "}
+                <a href={dtc.staging_url} className="text-sky-300 break-all" target="_blank" rel="noreferrer">
+                  {dtc.staging_url}
+                </a>
+              </div>
+            ) : null}
+            {dtc.generated_code_url ? (
+              <div>
+                Repo:{" "}
+                <a href={dtc.generated_code_url} className="text-sky-300 break-all" target="_blank" rel="noreferrer">
+                  {dtc.generated_code_url}
+                </a>
+              </div>
+            ) : null}
+          </div>
+        )}
+        {dtc?.design_brief ? (
+          <details className="text-sm">
+            <summary className="cursor-pointer text-sky-200/90">Design brief (markdown)</summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-textMuted">
+              {dtc.design_brief}
+            </pre>
+          </details>
+        ) : null}
+        {dtc?.master_prompt ? (
+          <details className="text-sm">
+            <summary className="cursor-pointer text-sky-200/90">Master prompt (for Claude / Cursor)</summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-textMuted">
+              {dtc.master_prompt}
+            </pre>
+          </details>
+        ) : null}
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="vs-card space-y-3">

@@ -57,7 +57,7 @@ export default async function DesignSystemPage() {
             </p>
             <p className="mt-4 text-xs text-textMuted">
               Local URL:{" "}
-              <span className="text-textPrimary/90">http://localhost:3000/design-system</span>
+              <span className="text-textPrimary/90">http://localhost:3005/design-system</span>
               {" · "}
               Production: set{" "}
               <code className="rounded bg-white/5 px-1 py-0.5 text-[11px]">NEXT_PUBLIC_DESIGN_SYSTEM_VIEWER=1</code> to enable.

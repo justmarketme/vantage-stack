@@ -57,5 +57,5 @@ export function publicAppOrigin(): string {
   const u = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "").trim();
   if (u.startsWith("http")) return u.replace(/\/$/, "");
   if (u) return `https://${u.replace(/\/$/, "")}`;
-  return "http://localhost:3000";
+  return "http://localhost:3005";
 }

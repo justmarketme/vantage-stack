@@ -90,14 +90,13 @@ appendLocalDebug({
 });
 // #endregion
 
-// Telegram is optional at bootstrap: dev/start can run without it. Add TELEGRAM_BOT_TOKEN when you
-// use the telegram-orchestrator, morning briefing, delivery alerts, etc. (BotFather token is free.)
-const REQUIRED = [
-  "DATABASE_URL",
-  "SUPABASE_KEY",
+// Only block on what the app needs to boot CRM + DB-backed routes. Integration keys are warned only.
+const REQUIRED = ["DATABASE_URL", "SUPABASE_KEY"] as const;
+
+// Used by research, email, SMS, Isabel, etc. — add when you use those features (see .env.example).
+const RECOMMENDED = [
   "WHOIS_API_KEY",
   "PAGESPEED_API_KEY",
-  // Accept either new or legacy naming for ElevenLabs.
   "ELEVEN_LABS_API_KEY",
   "RESEND_API_KEY",
   "TWILIO_ACCOUNT_SID",
@@ -112,9 +111,8 @@ function isSet(name: string): boolean {
 
 const missing = REQUIRED.filter((k) => !isSet(k));
 
-// Back-compat: if legacy key is set, consider ELEVEN_LABS_API_KEY satisfied.
 const legacyEleven = isSet("ELEVENLABS_API_KEY");
-const missingNormalized = missing.filter((k) => (k === "ELEVEN_LABS_API_KEY" ? !legacyEleven : true));
+const missingRecommended = RECOMMENDED.filter((k) => (k === "ELEVEN_LABS_API_KEY" ? !isSet(k) && !legacyEleven : !isSet(k)));
 
 // #region agent log H2 after dotenv load check
 fetch("http://127.0.0.1:7940/ingest/6c677ec0-0cba-4762-aa2d-dc2b04124703", {
@@ -152,19 +150,32 @@ appendLocalDebug({
 });
 // #endregion
 
-if (missingNormalized.length) {
-  // Keep output concise; CI/dev should fail fast.
+if (missing.length) {
   // eslint-disable-next-line no-console
   console.error(
     [
       "Missing required environment variables:",
-      ...missingNormalized.map((m) => `- ${m}`),
+      ...missing.map((m) => `- ${m}`),
       "",
       "Create `.env.local` (never commit it) or inject via your platform secrets.",
       "Template: `.env.example`",
     ].join("\n"),
   );
   process.exit(1);
+}
+
+if (missingRecommended.length) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    [
+      "",
+      "Optional integrations not configured (app will run; related features may fail):",
+      ...missingRecommended.map((m) => `- ${m}`),
+      "",
+      "Add to `.env.local` when you need research, Resend, Twilio, ElevenLabs, Apify, etc.",
+      "",
+    ].join("\n"),
+  );
 }
 
 if (!isSet("TELEGRAM_BOT_TOKEN")) {

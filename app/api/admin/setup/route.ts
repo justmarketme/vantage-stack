@@ -27,7 +27,13 @@ const Body = z.object({
 const SETUP_STATUS_MS = 25_000;
 
 export async function GET() {
-  const db = await connectCrmDb();
+  let db: Awaited<ReturnType<typeof connectCrmDb>>;
+  try {
+    db = await connectCrmDb();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Database connection error";
+    return NextResponse.json({ ok: false, needs_setup: false, error: msg }, { status: 503 });
+  }
   if (!db) {
     return NextResponse.json(
       { ok: false, needs_setup: false, error: "No DATABASE_URL (or other CRM DB env) — add it to .env.local" },
@@ -74,7 +80,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: passwordPolicyError() }, { status: 400 });
   }
 
-  const db = await connectCrmDb();
+  let db: Awaited<ReturnType<typeof connectCrmDb>>;
+  try {
+    db = await connectCrmDb();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Database connection error";
+    return NextResponse.json({ ok: false, error: msg }, { status: 503 });
+  }
   if (!db) return NextResponse.json({ ok: false, error: "No database" }, { status: 503 });
 
   try {

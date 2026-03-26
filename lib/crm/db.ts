@@ -1,5 +1,10 @@
+import { setDefaultResultOrder } from "node:dns";
+import { platform } from "node:os";
 import postgres, { type Sql } from "postgres";
 import { resolveSupabaseDatabaseUrlForNode } from "./supabase-pooler-resolve";
+
+/** Prefer IPv4 when both exist (helps some Windows / dual-stack setups). */
+setDefaultResultOrder("ipv4first");
 
 function env(name: string) {
   return (process.env[name] || "").trim();
@@ -7,6 +12,7 @@ function env(name: string) {
 
 export function getCrmDbUrl(): string | null {
   const url =
+    env("SUPABASE_DATABASE_POOLER_URL") ||
     env("DATABASE_URL") ||
     env("SUPABASE_DB_URL") ||
     env("REPORTS_PG_URL") ||
@@ -17,28 +23,69 @@ export function getCrmDbUrl(): string | null {
   return url ? url : null;
 }
 
-let resolvedCrmConnectionString: Promise<string | null> | null = null;
+/** Re-resolve when DATABASE_URL / SUPABASE_DATABASE_POOLER_URL changes (no stale cache after .env edits). */
+let memoRawUrl: string | null = null;
+let memoResolvedPromise: Promise<string | null> | null = null;
 
 function memoizedResolvedConnectionString(): Promise<string | null> {
-  resolvedCrmConnectionString ??= (async () => {
-    const raw = getCrmDbUrl();
-    if (!raw) return null;
-    return resolveSupabaseDatabaseUrlForNode(raw);
-  })();
-  return resolvedCrmConnectionString;
+  const raw = getCrmDbUrl();
+  if (!raw) {
+    memoRawUrl = null;
+    memoResolvedPromise = null;
+    return Promise.resolve(null);
+  }
+  if (raw !== memoRawUrl || !memoResolvedPromise) {
+    memoRawUrl = raw;
+    memoResolvedPromise = resolveSupabaseDatabaseUrlForNode(raw);
+  }
+  return memoResolvedPromise;
 }
+
+const DIRECT_SUPABASE_DB = /^db\.[^.]+\.supabase\.co$/i;
 
 /**
  * Opens a Postgres pool. For Supabase direct `db.<ref>.supabase.co` URLs, resolves to session pooler
  * (IPv4) on first call unless `SUPABASE_DISABLE_AUTO_POOLER=1` or you set `SUPABASE_POOLER_REGION`.
  */
+function supabaseLikeUrl(url: string): boolean {
+  return /supabase\.co|pooler\.supabase\.com/i.test(url);
+}
+
 export async function connectCrmDb(): Promise<Sql | null> {
   const url = await memoizedResolvedConnectionString();
   if (!url) return null;
+
+  let hostname = "";
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    /* invalid URL — let postgres throw */
+  }
+
+  /**
+   * Windows + Node often cannot resolve IPv6-only `db.<ref>.supabase.co` (ENOTFOUND). If pooler
+   * auto-detect failed we must not open that URL — return a fix instead of a DNS error.
+   * Opt out: SUPABASE_ALLOW_DIRECT_DB=1
+   */
+  if (
+    hostname &&
+    DIRECT_SUPABASE_DB.test(hostname) &&
+    platform() === "win32" &&
+    process.env.SUPABASE_ALLOW_DIRECT_DB !== "1"
+  ) {
+    throw new Error(
+      "This PC cannot use Supabase’s direct DB host (db.PROJECT.supabase.co) from Node — it usually fails on Windows. " +
+        "Fix: In Supabase → Project Settings → Database → Connection pooling, copy the Session pooler connection string and add it to .env.local as SUPABASE_DATABASE_POOLER_URL=... " +
+        "Or set SUPABASE_POOLER_REGION to your project’s region (e.g. eu-central-1). Then restart npm run dev. " +
+        "Optional: SUPABASE_ALLOW_DIRECT_DB=1 if you have IPv6 working end-to-end.",
+    );
+  }
+
   return postgres(url, {
     max: 5,
     prepare: false,
     connect_timeout: 15,
+    ...(supabaseLikeUrl(url) ? { ssl: "require" as const } : {}),
   });
 }
 

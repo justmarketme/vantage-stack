@@ -10,7 +10,7 @@ function parseOrigins(value: string) {
 export function getAllowedOrigins() {
   const configured = (process.env.CORS_ORIGINS || "").trim();
   if (configured) return parseOrigins(configured);
-  return ["http://localhost:3000"];
+  return ["http://localhost:3005"];
 }
 
 export function getCorsOrigin(request: Request) {

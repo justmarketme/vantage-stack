@@ -171,8 +171,9 @@ export function FirstAdminSetupForm() {
                   username shown there).
                 </li>
                 <li>
-                  Set that as <code className="text-sky-300/90">DATABASE_URL</code> in <code className="text-sky-300/90">.env.local</code>, save, restart{" "}
-                  <code className="text-sky-300/90">npm run dev</code>, then Retry.
+                  In <code className="text-sky-300/90">.env.local</code>, set either <code className="text-sky-300/90">SUPABASE_DATABASE_POOLER_URL</code>{" "}
+                  (recommended — app prefers it over <code className="text-sky-300/90">DATABASE_URL</code>) or replace <code className="text-sky-300/90">DATABASE_URL</code>{" "}
+                  with that URI. Save, restart <code className="text-sky-300/90">npm run dev</code>, then Retry.
                 </li>
                 <li>Alternatively, fix IPv6 on the machine/router, or try another network — then the direct <code className="text-sky-300/90">db.*</code> host may work.</li>
               </ul>

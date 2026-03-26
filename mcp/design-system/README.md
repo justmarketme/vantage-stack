@@ -4,7 +4,7 @@ Design-system guardrails for VantageStack UI work.
 
 ## Web viewer (local)
 
-With `npm run dev`, open **http://localhost:3000/design-system** to preview tokens, primitives, and `components/ui` files. In production, set `NEXT_PUBLIC_DESIGN_SYSTEM_VIEWER=1` to enable the same route.
+With `npm run dev` (port **3005**), open **http://localhost:3005/design-system** to preview tokens, primitives, and `components/ui` files. In production, set `NEXT_PUBLIC_DESIGN_SYSTEM_VIEWER=1` to enable the same route.
 
 ## Tools
 

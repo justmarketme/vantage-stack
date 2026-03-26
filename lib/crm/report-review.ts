@@ -104,7 +104,7 @@ The VantageStack Team`;
 }
 
 export function publicBaseUrl() {
-  const u = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000").trim();
+  const u = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3005").trim();
   return u.replace(/\/$/, "");
 }
 

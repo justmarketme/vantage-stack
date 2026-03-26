@@ -3,7 +3,13 @@ import { connectCrmDb, ensureCrmSchema } from "./db";
 import type { Sql } from "postgres";
 
 export async function withCrmHandler(handler: (db: Sql) => Promise<Response>): Promise<Response> {
-  const db = await connectCrmDb();
+  let db: Sql | null;
+  try {
+    db = await connectCrmDb();
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, error: msg }, { status: 503 });
+  }
   if (!db) {
     return NextResponse.json({ ok: false, error: "Missing DATABASE_URL (or compatible PG URL)." }, { status: 500 });
   }

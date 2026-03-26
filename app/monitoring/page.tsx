@@ -17,7 +17,7 @@ type Dashboard = {
 
 async function getDashboard(): Promise<Dashboard> {
   const base = process.env.NEXT_PUBLIC_BASE_URL?.trim();
-  const url = base ? `${base}/api/monitoring/dashboard` : "http://localhost:3000/api/monitoring/dashboard";
+  const url = base ? `${base}/api/monitoring/dashboard` : "http://localhost:3005/api/monitoring/dashboard";
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Monitoring dashboard fetch failed: ${res.status}`);
   return (await res.json()) as Dashboard;

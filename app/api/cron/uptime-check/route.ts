@@ -61,7 +61,7 @@ async function handler(req: Request) {
   const provided = (urlObj.searchParams.get("secret") || "").trim();
   if (secret && provided !== secret) return unauthorized();
 
-  const base = env("NEXT_PUBLIC_BASE_URL") || env("NEXT_PUBLIC_APP_URL") || "http://localhost:3000";
+  const base = env("NEXT_PUBLIC_BASE_URL") || env("NEXT_PUBLIC_APP_URL") || "http://localhost:3005";
   const website = env("NEXT_PUBLIC_SITE_URL") || env("NEXT_PUBLIC_APP_URL") || base;
 
   const endpoints = {

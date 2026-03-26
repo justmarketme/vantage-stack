@@ -17,7 +17,13 @@ export async function getSessionFromCookies(): Promise<ParsedSession | null> {
   const parsed = await parseFullAdminSession(token);
   if (!parsed) return null;
   if (parsed.kind === "legacy") return parsed;
-  const db = await connectCrmDb();
+  let db: Awaited<ReturnType<typeof connectCrmDb>>;
+  try {
+    db = await connectCrmDb();
+  } catch {
+    /* DB misconfigured (e.g. Windows + direct Supabase host); don’t brick every page */
+    return parsed;
+  }
   if (!db) return parsed;
   try {
     const m = await getMemberById(db, parsed.memberId);

@@ -116,7 +116,7 @@ NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=0.1
 SENTRY_AUTH_TOKEN=
 SENTRY_ORG=
 SENTRY_PROJECT=
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://localhost:3005
 `;
     const envOut = await appendEnvExample(block);
     const vercelOut = await upsertVercelCron({ path: "/api/cron/error-digest", schedule: "30 7 * * *" });

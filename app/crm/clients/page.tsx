@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tooltip } from "../../../components/ui/Tooltip";
 
@@ -76,7 +76,7 @@ const STATUSES = [
   "churned",
 ];
 
-export default function CrmClientsListPage() {
+function CrmClientsListPageInner() {
   const searchParams = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
@@ -404,4 +404,8 @@ export default function CrmClientsListPage() {
       )}
     </div>
   );
+}
+
+export default function CrmClientsListPage() {
+  return <Suspense fallback={<div className="p-6 text-sm text-textMuted">Loading…</div>}><CrmClientsListPageInner /></Suspense>;
 }

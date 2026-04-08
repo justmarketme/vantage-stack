@@ -17,20 +17,8 @@
       "schedule": "0 8 * * 2"
     },
     {
-      "path": "/api/cron/third-party-health",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/uptime-check",
-      "schedule": "*/5 * * * *"
-    },
-    {
       "path": "/api/cron/error-digest",
       "schedule": "30 7 * * *"
-    },
-    {
-      "path": "/api/cron/report-scheduled-send",
-      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/cron/pipeline-health",

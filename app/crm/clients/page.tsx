@@ -142,25 +142,26 @@ function CrmClientsListPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-textPrimary">Contacts</h1>
-          <p className="text-sm text-textMuted mt-1">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-textPrimary">Contacts</h1>
+          <p className="text-sm text-textMuted mt-0.5 truncate">
             {loading ? "Loading…" : (
               status
-                ? <><span className="text-textPrimary font-medium">{total}</span> contacts in <span className="text-accent font-medium">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span></>
+                ? <><span className="text-textPrimary font-medium">{total}</span> in <span className="text-accent font-medium">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span></>
                 : <>{total} total contacts</>
             )}
           </p>
         </div>
         <Link
           href="/crm/clients/new"
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
+          className="flex-shrink-0 flex items-center gap-2 rounded-lg bg-accent px-3 md:px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Add Contact
+          <span className="hidden sm:inline">Add Contact</span>
+          <span className="sm:hidden">Add</span>
         </Link>
       </div>
 
@@ -190,8 +191,8 @@ function CrmClientsListPageInner() {
       )}
 
       {/* Filters + View Toggle */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        <div className="relative flex-1 min-w-[160px] max-w-xs">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
@@ -344,8 +345,8 @@ function CrmClientsListPageInner() {
 
       {/* Table View */}
       {!loading && view === "table" && (
-        <div className="rounded-xl border border-white/[0.08] overflow-hidden">
-          <table className="min-w-full text-left text-sm">
+        <div className="rounded-xl border border-white/[0.08] overflow-hidden overflow-x-auto">
+          <table className="min-w-full text-left text-sm" style={{ minWidth: "640px" }}>
             <thead className="border-b border-white/[0.08] bg-white/[0.02]">
               <tr>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Contact</th>

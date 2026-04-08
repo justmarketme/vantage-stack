@@ -116,23 +116,26 @@ export default function PipelinePage() {
   return (
     <div className="space-y-6 h-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-textPrimary">Pipeline</h1>
-          <p className="text-sm text-textMuted mt-1">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-textPrimary">Pipeline</h1>
+          <p className="text-sm text-textMuted mt-0.5 truncate">
             {loading ? "Loading…" : `${totalContacts} contacts · R${(totalValue / 1000).toFixed(1)}k pipeline value`}
           </p>
         </div>
         <Link
           href="/crm/clients/new"
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
+          className="flex-shrink-0 flex items-center gap-2 rounded-lg bg-accent px-3 md:px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Add Contact
+          <span className="hidden sm:inline">Add Contact</span>
+          <span className="sm:hidden">Add</span>
         </Link>
       </div>
+      {/* Mobile scroll hint */}
+      <p className="text-xs text-textMuted/40 md:hidden">← Swipe to see all stages →</p>
 
       {err && <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-300">{err}</div>}
 

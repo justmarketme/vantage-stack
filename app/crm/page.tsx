@@ -130,28 +130,27 @@ export default function CrmDashboard() {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-textPrimary">Dashboard</h1>
-          <p className="mt-1 text-sm text-textMuted">{today}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-textPrimary">Dashboard</h1>
+          <p className="mt-0.5 text-sm text-textMuted truncate">{today}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/crm/clients/new"
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Contact
-          </Link>
-        </div>
+        <Link
+          href="/crm/clients/new"
+          className="flex-shrink-0 flex items-center gap-2 rounded-lg bg-accent px-3 py-2 md:px-4 text-sm font-semibold text-white hover:bg-accent/90 transition"
+        >
+          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          <span className="hidden sm:inline">Add Contact</span>
+          <span className="sm:hidden">Add</span>
+        </Link>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         <StatCard
           label="Total Contacts"
           value={loading ? "—" : stats?.totalContacts ?? 0}
@@ -206,7 +205,7 @@ export default function CrmDashboard() {
       </div>
 
       {/* Main content: Quick Actions + Activity Feed */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         {/* Quick Actions */}
         <div className="lg:col-span-1 space-y-4">
           <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">

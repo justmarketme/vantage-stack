@@ -92,24 +92,35 @@ const nav = [
   },
 ];
 
-export function CrmSidebar({ width }: { width?: number }) {
+export function CrmSidebar({ width, onClose }: { width?: number; onClose?: () => void }) {
   const pathname = usePathname();
   const sidebarWidth = width ?? 224;
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full flex flex-col bg-[#111113] border-r border-white/[0.07] z-30 pt-16"
+      className="fixed left-0 top-0 h-full flex flex-col bg-[#111113] border-r border-white/[0.07] z-30"
       style={{ width: sidebarWidth }}
     >
-      {/* Brand */}
-      <div className="px-5 py-4 border-b border-white/[0.07]">
+      {/* Brand + mobile close */}
+      <div className="px-4 py-4 border-b border-white/[0.07] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/20 text-accent text-[10px] font-bold">VS</div>
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-accent/20 text-accent text-[10px] font-bold">VS</div>
           <div>
             <div className="text-xs font-semibold text-textPrimary leading-none">VantageStack</div>
             <div className="text-[10px] text-textMuted mt-0.5">CRM</div>
           </div>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-textMuted hover:bg-white/10 hover:text-textPrimary transition"
+            aria-label="Close navigation"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -123,7 +134,7 @@ export function CrmSidebar({ width }: { width?: number }) {
               <Link
                 href={item.href}
                 className={[
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 w-full",
+                  "flex items-center gap-3 rounded-lg px-3 py-3 md:py-2.5 text-sm font-medium transition-all duration-150 w-full",
                   active
                     ? "bg-accent/15 text-accent"
                     : "text-textMuted hover:bg-white/5 hover:text-textPrimary",

@@ -31,6 +31,11 @@ async function handler(req: Request) {
       return NextResponse.json({ ok: false, error: out.error, message: "message" in out ? out.message : undefined }, { status: 500 });
     }
     return NextResponse.json({ ok: true, clientId: out.client_id }, { status: 200 });
+  } catch (err) {
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : "Internal server error" },
+      { status: 500 },
+    );
   } finally {
     await db.end({ timeout: 5 });
   }

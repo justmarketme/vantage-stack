@@ -1,230 +1,308 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { PdfExportButton } from "../../components/briefing/PdfExportButton";
-import { SopCrmTab } from "../../components/crm/SopCrmTab";
+import { useEffect, useState } from "react";
+import { Tooltip } from "../../components/ui/Tooltip";
 
-type BriefingRecord = {
-  id: string;
-  briefing_date: string;
-  created_at: string;
-  sent_at: string | null;
-  client_count_scanned: number;
-  alerts_found: number;
-  competitor_moves_found: number;
-  opportunities_found: number;
-  briefing_json: any;
-  briefing_text: string | null;
+type Stats = {
+  totalContacts: number;
+  activeClients: number;
+  blueprintsPending: number;
+  pipelineValue: number;
+  tasksDueToday: number;
+  reportsThisMonth: number;
 };
 
-type ApiResponse = { ok: boolean; briefing: BriefingRecord | null; timezone?: string; error?: string };
+type RecentActivity = {
+  id: string;
+  action_type: string;
+  client_name?: string;
+  details: any;
+  created_at: string;
+};
 
-function fmtMoney(n: number | undefined) {
-  if (typeof n !== "number" || !Number.isFinite(n)) return "—";
-  return n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  accent,
+  href,
+  tooltip,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ReactNode;
+  accent: string;
+  href?: string;
+  tooltip?: string;
+}) {
+  const inner = (
+    <div className={`rounded-xl border border-white/[0.08] bg-[#16161A] p-5 hover:border-white/[0.15] transition-all group ${href ? "cursor-pointer" : ""}`}>
+      <div className="flex items-start justify-between">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${accent}`}>
+          {icon}
+        </div>
+        {href && (
+          <svg className="h-4 w-4 text-textMuted group-hover:text-textPrimary transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        )}
+      </div>
+      <div className="mt-4">
+        <div className="text-2xl font-bold text-textPrimary">{value}</div>
+        <div className="mt-0.5 text-sm font-medium text-textMuted">{label}</div>
+        {sub && <div className="mt-1 text-xs text-textMuted/60">{sub}</div>}
+      </div>
+    </div>
+  );
+  const card = href ? <Link href={href}>{inner}</Link> : inner;
+  return tooltip ? <Tooltip content={tooltip} side="bottom">{card}</Tooltip> : card;
 }
 
-export default function CrmPage() {
-  const [tab, setTab] = useState<"briefing" | "sops">("briefing");
-  const [data, setData] = useState<ApiResponse | null>(null);
+function fmtMoney(n: number) {
+  if (!n) return "R0";
+  if (n >= 1000) return `R${(n / 1000).toFixed(1)}k`;
+  return `R${n.toLocaleString()}`;
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function activityLabel(a: RecentActivity) {
+  const type = a.action_type ?? "";
+  const name = a.client_name ?? a.details?.client_name ?? "Unknown";
+  switch (type) {
+    case "client_created": return `New contact added — ${name}`;
+    case "report_sent": return `Report sent to ${name}`;
+    case "proposal_sent": return `Proposal sent to ${name}`;
+    case "blueprint_submitted": return `Blueprint submitted by ${name}`;
+    case "note_added": return `Note added for ${name}`;
+    case "status_changed": return `${name} moved to ${a.details?.new_status ?? "new stage"}`;
+    default: return `${type.replace(/_/g, " ")} — ${name}`;
+  }
+}
+
+function activityDot(type: string) {
+  if (type.includes("blueprint")) return "bg-purple-400";
+  if (type.includes("report") || type.includes("sent")) return "bg-blue-400";
+  if (type.includes("created") || type.includes("added")) return "bg-emerald-400";
+  if (type.includes("proposal")) return "bg-amber-400";
+  return "bg-white/30";
+}
+
+export default function CrmDashboard() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        const res = await fetch("/api/crm/morning-briefing", {
-          cache: "no-store",
-          credentials: "same-origin",
-        });
-        const json = (await res.json()) as ApiResponse;
-        if (cancelled) return;
-        if (res.status === 401) throw new Error("Unauthorized — sign in at /admin/login");
-        if (!json.ok) throw new Error(json.error ?? "Failed to load briefing");
-        setData(json);
-      } catch (e: any) {
-        if (cancelled) return;
-        setErr(String(e?.message ?? e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    Promise.all([
+      fetch("/api/crm/clients?per_page=1", { credentials: "same-origin" }).then((r) => r.json()).catch(() => ({})),
+      fetch("/api/crm/activity?limit=20", { credentials: "same-origin" }).then((r) => r.json()).catch(() => ({})),
+      fetch("/api/crm/pipeline", { credentials: "same-origin" }).then((r) => r.json()).catch(() => ({})),
+      fetch("/api/crm/clients?status=blueprint-submitted&per_page=1", { credentials: "same-origin" }).then((r) => r.json()).catch(() => ({})),
+    ]).then(([clientsRes, activityRes, pipelineRes, blueprintRes]) => {
+      const pipelineValue = (pipelineRes?.stages ?? []).reduce((sum: number, st: any) => {
+        return sum + (st.clients ?? []).reduce((s: number, c: any) => s + (c.monthly_budget ?? 0), 0);
+      }, 0);
+      setStats({
+        totalContacts: clientsRes?.total ?? 0,
+        activeClients: (clientsRes?.clients ?? []).filter((c: any) => c.status === "active-client").length,
+        blueprintsPending: blueprintRes?.total ?? 0,
+        pipelineValue,
+        tasksDueToday: 0,
+        reportsThisMonth: 0,
+      });
+      setActivity(activityRes?.activity ?? []);
+      setLoading(false);
+    });
   }, []);
 
-  const briefing = data?.briefing ?? null;
-  const json = briefing?.briefing_json ?? null;
-  const meta = json?.meta ?? null;
-  const criticalAlerts = Array.isArray(json?.critical_alerts) ? json.critical_alerts : [];
-  const competitorMoves = Array.isArray(json?.competitor_moves) ? json.competitor_moves : [];
-  const industryNews = Array.isArray(json?.industry_news) ? json.industry_news : [];
-  const opportunities = Array.isArray(json?.opportunities) ? json.opportunities : [];
-  const focusClients = Array.isArray(json?.focus_clients) ? json.focus_clients : [];
-
-  const title = useMemo(() => {
-    if (!briefing?.briefing_date) return "Morning Briefing";
-    return `Morning Briefing (${briefing.briefing_date})`;
-  }, [briefing?.briefing_date]);
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <main className="max-w-5xl">
-      <p className="text-sm text-textMuted mb-6">Morning briefings, SOPs, and pipeline shortcuts.</p>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTab("briefing")}
-            className={[
-              "rounded-full border px-4 py-2 text-xs font-semibold transition",
-              tab === "briefing" ? "border-sky-500/30 bg-sky-500/10 text-sky-200" : "border-white/10 bg-white/5 text-textMuted hover:bg-white/10",
-            ].join(" ")}
-          >
-            Morning Briefing
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("sops")}
-            className={[
-              "rounded-full border px-4 py-2 text-xs font-semibold transition",
-              tab === "sops" ? "border-sky-500/30 bg-sky-500/10 text-sky-200" : "border-white/10 bg-white/5 text-textMuted hover:bg-white/10",
-            ].join(" ")}
-          >
-            SOPs
-          </button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-textPrimary">Dashboard</h1>
+          <p className="mt-1 text-sm text-textMuted">{today}</p>
+        </div>
+        <div className="flex items-center gap-3">
           <Link
-            href="/crm/clients"
-            className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-textMuted transition hover:bg-white/10"
+            href="/crm/clients/new"
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
           >
-            Client list
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Contact
           </Link>
         </div>
+      </div>
 
-        {tab === "briefing" ? (
-          <section className="mt-6 rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
-            <div className="border-b border-white/10 px-5 py-4 flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xs uppercase tracking-[0.14em] text-textMuted">Tab</div>
-                <div className="mt-1 text-lg font-semibold text-textPrimary">{title}</div>
-                {briefing ? (
-                  <div className="mt-2 text-xs text-textMuted">
-                    {briefing.alerts_found} alerts • {briefing.competitor_moves_found} competitor moves • {briefing.opportunities_found} opportunities • {briefing.client_count_scanned} clients
-                  </div>
-                ) : null}
-              </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Total Contacts"
+          value={loading ? "—" : stats?.totalContacts ?? 0}
+          icon={
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          }
+          accent="bg-blue-500/15 text-blue-400"
+          href="/crm/clients"
+          tooltip="Total number of contacts across all pipeline stages. Click to view all contacts."
+        />
+        <StatCard
+          label="Pipeline Value"
+          value={loading ? "—" : fmtMoney(stats?.pipelineValue ?? 0)}
+          sub="monthly recurring"
+          icon={
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+            </svg>
+          }
+          accent="bg-emerald-500/15 text-emerald-400"
+          href="/crm/pipeline"
+          tooltip="Combined monthly budget/value of all contacts in your pipeline."
+        />
+        <StatCard
+          label="Blueprints Pending"
+          value={loading ? "—" : stats?.blueprintsPending ?? 0}
+          sub="awaiting review"
+          icon={
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          }
+          accent="bg-purple-500/15 text-purple-400"
+          href="/crm/blueprint-review"
+          tooltip="Contacts who have submitted the intake form and are waiting for their blueprint."
+        />
+        <StatCard
+          label="Pipeline Stages"
+          value="5"
+          sub="active stages"
+          icon={
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="4" height="18" rx="1" /><rect x="10" y="7" width="4" height="14" rx="1" /><rect x="17" y="10" width="4" height="11" rx="1" />
+            </svg>
+          }
+          accent="bg-amber-500/15 text-amber-400"
+          href="/crm/pipeline"
+          tooltip="Your 5 active pipeline stages. Click to view the Kanban board."
+        />
+      </div>
 
-              {briefing ? <PdfExportButton pdfTargetId="morning-briefing-pdf" pdfName={`morning-briefing-${briefing.briefing_date}.pdf`} /> : null}
+      {/* Main content: Quick Actions + Activity Feed */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Quick Actions */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
+            <h2 className="text-sm font-semibold text-textPrimary mb-4">Quick Actions</h2>
+            <div className="space-y-2">
+              {[
+                { label: "View Pipeline Board", href: "/crm/pipeline", icon: "📊", tooltip: "See all contacts in a visual Kanban board sorted by stage" },
+                { label: "Review Blueprints", href: "/crm/blueprint-review", icon: "📋", tooltip: "Review and generate strategy blueprints for pending submissions" },
+                { label: "Morning Briefing", href: "/crm/briefing", icon: "☀️", tooltip: "Read today's AI-generated daily intelligence briefing" },
+                { label: "Add New Contact", href: "/crm/clients/new", icon: "➕", tooltip: "Manually add a new contact to your CRM" },
+                { label: "All Contacts", href: "/crm/clients", icon: "👥", tooltip: "Browse and filter all your CRM contacts" },
+              ].map((a) => (
+                <Tooltip key={a.href} content={a.tooltip} side="right">
+                  <Link
+                    href={a.href}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full"
+                  >
+                    <span className="text-base">{a.icon}</span>
+                    {a.label}
+                  </Link>
+                </Tooltip>
+              ))}
             </div>
+          </div>
 
-            <div className="p-5">
-              {loading ? <div className="text-sm text-textMuted">Loading briefing…</div> : null}
-              {err ? <div className="text-sm text-rose-200/80">{err}</div> : null}
-              {!loading && !err && !briefing ? <div className="text-sm text-textMuted">No briefing found yet for today.</div> : null}
-
-              {briefing ? (
-                <div id="morning-briefing-pdf" className="rounded-xl border border-white/10 bg-white text-slate-900 p-4">
-                  <div className="mb-3">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Snapshot</div>
-                    <div className="mt-1 text-sm font-semibold">
-                      {meta?.alerts_found ?? 0} alerts • {meta?.competitor_moves_found ?? 0} competitor moves • {meta?.opportunities_found ?? 0} opportunities •{" "}
-                      {meta?.scanned_client_count ?? briefing.client_count_scanned ?? 0} clients
+          <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
+            <h2 className="text-sm font-semibold text-textPrimary mb-3">Pipeline Stages</h2>
+            <div className="space-y-2">
+              {[
+                { label: "Blueprint Submitted", color: "bg-purple-400", status: "blueprint-submitted", tooltip: "Click to view all contacts in this stage" },
+                { label: "Report Sent", color: "bg-blue-400", status: "report-sent", tooltip: "Click to view all contacts in this stage" },
+                { label: "Proposal Sent", color: "bg-amber-400", status: "proposal-sent", tooltip: "Click to view all contacts in this stage" },
+                { label: "Active Client", color: "bg-emerald-400", status: "active-client", tooltip: "Click to view all active paying clients" },
+                { label: "Upsell", color: "bg-pink-400", status: "upsell-sent", tooltip: "Click to view upsell opportunity contacts" },
+              ].map((s) => (
+                <Tooltip key={s.status} content={s.tooltip} side="right">
+                  <Link
+                    href={`/crm/clients?status=${s.status}`}
+                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`h-2 w-2 rounded-full ${s.color} flex-shrink-0`} />
+                      {s.label}
                     </div>
-                    {focusClients.length ? (
-                      <div className="mt-2 text-[12px] text-slate-600">
-                        Focus: {focusClients.slice(0, 10).join(", ")}
-                      </div>
-                    ) : null}
+                    <svg className="h-3 w-3 opacity-0 group-hover:opacity-50 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Activity Feed */}
+        <div className="lg:col-span-2 rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-semibold text-textPrimary">Recent Activity</h2>
+            <span className="text-xs text-textMuted">Last 20 events</span>
+          </div>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-textMuted">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
+              Loading activity…
+            </div>
+          )}
+
+          {!loading && activity.length === 0 && (
+            <div className="py-12 text-center">
+              <div className="text-3xl mb-2">📭</div>
+              <p className="text-sm text-textMuted">No activity yet. Add your first contact to get started.</p>
+              <Link href="/crm/clients/new" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition">
+                Add Contact
+              </Link>
+            </div>
+          )}
+
+          {!loading && activity.length > 0 && (
+            <div className="space-y-1">
+              {activity.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-white/[0.03] transition-colors group">
+                  <div className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${activityDot(a.action_type)}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-textPrimary leading-snug">{activityLabel(a)}</p>
+                    {a.details?.note && (
+                      <p className="text-xs text-textMuted mt-0.5 truncate">{a.details.note}</p>
+                    )}
                   </div>
-
-                  {criticalAlerts.length ? (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Critical Alerts</div>
-                      <div className="mt-2 space-y-1 text-[12px] leading-relaxed">
-                        {criticalAlerts.slice(0, 6).map((a: any, idx: number) => (
-                          <div key={`${a?.client_id ?? "c"}_${idx}`} className="rounded-lg bg-rose-50 px-2 py-1 border border-rose-200">
-                            {a?.message ?? "Alert"}
-                          </div>
-                        ))}
-                        {criticalAlerts.length > 6 ? <div className="text-[12px] text-slate-600">…and {criticalAlerts.length - 6} more</div> : null}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {competitorMoves.length ? (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Competitor Moves</div>
-                      <div className="mt-2 space-y-2 text-[12px] leading-relaxed">
-                        {competitorMoves.slice(0, 5).map((m: any, idx: number) => (
-                          <div key={`${m?.client_id ?? "c"}_${idx}`} className="rounded-lg border border-slate-200 px-2 py-1">
-                            <div className="font-semibold text-slate-900">
-                              {m?.client_name ?? "Client"} {m?.competitor ? `— ${m.competitor}` : ""}
-                            </div>
-                            <div className="text-slate-700">{m?.headline ?? "Competitor signal"}</div>
-                            {m?.url ? <div className="text-slate-500 break-all">{m.url}</div> : null}
-                          </div>
-                        ))}
-                        {competitorMoves.length > 5 ? <div className="text-[12px] text-slate-600">…and {competitorMoves.length - 5} more</div> : null}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {industryNews.length ? (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Industry News</div>
-                      <div className="mt-2 space-y-2 text-[12px] leading-relaxed">
-                        {industryNews.slice(0, 5).map((n: any, idx: number) => (
-                          <div key={`${n?.headline ?? "n"}_${idx}`} className="rounded-lg border border-slate-200 px-2 py-1">
-                            <div className="font-semibold text-slate-900">{n?.headline ?? "Industry update"}</div>
-                            {n?.summary ? <div className="text-slate-700">{n.summary}</div> : null}
-                            {n?.url ? <div className="text-slate-500 break-all">{n.url}</div> : null}
-                          </div>
-                        ))}
-                        {industryNews.length > 5 ? <div className="text-[12px] text-slate-600">…and {industryNews.length - 5} more</div> : null}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {opportunities.length ? (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Top Opportunities</div>
-                      <div className="mt-2 space-y-2 text-[12px] leading-relaxed">
-                        {opportunities.slice(0, 3).map((o: any, idx: number) => (
-                          <div key={`${o?.client_id ?? o?.client_name ?? "o"}_${idx}`} className="rounded-lg border border-slate-200 px-2 py-1 bg-slate-50">
-                            <div className="font-semibold text-slate-900">
-                              {o?.client_name ?? o?.client_id ?? "Client"}: {o?.title ?? "Opportunity"}
-                            </div>
-                            {typeof o?.projected_revenue === "number" ? <div className="text-slate-700">Projected: {fmtMoney(o.projected_revenue)}</div> : null}
-                            {o?.rationale ? <div className="text-slate-700">{o.rationale}</div> : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="mt-4">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Full Text (Telegram copy)</div>
-                    <pre className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed font-mono">
-                      {briefing.briefing_text ?? "No briefing_text stored."}
-                    </pre>
-                  </div>
+                  <span className="text-xs text-textMuted/60 flex-shrink-0 mt-0.5">{timeAgo(a.created_at)}</span>
                 </div>
-              ) : null}
+              ))}
             </div>
-          </section>
-        ) : tab === "sops" ? (
-          <section className="mt-6">
-            <p className="text-sm text-textMuted mb-2">
-              View and edit SOP sections and Mermaid diagrams in-app. Changes are versioned in <code className="text-xs text-sky-200/90">sop_versions</code>.
-            </p>
-            <SopCrmTab />
-          </section>
-        ) : null}
-    </main>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
-

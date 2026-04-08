@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(timeout 15 bash -c 'until curl -s http://localhost:3005 > /dev/null 2>&1; do echo \"\"Waiting for server...\"\"; sleep 1; done && echo \"\"✓ Server is ready!\"\"')",
+      "Bash(curl -s http://localhost:3005)",
+      "mcp__70d71f04-2cb4-41f1-ab6e-d517795e277a__get_project",
+      "Bash(curl -s http://localhost:3005/api/admin/setup)",
+      "Bash(Resolve-DnsName \"aws-0-eu-central-1.pooler.supabase.com\")",
+      "Bash(Select-Object -First 5)"
+    ]
+  }
+}

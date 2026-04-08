@@ -42,35 +42,23 @@ export function Navbar() {
             </div>
           </Link>
           <nav className="hidden items-center gap-8 text-xs md:flex text-textMuted">
-            <Link href="/crm" className="hover:text-textPrimary transition">
-              CRM
-            </Link>
-            <Link href="/blueprint" className="hover:text-textPrimary transition">
+            <a href="#blueprint" className="hover:text-textPrimary transition">
               Blueprint
-            </Link>
+            </a>
             <a href="#services" className="hover:text-textPrimary transition">
               Services
             </a>
             <a href="#revenue-system" className="hover:text-textPrimary transition">
               Revenue System™
             </a>
-            <a href="#sa" className="hover:text-textPrimary transition">
-              For South Africa
-            </a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link
-              href="/crm"
-              className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-textMuted hover:border-white/25 hover:text-textPrimary transition md:hidden"
-            >
-              CRM
-            </Link>
-            <Link
-              href="/blueprint"
+            <a
+              href="#blueprint"
               className="vs-button-primary text-xs whitespace-nowrap"
             >
               Get Blueprint
-            </Link>
+            </a>
           </div>
         </div>
       </div>

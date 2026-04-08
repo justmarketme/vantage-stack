@@ -314,7 +314,7 @@ export default function ClientProfilePage() {
             <ul className="space-y-1 max-h-40 overflow-y-auto">
               {(data.deals ?? []).map((d: any) => (
                 <li key={d.id} className="border-b border-white/5 pb-1">
-                  {d.service_type} · {d.proposal_status} · ${d.deal_value}
+                  {d.service_type} · {d.proposal_status} · R{d.deal_value}
                 </li>
               ))}
             </ul>
@@ -322,7 +322,7 @@ export default function ClientProfilePage() {
             <ul className="space-y-1 max-h-40 overflow-y-auto">
               {(data.upsells ?? []).map((u: any) => (
                 <li key={u.id} className="border-b border-white/5 pb-1">
-                  {u.service_name} · {u.status} · ${u.projected_revenue ?? "—"}
+                  {u.service_name} · {u.status} · R{u.projected_revenue ?? "—"}
                 </li>
               ))}
             </ul>

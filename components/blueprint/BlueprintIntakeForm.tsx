@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { BlueprintSubmitSchema, normalizeWebsiteUrl, parseMonthlyBudgetToInt } from "../../lib/blueprint/schema";
 import { FormField } from "../ui/FormField";
 import { ProgressBar } from "../ui/ProgressBar";
+import { getCompetitorSuggestions } from "../../lib/crm/industry-data";
 
 type FormState = {
   clientName: string;
@@ -55,6 +56,11 @@ const selectPresets: Partial<Record<FieldKey, string[]>> = {
     "Construction",
     "Education",
     "Hospitality",
+    "Technology",
+    "Financial services",
+    "Retail",
+    "Food & Beverage",
+    "Marketing",
     "Other",
   ],
   revenueRange: [
@@ -90,12 +96,6 @@ const textareaTemplates: Partial<Record<FieldKey, string[]>> = {
     "Low conversion rates",
     "Slow follow-up with prospects",
     "Difficulty scaling marketing profitably",
-    "Other",
-  ],
-  competitors: [
-    "Competitor 1",
-    "Competitor 2",
-    "Competitor 3",
     "Other",
   ],
   toolsUsed: [
@@ -357,25 +357,51 @@ export function BlueprintIntakeForm() {
           const required = key !== "websiteUrl";
 
           if (isTextarea(key)) {
+            // For competitors: use dynamic industry-based suggestions
+            const chips: string[] =
+              key === "competitors"
+                ? getCompetitorSuggestions(form.industry)
+                : (textareaTemplates[key] ?? []);
+
             return (
               <div key={key} className="space-y-3">
-                {textareaTemplates[key]?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {textareaTemplates[key]!.map((preset) => (
-                      <button
-                        type="button"
-                        key={`${key}-${preset}`}
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-textMuted hover:bg-white/10 hover:text-textPrimary"
-                        onClick={() => {
-                          if (preset === "Other") return;
-                          appendLineValue(key, preset);
-                        }}
-                      >
-                        {preset}
-                      </button>
-                    ))}
+                {chips.length > 0 && (
+                  <div>
+                    {key === "competitors" && (
+                      <p className="text-xs text-textMuted/60 mb-2">
+                        {form.industry
+                          ? `Known competitors in ${form.industry} — click to add:`
+                          : "Select your industry first to see competitor suggestions"}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {chips.map((preset) => {
+                        const alreadyAdded = form[key]
+                          .split(/\r?\n/)
+                          .map((s) => s.trim().toLowerCase())
+                          .includes(preset.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={`${key}-${preset}`}
+                            disabled={alreadyAdded || preset === "Other"}
+                            className={`rounded-full border px-3 py-1 text-xs transition ${
+                              alreadyAdded
+                                ? "border-accent/30 bg-accent/10 text-accent cursor-default"
+                                : "border-white/10 bg-white/5 text-textMuted hover:bg-white/10 hover:text-textPrimary"
+                            }`}
+                            onClick={() => {
+                              if (preset === "Other" || alreadyAdded) return;
+                              appendLineValue(key, preset);
+                            }}
+                          >
+                            {alreadyAdded ? `✓ ${preset}` : `+ ${preset}`}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : null}
+                )}
                 <FormField
                   kind="textarea"
                   label={label}

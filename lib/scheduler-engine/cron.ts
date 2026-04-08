@@ -1,6 +1,58 @@
+/**
+ * Parses a single cron field into a set of matching values.
+ * Supports: '*', single numbers, '* /N' steps, and 'a-b' ranges.
+ */
 function parseField(field: string, min: number, max: number): number[] | "*" {
   const f = field.trim();
+
+  // Wildcard
   if (f === "*") return "*";
+
+  // Step: */N  — every N units across the full range
+  const stepMatch = f.match(/^\*\/(\d+)$/);
+  if (stepMatch) {
+    const step = Number(stepMatch[1]);
+    if (!Number.isInteger(step) || step < 1) throw new Error(`Invalid step value in cron field: ${field}`);
+    const values: number[] = [];
+    for (let i = min; i <= max; i += step) values.push(i);
+    return values;
+  }
+
+  // Range: a-b
+  const rangeMatch = f.match(/^(\d+)-(\d+)$/);
+  if (rangeMatch) {
+    const lo = Number(rangeMatch[1]);
+    const hi = Number(rangeMatch[2]);
+    if (lo > hi || lo < min || hi > max) throw new Error(`Invalid range in cron field: ${field}`);
+    const values: number[] = [];
+    for (let i = lo; i <= hi; i++) values.push(i);
+    return values;
+  }
+
+  // Range with step: a-b/N
+  const rangeStepMatch = f.match(/^(\d+)-(\d+)\/(\d+)$/);
+  if (rangeStepMatch) {
+    const lo = Number(rangeStepMatch[1]);
+    const hi = Number(rangeStepMatch[2]);
+    const step = Number(rangeStepMatch[3]);
+    if (lo > hi || lo < min || hi > max || step < 1) throw new Error(`Invalid range/step in cron field: ${field}`);
+    const values: number[] = [];
+    for (let i = lo; i <= hi; i += step) values.push(i);
+    return values;
+  }
+
+  // Comma-separated list
+  if (f.includes(",")) {
+    const values: number[] = [];
+    for (const part of f.split(",")) {
+      const n = Number(part.trim());
+      if (!Number.isInteger(n) || n < min || n > max) throw new Error(`Invalid value in cron list: ${part}`);
+      values.push(n);
+    }
+    return values;
+  }
+
+  // Single number
   const n = Number(f);
   if (!Number.isInteger(n) || n < min || n > max) throw new Error(`Unsupported cron field: ${field}`);
   return [n];
@@ -8,15 +60,14 @@ function parseField(field: string, min: number, max: number): number[] | "*" {
 
 function matches(field: number[] | "*", value: number): boolean {
   if (field === "*") return true;
-  return field.includes(value);
+  return (field as number[]).includes(value);
 }
 
 /**
- * Minimal UTC cron "next run" calculator for 5-field expressions:
+ * UTC cron "next run" calculator for 5-field expressions:
  *   minute hour day-of-month month day-of-week
- * Supports: '*' and single numeric values only.
  *
- * This is intentionally strict so the dashboard never lies.
+ * Supports: '*', single numbers, ranges (a-b), steps (* /N, a-b/N), and comma lists.
  */
 export function nextRunUtcFromCron(schedule: string, from = new Date()): Date | null {
   const parts = schedule.trim().split(/\s+/);
@@ -55,4 +106,3 @@ export function nextRunUtcFromCron(schedule: string, from = new Date()): Date | 
   }
   return null;
 }
-

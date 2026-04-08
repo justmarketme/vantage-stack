@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAdminSetupApiPayload } from "../../../../lib/admin/setup-status";
 import { connectCrmDb } from "../../../../lib/crm/db";
 import {
   countActiveSuperAdmins,
@@ -23,41 +24,12 @@ const Body = z.object({
   terms_accepted: z.literal(true),
 });
 
-/** Allow slow first connect (Supabase pooler auto-detect) + query. */
-const SETUP_STATUS_MS = 25_000;
-
 export async function GET() {
-  let db: Awaited<ReturnType<typeof connectCrmDb>>;
-  try {
-    db = await connectCrmDb();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Database connection error";
-    return NextResponse.json({ ok: false, needs_setup: false, error: msg }, { status: 503 });
+  const payload = await getAdminSetupApiPayload();
+  if (payload.ok) {
+    return NextResponse.json(payload);
   }
-  if (!db) {
-    return NextResponse.json(
-      { ok: false, needs_setup: false, error: "No DATABASE_URL (or other CRM DB env) — add it to .env.local" },
-      { status: 503 },
-    );
-  }
-  try {
-    const n = await Promise.race([
-      countActiveSuperAdmins(db),
-      new Promise<never>((_, rej) =>
-        setTimeout(() => rej(new Error("Database check timed out — check DATABASE_URL and network")), SETUP_STATUS_MS),
-      ),
-    ]);
-    return NextResponse.json({ ok: true, needs_setup: n === 0 });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Database error";
-    return NextResponse.json({ ok: false, needs_setup: false, error: msg }, { status: 503 });
-  } finally {
-    try {
-      await db.end({ timeout: 5 });
-    } catch {
-      /* ignore */
-    }
-  }
+  return NextResponse.json(payload, { status: 503 });
 }
 
 export async function POST(req: Request) {

@@ -1,116 +1,836 @@
 {
-  "updated_at": "2026-03-19T14:03:22.230Z",
+  "updated_at": "2026-04-08T00:44:30.816Z",
   "api": {
     "points": [
       {
-        "ts": "2026-03-19T14:03:21.972Z",
-        "route": "/api/crm/morning-briefing",
+        "ts": "2026-04-08T00:44:30.810Z",
+        "route": "/api/crm/clients",
         "method": "GET",
-        "ms": 6,
+        "ms": 898,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:44:29.608Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 894,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:44:28.309Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 909,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:44:26.866Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 6899,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:39:12.314Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 890,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:39:10.763Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5639,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:38:00.624Z",
+        "route": "/api/research/trigger",
+        "method": "POST",
+        "ms": 4,
         "ok": false,
         "status": 500
       },
       {
-        "ts": "2026-03-19T14:03:13.369Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 1154,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T14:00:20.666Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 484,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T14:00:20.127Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 47,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:59:31.413Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 365,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:59:30.693Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 1573,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:59:23.543Z",
-        "route": "/api/scheduler/dashboard",
-        "method": "GET",
-        "ms": 1063,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:55:33.570Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
+        "ts": "2026-04-08T00:37:59.932Z",
+        "route": "/api/research/trigger",
+        "method": "POST",
         "ms": 2,
         "ok": false,
         "status": 500
       },
       {
-        "ts": "2026-03-19T13:55:33.496Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
-        "ms": 1,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:43:23.301Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
-        "ms": 1,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:43:23.213Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
-        "ms": 3,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:42:43.070Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
-        "ms": 1,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:42:42.574Z",
-        "route": "/api/crm/morning-briefing",
-        "method": "GET",
-        "ms": 3,
-        "ok": false,
-        "status": 500
-      },
-      {
-        "ts": "2026-03-19T13:42:26.404Z",
-        "route": "/api/blueprint/submit",
+        "ts": "2026-04-08T00:37:58.383Z",
+        "route": "/api/research/trigger",
         "method": "POST",
-        "ms": 200,
+        "ms": 11,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-08T00:36:21.589Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 444,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:36:21.019Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "POST",
+        "ms": 6833,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:35:52.429Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 2254,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:35:50.999Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 454,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:35:50.419Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 4880,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:35:50.069Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 4475,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-08T00:35:32.517Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5591,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:38:02.913Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6672,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:36:07.900Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6723,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:35:51.632Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 10565,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:34:58.670Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6794,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:33:52.508Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 3565,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T23:29:46.964Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 6276,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:50:51.636Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 3094,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:50:51.603Z",
+        "route": "/api/crm/morning-briefing",
+        "method": "GET",
+        "ms": 3058,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:49:12.417Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 2311,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:49:09.974Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6491,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:48:43.087Z",
+        "route": "/api/research/trigger",
+        "method": "POST",
+        "ms": 4,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:48:19.138Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 2272,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:48:16.659Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6532,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:48:15.328Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 438,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:48:14.778Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 2544,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:47:55.712Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2338,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:47:54.088Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 647,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:47:19.791Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4635,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:47:17.350Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2192,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:40.905Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1334,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:39.605Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1165,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:39.447Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1591,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:38.295Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 663,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:29.532Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1419,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:28.125Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2978,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:28.037Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2249,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:27.803Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2767,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:25.567Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 696,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:45:24.722Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2813,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:44:30.086Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4011,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:44:29.867Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 3873,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:37:24.531Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 860,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:37:23.551Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4751,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:37:22.693Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1001,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:37:21.414Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2613,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:35:22.362Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6583,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:34:09.228Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 34063,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:33:56.663Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6502,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:32:47.227Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 917,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:32:46.196Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5962,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:26:39.019Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 2199,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:26:36.696Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6877,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:10:39.465Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2378,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:10:39.436Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2382,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:09:22.656Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4614,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:09:20.334Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2265,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:57.012Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1227,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:56.581Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1275,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:55.682Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4034,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:55.216Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5547,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:35.973Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 874,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:08:34.963Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5503,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:05:30.095Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 0,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:05:30.062Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 0,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:05:29.939Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4907,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:04:31.204Z",
+        "route": "/api/research/trigger",
+        "method": "POST",
+        "ms": 1,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:04:31.133Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 6875,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:04:24.207Z",
+        "route": "/api/research/trigger",
+        "method": "POST",
+        "ms": 2,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T19:04:20.744Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 8245,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T19:04:03.574Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5313,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:57.049Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 13301,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:50.626Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 16848,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:45.756Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 10717,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:44.523Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 9801,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:58:43.657Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 43804,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:38.195Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 11523,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:58:33.667Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 9430,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:27.169Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 11407,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:58:26.383Z",
+        "route": "/api/crm/clients/[id]/design-to-code",
+        "method": "GET",
+        "ms": 10593,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:58:24.475Z",
+        "route": "/api/crm/clients/[id]",
+        "method": "GET",
+        "ms": 24612,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:49:32.242Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 75520,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T18:44:40.870Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 14161,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:44:36.641Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 9932,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:23:23.335Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 10859,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:23:23.195Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 10259,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:23:12.816Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 10700,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T18:23:12.372Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 10256,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:45:18.887Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8542,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:45:14.981Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4610,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T09:45:10.949Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8548,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:45:04.059Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1594,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:45:02.375Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8802,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:45:02.246Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8580,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:44:44.609Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 5278,
+        "ok": true,
+        "status": 200
+      },
+      {
+        "ts": "2026-04-07T09:44:39.262Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8592,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:44:39.251Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8581,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:44:39.242Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8530,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-07T09:44:30.170Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 8591,
         "ok": false,
         "status": 500
       }
@@ -120,9 +840,8 @@
     "uptime": {},
     "third_party": {},
     "database": {
-      "status": "red",
-      "checked_at": "2026-03-19T14:03:13.299Z",
-      "details": "db error (ensureSchedulerTables): getaddrinfo ENOTFOUND db.tinkmipmxunwvyemhalu.supabase.co"
+      "status": "unknown",
+      "checked_at": "2026-04-07T09:44:30.173Z"
     }
   }
 }

@@ -106,7 +106,8 @@ export async function listClients(
         c.next_action::text as next_action,
         c.assigned_to::text as assigned_to,
         c.email::text as email,
-        c.website_url::text as website_url
+        c.website_url::text as website_url,
+        (c.blueprint_markdown is not null) as has_blueprint
       from public.clients c
       where ${whereSql}
       order by ${sort}
@@ -149,7 +150,8 @@ export async function getClientDetail(db: Sql, id: string) {
       c.tools_used as tools_used,
       c.current_marketing::text as current_marketing,
       c.success_goals::text as success_goals,
-      c.created_by::text as created_by
+      c.created_by::text as created_by,
+      c.blueprint_markdown::text as blueprint_markdown
     from public.clients c
     where c.id = ${id}::uuid
     limit 1
@@ -157,22 +159,113 @@ export async function getClientDetail(db: Sql, id: string) {
   const client = clients[0] as Record<string, unknown> | undefined;
   if (!client) return { ok: false as const, error: "not_found" };
 
-  const reports = await db`
-    select
-      r.id::text as id,
-      r.report_type::text as report_type,
-      r.website_score::int as health_score,
-      r.video_url::text as video_url,
-      r.sent_at::text as sent_at,
-      r.created_at::text as created_at,
-      r.report_generated,
-      r.research_complete,
-      r.video_complete
-    from public.reports r
-    where r.client_id = ${id}::uuid
-    order by r.created_at desc
-    limit 100
-  `;
+  const [reports, campaigns, tasks, comms, notes, intel, deals, upsells, journeyEvents] =
+    await Promise.all([
+      db`
+        select
+          r.id::text as id,
+          r.report_type::text as report_type,
+          r.website_score::int as health_score,
+          r.video_url::text as video_url,
+          r.sent_at::text as sent_at,
+          r.created_at::text as created_at,
+          r.report_generated,
+          r.research_complete,
+          r.video_complete
+        from public.reports r
+        where r.client_id = ${id}::uuid
+        order by r.created_at desc
+        limit 100
+      `,
+      db`
+        select
+          cp.id::text as id,
+          cp.platform::text as platform,
+          cp.budget::int as budget,
+          cp.spend::int as spend,
+          cp.leads::int as leads,
+          cp.conversions::int as conversions,
+          cp.revenue_attributed::int as revenue_attributed,
+          cp.status::text as status,
+          cp.created_at::text as created_at
+        from public.campaigns cp
+        where cp.client_id = ${id}::uuid
+        order by cp.created_at desc
+        limit 50
+      `,
+      db`
+        select
+          t.id::text as id,
+          t.task_type::text as task_type,
+          t.status::text as status,
+          t.due_date::text as due_date,
+          t.notes::text as description,
+          t.assigned_to::text as assigned_to,
+          t.priority::text as priority,
+          t.created_at::text as created_at
+        from public.tasks t
+        where t.client_id = ${id}::uuid
+        order by t.due_date asc nulls last, t.created_at desc
+        limit 100
+      `,
+      db`
+        select id::text, channel::text, subject::text, body_preview::text, sent_at::text, metadata
+        from public.client_communications
+        where client_id = ${id}::uuid
+        order by sent_at desc
+        limit 100
+      `,
+      db`
+        select id::text, author::text, body::text, created_at::text
+        from public.client_notes
+        where client_id = ${id}::uuid
+        order by created_at desc
+        limit 50
+      `,
+      db`
+        select id::text, title::text, body::text, source::text, severity::text, created_at::text, metadata
+        from public.intelligence_items
+        where client_id = ${id}::uuid or client_id is null
+        order by created_at desc
+        limit 30
+      `,
+      db`
+        select
+          id::text,
+          proposal_status::text,
+          deal_value::int,
+          service_type::text,
+          sent_at::text,
+          accepted_at::text,
+          expected_close_date::text,
+          created_at::text,
+          notes::text
+        from public.deals
+        where client_id = ${id}::uuid
+        order by created_at desc
+        limit 50
+      `,
+      db`
+        select
+          id::text,
+          service_name::text,
+          projected_revenue::int,
+          status::text,
+          sent_at::text,
+          created_at::text
+        from public.upsells
+        where client_id = ${id}::uuid
+        order by created_at desc
+        limit 50
+      `,
+      db`
+        select id::text, event_type::text, timestamp::text, metadata
+        from public.events
+        where client_id = ${id}::uuid
+        order by timestamp desc
+        limit 100
+      `,
+    ]);
 
   const latest = reports[0] as Record<string, unknown> | undefined;
   const health_score = typeof latest?.health_score === "number" ? latest.health_score : null;
@@ -180,102 +273,6 @@ export async function getClientDetail(db: Sql, id: string) {
     latest && typeof latest.report_type === "string"
       ? `Latest ${latest.report_type} report (${String(latest.created_at ?? "").slice(0, 10)})`
       : null;
-
-  const campaigns = await db`
-    select
-      cp.id::text as id,
-      cp.platform::text as platform,
-      cp.budget::int as budget,
-      cp.spend::int as spend,
-      cp.leads::int as leads,
-      cp.conversions::int as conversions,
-      cp.revenue_attributed::int as revenue_attributed,
-      cp.status::text as status,
-      cp.created_at::text as created_at
-    from public.campaigns cp
-    where cp.client_id = ${id}::uuid
-    order by cp.created_at desc
-    limit 50
-  `;
-
-  const tasks = await db`
-    select
-      t.id::text as id,
-      t.task_type::text as task_type,
-      t.status::text as status,
-      t.due_date::text as due_date,
-      t.notes::text as description,
-      t.assigned_to::text as assigned_to,
-      t.priority::text as priority,
-      t.created_at::text as created_at
-    from public.tasks t
-    where t.client_id = ${id}::uuid
-    order by t.due_date asc nulls last, t.created_at desc
-    limit 100
-  `;
-
-  const comms = await db`
-    select id::text, channel::text, subject::text, body_preview::text, sent_at::text, metadata
-    from public.client_communications
-    where client_id = ${id}::uuid
-    order by sent_at desc
-    limit 100
-  `;
-
-  const notes = await db`
-    select id::text, author::text, body::text, created_at::text
-    from public.client_notes
-    where client_id = ${id}::uuid
-    order by created_at desc
-    limit 200
-  `;
-
-  const intel = await db`
-    select id::text, title::text, body::text, source::text, severity::text, created_at::text, metadata
-    from public.intelligence_items
-    where client_id = ${id}::uuid or client_id is null
-    order by created_at desc
-    limit 30
-  `;
-
-  const deals = await db`
-    select
-      id::text,
-      proposal_status::text,
-      deal_value::int,
-      service_type::text,
-      sent_at::text,
-      accepted_at::text,
-      expected_close_date::text,
-      created_at::text,
-      notes::text
-    from public.deals
-    where client_id = ${id}::uuid
-    order by created_at desc
-    limit 50
-  `;
-
-  const upsells = await db`
-    select
-      id::text,
-      service_name::text,
-      projected_revenue::int,
-      status::text,
-      sent_at::text,
-      created_at::text
-    from public.upsells
-    where client_id = ${id}::uuid
-    order by created_at desc
-    limit 50
-  `;
-
-  const journeyEvents = await db`
-    select id::text, event_type::text, timestamp::text, metadata
-    from public.events
-    where client_id = ${id}::uuid
-    order by timestamp desc
-    limit 200
-  `;
 
   const reportsOut = (reports as Record<string, unknown>[]).map((r) => ({
     ...r,
@@ -324,25 +321,28 @@ export async function getPipeline(db: Sql) {
 
   const stages: PipelineStage[] = [...PIPELINE_STAGES];
   const stageClients: Record<string, unknown[]> = {};
-  for (const st of stages) {
-    const rows = await db`
-      select
-        c.id::text as id,
-        c.name::text as name,
-        coalesce(c.company, c.name)::text as company,
-        c.industry::text as industry,
-        c.revenue_range::text as revenue_range,
-        c.status::text as status,
-        c.created_at::text as date_entered_stage,
-        c.next_action::text as next_action,
-        c.assigned_to::text as assigned_to
-      from public.clients c
-      where c.status = ${st}
-      order by c.created_at desc
-      limit 200
-    `;
-    stageClients[st] = rows as unknown[];
-  }
+  const stageResults = await Promise.all(
+    stages.map((st) =>
+      db`
+        select
+          c.id::text as id,
+          c.name::text as name,
+          coalesce(c.company, c.name)::text as company,
+          c.industry::text as industry,
+          c.revenue_range::text as revenue_range,
+          c.monthly_budget::int as monthly_budget,
+          c.status::text as status,
+          c.created_at::text as date_entered_stage,
+          c.next_action::text as next_action,
+          c.assigned_to::text as assigned_to
+        from public.clients c
+        where c.status = ${st}
+        order by c.created_at desc
+        limit 200
+      `
+    )
+  );
+  stages.forEach((st, i) => { stageClients[st] = stageResults[i] as unknown[]; });
 
   const conversion_rates: { from: string; to: string; rate: number | null }[] = [];
   for (let i = 0; i < stages.length - 1; i++) {

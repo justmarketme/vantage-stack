@@ -19,7 +19,7 @@ function fmtPctAbs(v: number | null) {
 
 function fmtMoney(v: number) {
   if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  return `R${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 export function AnalyticsDashboard() {

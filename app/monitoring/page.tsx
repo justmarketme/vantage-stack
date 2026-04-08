@@ -1,26 +1,47 @@
-type Dashboard = {
-  ok: boolean;
-  updated_at: string;
-  uptime: null | { window_hours: number; uptime_pct: number };
-  api: { status: string; p95_ms: number | null; error_rate: number | null; recent_points: any[] };
-  api_endpoints?: Array<{
-    route: string;
-    method: string;
-    avg_ms: number;
-    p95_ms: number;
-    error_rate: number;
-    count: number;
-    status: "green" | "yellow" | "red";
-  }>;
-  checks: any;
-};
+import { getMonitoringSnapshot, computeUptimePercentageFromChecks } from "../../lib/monitoring/metrics";
 
-async function getDashboard(): Promise<Dashboard> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL?.trim();
-  const url = base ? `${base}/api/monitoring/dashboard` : "http://localhost:3005/api/monitoring/dashboard";
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Monitoring dashboard fetch failed: ${res.status}`);
-  return (await res.json()) as Dashboard;
+type ApiPoint = { ts: string; route: string; method: string; ms: number; ok: boolean; status: number };
+
+function bucketStatus(points: ApiPoint[]) {
+  if (!points.length) return { status: "unknown" as const, p95_ms: null as number | null, error_rate: null as number | null };
+  const sorted = points.map((p) => p.ms).sort((a, b) => a - b);
+  const p95 = sorted[Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1)];
+  const errRate = points.filter((p) => !p.ok).length / points.length;
+  const status = errRate > 0.05 ? "red" : p95 > 10_000 ? "red" : p95 > 3_000 ? "yellow" : "green";
+  return { status, p95_ms: p95, error_rate: Math.round(errRate * 1000) / 10 };
+}
+
+function analyzeEndpoints(points: ApiPoint[]) {
+  const map = new Map<string, { route: string; method: string; ms: number[]; ok: boolean[] }>();
+  for (const p of points) {
+    const key = `${p.method} ${p.route}`;
+    const e = map.get(key) ?? { route: p.route, method: p.method, ms: [], ok: [] };
+    e.ms.push(p.ms);
+    e.ok.push(p.ok);
+    map.set(key, e);
+  }
+  return [...map.values()].map((v) => {
+    const sorted = v.ms.slice().sort((a, b) => a - b);
+    const p95 = sorted[Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1)] ?? 0;
+    const avg = v.ms.reduce((a, b) => a + b, 0) / (v.ms.length || 1);
+    const errRate = v.ok.filter((x) => !x).length / (v.ok.length || 1);
+    const status = errRate > 0.05 ? "red" : p95 > 10_000 ? "red" : p95 > 3_000 ? "yellow" : ("green" as const);
+    return { route: v.route, method: v.method, avg_ms: Math.round(avg), p95_ms: Math.round(p95), error_rate: Math.round(errRate * 1000) / 10, count: v.ms.length, status };
+  }).sort((a, b) => b.p95_ms - a.p95_ms).slice(0, 12);
+}
+
+async function getDashboard() {
+  const snap = await getMonitoringSnapshot();
+  const last1h = (snap.api.points ?? []).filter((p) => Date.now() - new Date(p.ts).getTime() < 60 * 60 * 1000);
+  const apiAgg = bucketStatus(last1h);
+  const uptime = computeUptimePercentageFromChecks(snap, 24);
+  return {
+    updated_at: snap.updated_at,
+    uptime,
+    api: { ...apiAgg, recent_points: last1h.slice(0, 200) },
+    api_endpoints: analyzeEndpoints(last1h),
+    checks: snap.checks,
+  };
 }
 
 function dot(status: string) {

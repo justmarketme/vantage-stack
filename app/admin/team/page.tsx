@@ -1,10 +1,10 @@
-import { Navbar } from "../../../components/layout/Navbar";
+import { AdminNavbar } from "../../../components/admin/AdminNavbar";
 import { TeamConsole } from "./team-console";
 
 export default function AdminTeamPage() {
   return (
     <div>
-      <Navbar />
+      <AdminNavbar />
       <main className="vs-container pb-24 pt-28">
         <TeamConsole />
       </main>

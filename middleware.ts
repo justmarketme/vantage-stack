@@ -18,6 +18,7 @@ function withNoIndex(res: NextResponse) {
 }
 
 function isPublicAdminPath(pathname: string) {
+  if (pathname === "/admin" || pathname === "/admin/") return true;
   if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) return true;
   if (pathname === "/admin/setup" || pathname.startsWith("/admin/setup/")) return true;
   if (pathname === "/admin/invite" || pathname.startsWith("/admin/invite/")) return true;

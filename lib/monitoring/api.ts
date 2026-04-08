@@ -1,9 +1,32 @@
 import * as Sentry from "@sentry/nextjs";
-import { recordApiMetric } from "./metrics";
+import { recordApiMetric, getMonitoringSnapshot } from "./metrics";
 import { sendTelegramAlert } from "../scheduler-engine/telegram";
 
 function safeRouteName(input: string) {
   return input.replace(/\s+/g, " ").trim().slice(0, 140);
+}
+
+/** Alert if error rate in the last 15 minutes exceeds 20% (minimum 5 data points). */
+async function checkErrorRateSpike(route: string, method: string) {
+  try {
+    const snap = await getMonitoringSnapshot();
+    const windowMs = 15 * 60 * 1000;
+    const recent = (snap.api.points ?? []).filter(
+      (p) =>
+        p.route === route &&
+        p.method === method &&
+        Date.now() - new Date(p.ts).getTime() < windowMs,
+    );
+    if (recent.length < 5) return; // not enough data
+    const errRate = recent.filter((p) => !p.ok).length / recent.length;
+    if (errRate >= 0.2) {
+      await sendTelegramAlert({
+        text: `🚨 Error rate spike: ${method} ${route}\n${Math.round(errRate * 100)}% errors in last 15 min (${recent.length} requests)`,
+      }).catch(() => {});
+    }
+  } catch {
+    // never throw from monitoring — it must not break the actual handler
+  }
 }
 
 export function withApiMonitoring<T extends (...args: any[]) => Promise<Response>>(params: {
@@ -46,26 +69,20 @@ export function withApiMonitoring<T extends (...args: any[]) => Promise<Response
       throw err;
     } finally {
       const ms = Date.now() - started;
-      await recordApiMetric({
-        ts: new Date().toISOString(),
-        route,
-        method,
-        ms,
-        ok,
-        status,
-      }).catch(() => {});
+      await recordApiMetric({ ts: new Date().toISOString(), route, method, ms, ok, status }).catch(() => {});
 
       if (ms > 10_000) {
         await sendTelegramAlert({
           text: `🚩 API slow: ${method} ${route} took ${ms}ms (status ${status})`,
         }).catch(() => {});
       } else if (ms > 3_000) {
-        // Warning-level: stored in metrics + visible on dashboard; no pager.
-        // Keep this low-noise by not alerting to Telegram.
-        // eslint-disable-next-line no-console
         console.warn(`[monitoring] slow API: ${method} ${route} took ${ms}ms (status ${status})`);
+      }
+
+      // Check for error rate spike after recording (fire-and-forget)
+      if (!ok) {
+        checkErrorRateSpike(route, method).catch(() => {});
       }
     }
   }) as T;
 }
-

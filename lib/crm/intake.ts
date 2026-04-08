@@ -5,6 +5,7 @@ import { ensureCrmSchema } from "./db";
 import { ensureAnalyticsTables } from "../analytics/db";
 import { trackClientEvent } from "../analytics/engine-v2";
 import { logCrmActivity } from "./activity";
+import { generateAndSaveBlueprint } from "./blueprint-generator";
 
 export type ClientIntakeSource = "blueprint_form" | "crm_manual";
 
@@ -135,6 +136,26 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
     user_actor: createdBy || (opts.source === "blueprint_form" ? "public_form" : "crm"),
     details: { status, skip_research: Boolean(opts.skipResearch) },
   });
+
+  // Auto-generate blueprint on intake so it's immediately visible in Blueprint Review
+  if (status === "blueprint-submitted") {
+    await generateAndSaveBlueprint(db, {
+      id: clientId,
+      name: payload.clientName,
+      email: payload.email,
+      company: company,
+      industry: payload.industry,
+      website_url: website_url || null,
+      whatsapp: payload.whatsapp,
+      monthly_budget: monthly_budget,
+      success_goals: payload.successGoals,
+      current_marketing: payload.currentMarketing,
+      challenges: payload.challenges,
+      competitors: payload.competitors,
+      tools_used: payload.toolsUsed,
+      revenue_range: payload.revenueRange,
+    });
+  }
 
   return { ok: true as const, client_id: clientId, status };
 }

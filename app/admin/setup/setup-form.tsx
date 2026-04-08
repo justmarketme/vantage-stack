@@ -124,7 +124,9 @@ export function FirstAdminSetupForm() {
         setErr(json.error ?? "Setup failed");
         return;
       }
-      router.replace("/admin/verify-email?pending=1");
+      const msg =
+        "Account created. Sign in below with your username and password. If you received a verification email, you can open that link when you are ready.";
+      router.replace(`/admin/login?message=${encodeURIComponent(msg)}`);
     } catch {
       setErr("Network error");
     } finally {

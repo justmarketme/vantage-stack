@@ -27,7 +27,14 @@
     {
       "path": "/api/cron/error-digest",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/report-scheduled-send",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/pipeline-health",
+      "schedule": "0 6 * * *"
     }
   ]
 }
-

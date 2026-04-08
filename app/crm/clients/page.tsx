@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { statusBadgeClass } from "../../../components/crm/statusStyles";
+import { useSearchParams } from "next/navigation";
+import { Tooltip } from "../../../components/ui/Tooltip";
 
 type Row = {
   id: string;
@@ -14,17 +15,83 @@ type Row = {
   last_activity: string;
   next_action: string | null;
   email?: string;
+  monthly_budget?: number;
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  "blueprint-submitted": "bg-purple-500/15 text-purple-300 border-purple-500/30",
+  "manually-added": "bg-white/5 text-white/60 border-white/10",
+  "report-sent": "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  "proposal-sent": "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  "active-client": "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  "upsell-sent": "bg-pink-500/15 text-pink-300 border-pink-500/30",
+  "churned": "bg-rose-500/15 text-rose-300 border-rose-500/30",
+};
+
+function statusClass(s: string) {
+  return STATUS_COLORS[s] ?? "bg-white/5 text-white/50 border-white/10";
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function avatarColor(id: string) {
+  const colors = [
+    "bg-blue-500/30 text-blue-200",
+    "bg-purple-500/30 text-purple-200",
+    "bg-emerald-500/30 text-emerald-200",
+    "bg-amber-500/30 text-amber-200",
+    "bg-rose-500/30 text-rose-200",
+    "bg-pink-500/30 text-pink-200",
+    "bg-sky-500/30 text-sky-200",
+    "bg-orange-500/30 text-orange-200",
+  ];
+  const idx = id.charCodeAt(0) % colors.length;
+  return colors[idx];
+}
+
+function timeAgo(dateStr: string) {
+  if (!dateStr) return "—";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const d = Math.floor(diff / 86400000);
+  if (d === 0) return "Today";
+  if (d === 1) return "Yesterday";
+  if (d < 30) return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const STATUSES = [
+  "blueprint-submitted",
+  "manually-added",
+  "report-sent",
+  "proposal-sent",
+  "active-client",
+  "upsell-sent",
+  "churned",
+];
+
 export default function CrmClientsListPage() {
+  const searchParams = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [revenueRange, setRevenueRange] = useState("");
+  // Pre-populate from ?status= URL param (e.g. when clicking a pipeline stage on dashboard)
+  const [status, setStatus] = useState(() => searchParams.get("status") ?? "");
+  const [view, setView] = useState<"cards" | "table">("cards");
+
+  // Keep filter in sync if URL changes (browser back/forward)
+  useEffect(() => {
+    const fromUrl = searchParams.get("status") ?? "";
+    setStatus(fromUrl);
+  }, [searchParams]);
 
   const qs = useMemo(() => {
     const p = new URLSearchParams();
@@ -32,10 +99,8 @@ export default function CrmClientsListPage() {
     p.set("sort", "last_activity");
     if (search.trim()) p.set("search", search.trim());
     if (status) p.set("status", status);
-    if (industry.trim()) p.set("industry", industry.trim());
-    if (revenueRange.trim()) p.set("revenue_range", revenueRange.trim());
     return p.toString();
-  }, [search, status, industry, revenueRange]);
+  }, [search, status]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,9 +118,7 @@ export default function CrmClientsListPage() {
     }
   }, [qs]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function triggerResearch(clientId: string) {
     try {
@@ -66,15 +129,7 @@ export default function CrmClientsListPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({
-          client: {
-            id: p.id,
-            name: p.name,
-            email: p.email,
-            website_url: p.website_url,
-            industry: p.industry,
-          },
-        }),
+        body: JSON.stringify({ client: { id: p.id, name: p.name, email: p.email, website_url: p.website_url, industry: p.industry } }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? "Research trigger failed");
@@ -86,99 +141,267 @@ export default function CrmClientsListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-heading text-xl text-textPrimary">Clients</h2>
-          <p className="text-sm text-textMuted mt-1">{total} total · searchable table</p>
+          <h1 className="text-2xl font-bold text-textPrimary">Contacts</h1>
+          <p className="text-sm text-textMuted mt-1">
+            {loading ? "Loading…" : (
+              status
+                ? <><span className="text-textPrimary font-medium">{total}</span> contacts in <span className="text-accent font-medium">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span></>
+                : <>{total} total contacts</>
+            )}
+          </p>
         </div>
-        <Link href="/crm/clients/new" className="vs-button-primary text-sm">
-          Add new client
+        <Link
+          href="/crm/clients/new"
+          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Contact
         </Link>
       </div>
 
-      <div className="vs-card grid gap-4 md:grid-cols-4">
-        <label className="text-xs text-textMuted block space-y-1">
-          Search
+      {/* Active stage filter banner */}
+      {status && (
+        <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+          <span className="text-sm text-textPrimary">
+            Showing contacts in stage: <strong className="text-accent">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setStatus("")}
+            className="ml-auto flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear filter
+          </button>
+          <Link
+            href="/crm/pipeline"
+            className="flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
+          >
+            View Kanban →
+          </Link>
+        </div>
+      )}
+
+      {/* Filters + View Toggle */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
           <input
-            className="vs-input"
+            className="w-full rounded-lg border border-white/[0.08] bg-[#16161A] pl-9 pr-4 py-2.5 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Name or email"
+            placeholder="Search contacts…"
           />
-        </label>
-        <label className="text-xs text-textMuted block space-y-1">
-          Status
-          <select className="vs-input" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Any</option>
-            <option value="blueprint-submitted">blueprint-submitted</option>
-            <option value="manually-added">manually-added</option>
-            <option value="report-sent">report-sent</option>
-            <option value="proposal-sent">proposal-sent</option>
-            <option value="active-client">active-client</option>
-            <option value="upsell-sent">upsell-sent</option>
-            <option value="churned">churned</option>
-          </select>
-        </label>
-        <label className="text-xs text-textMuted block space-y-1">
-          Industry contains
-          <input className="vs-input" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Health" />
-        </label>
-        <label className="text-xs text-textMuted block space-y-1">
-          Revenue range contains
-          <input className="vs-input" value={revenueRange} onChange={(e) => setRevenueRange(e.target.value)} />
-        </label>
+        </div>
+
+        <select
+          className="rounded-lg border border-white/[0.08] bg-[#16161A] px-3 py-2.5 text-sm text-textPrimary focus:border-accent/50 focus:outline-none"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">All Stages</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+          ))}
+        </select>
+
+        {/* View toggle */}
+        <div className="flex items-center rounded-lg border border-white/[0.08] bg-[#16161A] p-1">
+          <Tooltip content="Card view — visual contact cards" side="bottom">
+            <button
+              type="button"
+              onClick={() => setView("cards")}
+              className={`rounded-md p-1.5 transition ${view === "cards" ? "bg-white/10 text-textPrimary" : "text-textMuted hover:text-textPrimary"}`}
+              title="Card view"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+          </Tooltip>
+          <Tooltip content="Table view — compact list" side="bottom">
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              className={`rounded-md p-1.5 transition ${view === "table" ? "bg-white/10 text-textPrimary" : "text-textMuted hover:text-textPrimary"}`}
+              title="Table view"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
-      {loading ? <p className="text-sm text-textMuted">Loading…</p> : null}
-      {err ? <p className="text-sm text-rose-300">{err}</p> : null}
+      {err && <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-300">{err}</div>}
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-white/10 bg-white/[0.02] text-xs uppercase tracking-wider text-textMuted">
-            <tr>
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Industry</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Last activity</th>
-              <th className="px-4 py-3 font-medium">Next action</th>
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {rows.map((r, i) => (
-              <tr key={r.id} className={i % 2 === 0 ? "bg-black/20" : "bg-black/10"}>
-                <td className="px-4 py-3">
-                  <div className="font-medium text-textPrimary">{r.name}</div>
-                  <div className="text-xs text-textMuted">{r.company}</div>
-                </td>
-                <td className="px-4 py-3 text-textMuted">{r.industry}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusBadgeClass(r.status)}`}>
-                    {r.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-textMuted whitespace-nowrap">{String(r.created_at).slice(0, 10)}</td>
-                <td className="px-4 py-3 text-textMuted whitespace-nowrap">{String(r.last_activity).slice(0, 10)}</td>
-                <td className="px-4 py-3 text-textMuted max-w-[200px] truncate">{r.next_action ?? "—"}</td>
-                <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                  <Link href={`/crm/clients/${r.id}`} className="text-sky-300 hover:text-sky-200 text-xs font-semibold">
-                    Profile
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-textMuted py-8">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
+          Loading contacts…
+        </div>
+      )}
+
+      {/* Card View */}
+      {!loading && view === "cards" && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((r) => (
+            <div key={r.id} className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5 hover:border-white/[0.15] transition-all group flex flex-col gap-4">
+              {/* Top: avatar + name + status */}
+              <div className="flex items-start gap-3">
+                <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${avatarColor(r.id)}`}>
+                  {initials(r.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-textPrimary truncate">{r.name}</span>
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(r.status)}`}>
+                      {r.status.replace(/-/g, " ")}
+                    </span>
+                  </div>
+                  <div className="text-xs text-textMuted mt-0.5 truncate">{r.company || r.industry || "—"}</div>
+                </div>
+              </div>
+
+              {/* Meta */}
+              <div className="grid grid-cols-2 gap-2 text-xs text-textMuted">
+                <div>
+                  <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Industry</span>
+                  <span className="text-textPrimary/80 truncate block">{r.industry || "—"}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Last Activity</span>
+                  <span className="text-textPrimary/80">{timeAgo(r.last_activity)}</span>
+                </div>
+                {r.next_action && (
+                  <div className="col-span-2">
+                    <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Next Action</span>
+                    <span className="text-amber-300/80 truncate block">{r.next_action}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 border-t border-white/[0.06] pt-3 mt-auto">
+                <Tooltip content="Open the full client profile with notes, tasks, and reports" side="bottom">
+                  <Link
+                    href={`/crm/clients/${r.id}`}
+                    className="flex-1 rounded-lg bg-white/5 px-3 py-1.5 text-center text-xs font-semibold text-textPrimary hover:bg-white/10 transition"
+                  >
+                    View Profile
                   </Link>
-                  <Link href={`/crm/clients/${r.id}/edit`} className="text-textMuted hover:text-textPrimary text-xs">
+                </Tooltip>
+                <Tooltip content="Edit contact details" side="bottom">
+                  <Link
+                    href={`/crm/clients/${r.id}/edit`}
+                    className="rounded-lg bg-white/5 px-3 py-1.5 text-xs font-semibold text-textMuted hover:bg-white/10 transition"
+                  >
                     Edit
                   </Link>
-                  <button type="button" onClick={() => triggerResearch(r.id)} className="text-amber-200/90 hover:text-amber-100 text-xs">
-                    Research
+                </Tooltip>
+                {r.status === "blueprint-submitted" && (
+                  <Tooltip content="Review and generate this client's strategy blueprint" side="bottom">
+                    <Link
+                      href={`/crm/blueprint-review/${r.id}`}
+                      className="rounded-lg bg-purple-500/15 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-500/25 transition border border-purple-500/20"
+                    >
+                      Blueprint
+                    </Link>
+                  </Tooltip>
+                )}
+                <Tooltip content="Trigger the automated research pipeline for this client" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => triggerResearch(r.id)}
+                    className="rounded-lg bg-white/5 px-3 py-1.5 text-xs font-semibold text-amber-300/80 hover:bg-white/10 transition"
+                    title="Run research"
+                  >
+                    🔍
                   </button>
-                  <span className="text-textMuted text-xs">Proposal</span>
-                </td>
+                </Tooltip>
+              </div>
+            </div>
+          ))}
+          {rows.length === 0 && !loading && (
+            <div className="col-span-3 py-16 text-center">
+              <div className="text-4xl mb-3">👥</div>
+              <p className="text-sm text-textMuted">No contacts found. Try adjusting your filters.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Table View */}
+      {!loading && view === "table" && (
+        <div className="rounded-xl border border-white/[0.08] overflow-hidden">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-white/[0.08] bg-white/[0.02]">
+              <tr>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Contact</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Industry</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Status</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Last Activity</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Next Action</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {!loading && !rows.length ? <div className="p-8 text-center text-sm text-textMuted">No clients match.</div> : null}
-      </div>
+            </thead>
+            <tbody className="divide-y divide-white/[0.05]">
+              {rows.map((r) => (
+                <tr key={r.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold ${avatarColor(r.id)}`}>
+                        {initials(r.name)}
+                      </div>
+                      <div>
+                        <div className="font-medium text-textPrimary">{r.name}</div>
+                        <div className="text-xs text-textMuted">{r.company || "—"}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-textMuted">{r.industry || "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusClass(r.status)}`}>
+                      {r.status.replace(/-/g, " ")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-textMuted whitespace-nowrap">{timeAgo(r.last_activity)}</td>
+                  <td className="px-4 py-3 text-sm text-textMuted max-w-[180px] truncate">{r.next_action ?? "—"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link href={`/crm/clients/${r.id}`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textPrimary hover:bg-white/10 transition">
+                        View
+                      </Link>
+                      <Link href={`/crm/clients/${r.id}/edit`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textMuted hover:bg-white/10 transition">
+                        Edit
+                      </Link>
+                      {r.status === "blueprint-submitted" && (
+                        <Link href={`/crm/blueprint-review/${r.id}`} className="rounded-md bg-purple-500/15 border border-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-500/25 transition">
+                          Blueprint
+                        </Link>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {rows.length === 0 && !loading && (
+            <div className="py-12 text-center text-sm text-textMuted">No contacts match your filters.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

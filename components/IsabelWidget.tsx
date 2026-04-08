@@ -8,7 +8,7 @@ const AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
 
 /** Isabel avatar — place your photo at public/images/isabel-avatar.png */
-const ISABEL_AVATAR = "/images/isabel-avatar.png";
+const ISABEL_AVATAR = "/images/isabel-avatar.jpg";
 
 type Message = { role: "user" | "assistant"; content: string };
 

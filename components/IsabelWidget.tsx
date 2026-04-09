@@ -131,11 +131,13 @@ export function IsabelWidget() {
       },
       onError: (err) => {
         console.error("❌ Isabel error:", err);
-        console.error("Error details:", {
-          message: err?.message,
-          code: err?.code,
-          stack: err?.stack
-        });
+        if (typeof err === 'object' && err !== null) {
+          console.error("Error details:", {
+            message: (err as any)?.message,
+            code: (err as any)?.code,
+            stack: (err as any)?.stack
+          });
+        }
       },
     });
 

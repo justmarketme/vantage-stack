@@ -7,6 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 const AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
 
+// Debug: log the agent ID to verify it's loading
+if (typeof window !== 'undefined') {
+  console.log('📌 Isabel Agent ID loaded:', AGENT_ID === "YOUR_AGENT_ID" ? "⚠️ FALLBACK (missing env var)" : "✅ From environment");
+  console.log('Agent ID value:', AGENT_ID.substring(0, 10) + '...');
+}
+
 /** Isabel avatar — place your photo at public/images/isabel-avatar.png */
 const ISABEL_AVATAR = "/images/isabel-avatar.jpg";
 
@@ -123,7 +129,14 @@ export function IsabelWidget() {
           setMessages((prev) => [...prev, { role: msg.source === "user" ? "user" : "assistant", content: msg.message }]);
         }
       },
-      onError: (err) => console.error("Isabel error:", err),
+      onError: (err) => {
+        console.error("❌ Isabel error:", err);
+        console.error("Error details:", {
+          message: err?.message,
+          code: err?.code,
+          stack: err?.stack
+        });
+      },
     });
 
   const agentState = status;

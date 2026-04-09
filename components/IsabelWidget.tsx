@@ -213,7 +213,7 @@ export function IsabelWidget() {
 
             {/* Main card */}
             <motion.div
-              className="relative flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] cursor-pointer max-w-[340px]"
+              className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] cursor-pointer max-w-[360px]"
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
               onClick={handleTextQuickStart}
@@ -223,7 +223,7 @@ export function IsabelWidget() {
 
               {/* Avatar */}
               <div className="relative shrink-0">
-                <IsabelAvatar className="h-12 w-12" isActive={false} />
+                <IsabelAvatar className="h-16 w-16" isActive={false} />
                 {/* Online indicator */}
                 <span className="absolute bottom-0.5 right-0.5 flex h-3 w-3 items-center justify-center">
                   <span className="absolute h-full w-full rounded-full bg-emerald-400 opacity-40 animate-ping" />
@@ -369,7 +369,7 @@ export function IsabelWidget() {
               ) : messages.length === 0 ? (
                 /* Empty state — invite to start */
                 <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
-                  <IsabelAvatar className="h-20 w-20" isActive={false} />
+                  <IsabelAvatar className="h-24 w-24" isActive={false} />
                   <div className="space-y-1.5 px-2">
                     <p className="text-sm font-semibold text-textPrimary">Hi, I'm Isabel 👋</p>
                     <p className="text-xs leading-relaxed text-textMuted">

@@ -121,9 +121,13 @@ export function IsabelWidget() {
   const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
       onConnect: () => {
+        console.log("✅ Isabel connected!");
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
-      onDisconnect: () => { setFeedbackSent(null); },
+      onDisconnect: () => {
+        console.log("🔌 Isabel disconnected");
+        setFeedbackSent(null);
+      },
       onMessage: (msg) => {
         if (msg.message) {
           setMessages((prev) => [...prev, { role: msg.source === "user" ? "user" : "assistant", content: msg.message }]);
@@ -160,15 +164,27 @@ export function IsabelWidget() {
 
   const startVoice = useCallback(async () => {
     try {
+      console.log("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
       await getMicStream();
-      await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } } });
-    } catch (err) { console.error("Failed to start voice:", err); }
+      console.log("🎤 Mic stream acquired, initiating session...");
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } } });
+      console.log("✅ Voice session started:", sessionId);
+    } catch (err) {
+      console.error("❌ Failed to start voice:", err);
+      console.error("Error type:", typeof err);
+      console.error("Error details:", err);
+    }
   }, [getMicStream, startSession]);
 
   const startText = useCallback(async () => {
     try {
-      await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } } });
-    } catch (err) { console.error("Failed to start text:", err); }
+      console.log("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } } });
+      console.log("✅ Text session started:", sessionId);
+    } catch (err) {
+      console.error("❌ Failed to start text:", err);
+      console.error("Error details:", err);
+    }
   }, [startSession]);
 
   const endVoice = useCallback(async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -24,22 +25,19 @@ export function Navbar() {
     >
       <div className="vs-container">
         <div
-          className={`mt-4 flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-5 py-3 backdrop-blur ${
+          className={`mt-4 flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-5 py-2 sm:py-3 backdrop-blur ${
             scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.65)]" : ""
           }`}
         >
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent text-xs font-semibold">
-              VS
-            </div>
-            <div className="flex flex-col">
-              <span className="font-heading text-sm tracking-wide">
-                VantageStack
-              </span>
-              <span className="text-[11px] uppercase tracking-[0.16em] text-textMuted">
-                Revenue Systems
-              </span>
-            </div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/images/vs-logo.png"
+              alt="VantageStack"
+              width={280}
+              height={100}
+              className="h-24 w-auto object-contain sm:h-20"
+              priority
+            />
           </Link>
           <nav className="hidden items-center gap-8 text-xs md:flex text-textMuted">
             <a href="#blueprint" className="hover:text-textPrimary transition">

@@ -39,9 +39,11 @@ function StatCard({
   tooltip?: string;
 }) {
   const inner = (
-    <div className={`rounded-xl border border-white/[0.08] bg-[#16161A] p-5 hover:border-white/[0.15] transition-all group ${href ? "cursor-pointer" : ""}`}>
-      <div className="flex items-start justify-between">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${accent}`}>
+    <div className={`relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#16161A] p-4 md:p-5 hover:border-white/[0.15] transition-all group ${href ? "cursor-pointer" : ""}`}>
+      {/* Subtle gradient overlay for depth */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
+      <div className="relative flex items-start justify-between">
+        <div className={`flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-lg ${accent}`}>
           {icon}
         </div>
         {href && (
@@ -50,10 +52,10 @@ function StatCard({
           </svg>
         )}
       </div>
-      <div className="mt-4">
-        <div className="text-2xl font-bold text-textPrimary">{value}</div>
-        <div className="mt-0.5 text-sm font-medium text-textMuted">{label}</div>
-        {sub && <div className="mt-1 text-xs text-textMuted/60">{sub}</div>}
+      <div className="relative mt-3 md:mt-4">
+        <div className="text-2xl md:text-2xl font-bold text-textPrimary tracking-tight">{value}</div>
+        <div className="mt-0.5 text-xs md:text-sm font-medium text-textMuted">{label}</div>
+        {sub && <div className="mt-1 text-[10px] md:text-xs text-textMuted/50">{sub}</div>}
       </div>
     </div>
   );
@@ -99,6 +101,13 @@ function activityDot(type: string) {
   return "bg-white/30";
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function CrmDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
@@ -128,13 +137,16 @@ export default function CrmDashboard() {
   }, []);
 
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const greeting = getGreeting();
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-5 md:space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold text-textPrimary">Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-textPrimary">
+            {greeting} <span className="inline-block">👋</span>
+          </h1>
           <p className="mt-0.5 text-sm text-textMuted truncate">{today}</p>
         </div>
         <Link
@@ -204,60 +216,25 @@ export default function CrmDashboard() {
         />
       </div>
 
-      {/* Main content: Quick Actions + Activity Feed */}
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
-        {/* Quick Actions */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
-            <h2 className="text-sm font-semibold text-textPrimary mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              {[
-                { label: "View Pipeline Board", href: "/crm/pipeline", icon: "📊", tooltip: "See all contacts in a visual Kanban board sorted by stage" },
-                { label: "Review Blueprints", href: "/crm/blueprint-review", icon: "📋", tooltip: "Review and generate strategy blueprints for pending submissions" },
-                { label: "Morning Briefing", href: "/crm/briefing", icon: "☀️", tooltip: "Read today's AI-generated daily intelligence briefing" },
-                { label: "Add New Contact", href: "/crm/clients/new", icon: "➕", tooltip: "Manually add a new contact to your CRM" },
-                { label: "All Contacts", href: "/crm/clients", icon: "👥", tooltip: "Browse and filter all your CRM contacts" },
-              ].map((a) => (
-                <Tooltip key={a.href} content={a.tooltip} side="right">
-                  <Link
-                    href={a.href}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full"
-                  >
-                    <span className="text-base">{a.icon}</span>
-                    {a.label}
-                  </Link>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
+      {/* Main content:
+          Mobile: Activity Feed first (full width), then Quick Actions hidden
+          Desktop: Quick Actions sidebar + Activity Feed (lg:grid-cols-3) */}
 
-          <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
-            <h2 className="text-sm font-semibold text-textPrimary mb-3">Pipeline Stages</h2>
-            <div className="space-y-2">
-              {[
-                { label: "Blueprint Submitted", color: "bg-purple-400", status: "blueprint-submitted", tooltip: "Click to view all contacts in this stage" },
-                { label: "Report Sent", color: "bg-blue-400", status: "report-sent", tooltip: "Click to view all contacts in this stage" },
-                { label: "Proposal Sent", color: "bg-amber-400", status: "proposal-sent", tooltip: "Click to view all contacts in this stage" },
-                { label: "Active Client", color: "bg-emerald-400", status: "active-client", tooltip: "Click to view all active paying clients" },
-                { label: "Upsell", color: "bg-pink-400", status: "upsell-sent", tooltip: "Click to view upsell opportunity contacts" },
-              ].map((s) => (
-                <Tooltip key={s.status} content={s.tooltip} side="right">
-                  <Link
-                    href={`/crm/clients?status=${s.status}`}
-                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`h-2 w-2 rounded-full ${s.color} flex-shrink-0`} />
-                      {s.label}
-                    </div>
-                    <svg className="h-3 w-3 opacity-0 group-hover:opacity-50 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
+      {/* Activity Feed — full width on mobile, 2/3 on desktop */}
+      <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5 lg:hidden">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-sm font-semibold text-textPrimary">Recent Activity</h2>
+          <span className="text-xs text-textMuted">Last 20 events</span>
+        </div>
+        <ActivityFeedContent loading={loading} activity={activity} />
+      </div>
+
+      {/* Desktop layout: Quick Actions + Activity Feed side by side */}
+      <div className="hidden lg:grid gap-6 lg:grid-cols-3">
+        {/* Quick Actions + Pipeline Stages */}
+        <div className="lg:col-span-1 space-y-4">
+          <QuickActionsPanel />
+          <PipelineStagesPanel />
         </div>
 
         {/* Activity Feed */}
@@ -266,41 +243,107 @@ export default function CrmDashboard() {
             <h2 className="text-sm font-semibold text-textPrimary">Recent Activity</h2>
             <span className="text-xs text-textMuted">Last 20 events</span>
           </div>
-
-          {loading && (
-            <div className="flex items-center gap-2 text-sm text-textMuted">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
-              Loading activity…
-            </div>
-          )}
-
-          {!loading && activity.length === 0 && (
-            <div className="py-12 text-center">
-              <div className="text-3xl mb-2">📭</div>
-              <p className="text-sm text-textMuted">No activity yet. Add your first contact to get started.</p>
-              <Link href="/crm/clients/new" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition">
-                Add Contact
-              </Link>
-            </div>
-          )}
-
-          {!loading && activity.length > 0 && (
-            <div className="space-y-1">
-              {activity.map((a) => (
-                <div key={a.id} className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-white/[0.03] transition-colors group">
-                  <div className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${activityDot(a.action_type)}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-textPrimary leading-snug">{activityLabel(a)}</p>
-                    {a.details?.note && (
-                      <p className="text-xs text-textMuted mt-0.5 truncate">{a.details.note}</p>
-                    )}
-                  </div>
-                  <span className="text-xs text-textMuted/60 flex-shrink-0 mt-0.5">{timeAgo(a.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <ActivityFeedContent loading={loading} activity={activity} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityFeedContent({ loading, activity }: { loading: boolean; activity: RecentActivity[] }) {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-textMuted">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/10 border-t-accent" />
+        Loading activity…
+      </div>
+    );
+  }
+
+  if (activity.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <div className="text-3xl mb-2">📭</div>
+        <p className="text-sm text-textMuted">No activity yet. Add your first contact to get started.</p>
+        <Link href="/crm/clients/new" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition">
+          Add Contact
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {activity.map((a) => (
+        <div key={a.id} className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-white/[0.03] transition-colors group">
+          <div className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${activityDot(a.action_type)}`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-textPrimary leading-snug">{activityLabel(a)}</p>
+            {a.details?.note && (
+              <p className="text-xs text-textMuted mt-0.5 truncate">{a.details.note}</p>
+            )}
+          </div>
+          <span className="text-xs text-textMuted/60 flex-shrink-0 mt-0.5">{timeAgo(a.created_at)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QuickActionsPanel() {
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
+      <h2 className="text-sm font-semibold text-textPrimary mb-4">Quick Actions</h2>
+      <div className="space-y-2">
+        {[
+          { label: "View Pipeline Board", href: "/crm/pipeline", icon: "📊", tooltip: "See all contacts in a visual Kanban board sorted by stage" },
+          { label: "Review Blueprints", href: "/crm/blueprint-review", icon: "📋", tooltip: "Review and generate strategy blueprints for pending submissions" },
+          { label: "Morning Briefing", href: "/crm/briefing", icon: "☀️", tooltip: "Read today's AI-generated daily intelligence briefing" },
+          { label: "Add New Contact", href: "/crm/clients/new", icon: "➕", tooltip: "Manually add a new contact to your CRM" },
+          { label: "All Contacts", href: "/crm/clients", icon: "👥", tooltip: "Browse and filter all your CRM contacts" },
+        ].map((a) => (
+          <Tooltip key={a.href} content={a.tooltip} side="right">
+            <Link
+              href={a.href}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full"
+            >
+              <span className="text-base">{a.icon}</span>
+              {a.label}
+            </Link>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PipelineStagesPanel() {
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5">
+      <h2 className="text-sm font-semibold text-textPrimary mb-3">Pipeline Stages</h2>
+      <div className="space-y-2">
+        {[
+          { label: "Blueprint Submitted", color: "bg-purple-400", status: "blueprint-submitted", tooltip: "Click to view all contacts in this stage" },
+          { label: "Report Sent", color: "bg-blue-400", status: "report-sent", tooltip: "Click to view all contacts in this stage" },
+          { label: "Proposal Sent", color: "bg-amber-400", status: "proposal-sent", tooltip: "Click to view all contacts in this stage" },
+          { label: "Active Client", color: "bg-emerald-400", status: "active-client", tooltip: "Click to view all active paying clients" },
+          { label: "Upsell", color: "bg-pink-400", status: "upsell-sent", tooltip: "Click to view upsell opportunity contacts" },
+        ].map((s) => (
+          <Tooltip key={s.status} content={s.tooltip} side="right">
+            <Link
+              href={`/crm/clients?status=${s.status}`}
+              className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-textMuted hover:bg-white/5 hover:text-textPrimary transition-all w-full group"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`h-2 w-2 rounded-full ${s.color} flex-shrink-0`} />
+                {s.label}
+              </div>
+              <svg className="h-3 w-3 opacity-0 group-hover:opacity-50 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </Tooltip>
+        ))}
       </div>
     </div>
   );

@@ -140,7 +140,7 @@ function CrmClientsListPageInner() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -153,59 +153,65 @@ function CrmClientsListPageInner() {
             )}
           </p>
         </div>
-        <Link
-          href="/crm/clients/new"
-          className="flex-shrink-0 flex items-center gap-2 rounded-lg bg-accent px-3 md:px-4 py-2 text-sm font-semibold text-white hover:bg-accent/90 transition"
-        >
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          <span className="hidden sm:inline">Add Contact</span>
-          <span className="sm:hidden">Add</span>
-        </Link>
+        {/* Add button: icon only on mobile, full label on sm+ */}
+        <Tooltip content="Add a new contact to your CRM" side="left">
+          <Link
+            href="/crm/clients/new"
+            className="flex-shrink-0 flex items-center gap-2 rounded-lg bg-accent px-3 py-2 md:px-4 text-sm font-semibold text-white hover:bg-accent/90 transition"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Add Contact</span>
+          </Link>
+        </Tooltip>
       </div>
 
       {/* Active stage filter banner */}
       {status && (
         <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
-          <span className="text-sm text-textPrimary">
-            Showing contacts in stage: <strong className="text-accent">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</strong>
+          <span className="text-sm text-textPrimary min-w-0 truncate">
+            Stage: <strong className="text-accent">{status.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</strong>
           </span>
-          <button
-            type="button"
-            onClick={() => setStatus("")}
-            className="ml-auto flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
-          >
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Clear filter
-          </button>
-          <Link
-            href="/crm/pipeline"
-            className="flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
-          >
-            View Kanban →
-          </Link>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+            <button
+              type="button"
+              onClick={() => setStatus("")}
+              className="flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
+            >
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+            <Link
+              href="/crm/pipeline"
+              className="hidden sm:flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-textMuted hover:text-textPrimary transition"
+            >
+              View Kanban →
+            </Link>
+          </div>
         </div>
       )}
 
       {/* Filters + View Toggle */}
-      <div className="flex flex-wrap items-center gap-2 md:gap-3">
-        <div className="relative flex-1 min-w-[160px] max-w-xs">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Search — full width on mobile */}
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted pointer-events-none" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
           <input
-            className="w-full rounded-lg border border-white/[0.08] bg-[#16161A] pl-9 pr-4 py-2.5 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+            className="w-full rounded-lg border border-white/[0.08] bg-[#16161A] pl-9 pr-4 py-2.5 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search contacts…"
           />
         </div>
 
+        {/* Status filter — hidden on smallest mobile to save space */}
         <select
-          className="rounded-lg border border-white/[0.08] bg-[#16161A] px-3 py-2.5 text-sm text-textPrimary focus:border-accent/50 focus:outline-none"
+          className="hidden sm:block rounded-lg border border-white/[0.08] bg-[#16161A] px-3 py-2.5 text-sm text-textPrimary focus:border-accent/50 focus:outline-none flex-shrink-0"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
@@ -216,7 +222,7 @@ function CrmClientsListPageInner() {
         </select>
 
         {/* View toggle */}
-        <div className="flex items-center rounded-lg border border-white/[0.08] bg-[#16161A] p-1">
+        <div className="flex items-center rounded-lg border border-white/[0.08] bg-[#16161A] p-1 flex-shrink-0">
           <Tooltip content="Card view — visual contact cards" side="bottom">
             <button
               type="button"
@@ -245,6 +251,20 @@ function CrmClientsListPageInner() {
         </div>
       </div>
 
+      {/* Mobile status filter — shown only on xs, below search row */}
+      <div className="sm:hidden">
+        <select
+          className="w-full rounded-lg border border-white/[0.08] bg-[#16161A] px-3 py-2.5 text-sm text-textPrimary focus:border-accent/50 focus:outline-none"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">All Stages</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+          ))}
+        </select>
+      </div>
+
       {err && <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-300">{err}</div>}
 
       {loading && (
@@ -256,12 +276,12 @@ function CrmClientsListPageInner() {
 
       {/* Card View */}
       {!loading && view === "cards" && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((r) => (
-            <div key={r.id} className="rounded-xl border border-white/[0.08] bg-[#16161A] p-5 hover:border-white/[0.15] transition-all group flex flex-col gap-4">
+            <div key={r.id} className="rounded-xl border border-white/[0.08] bg-[#16161A] p-4 md:p-5 hover:border-white/[0.15] transition-all group flex flex-col gap-3 md:gap-4">
               {/* Top: avatar + name + status */}
               <div className="flex items-start gap-3">
-                <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${avatarColor(r.id)}`}>
+                <div className={`flex h-10 w-10 md:h-11 md:w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${avatarColor(r.id)}`}>
                   {initials(r.name)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -335,7 +355,7 @@ function CrmClientsListPageInner() {
             </div>
           ))}
           {rows.length === 0 && !loading && (
-            <div className="col-span-3 py-16 text-center">
+            <div className="col-span-full py-16 text-center">
               <div className="text-4xl mb-3">👥</div>
               <p className="text-sm text-textMuted">No contacts found. Try adjusting your filters.</p>
             </div>
@@ -343,65 +363,101 @@ function CrmClientsListPageInner() {
         </div>
       )}
 
-      {/* Table View */}
+      {/* Table View — cards on mobile, table on sm+ */}
       {!loading && view === "table" && (
-        <div className="rounded-xl border border-white/[0.08] overflow-hidden overflow-x-auto">
-          <table className="min-w-full text-left text-sm" style={{ minWidth: "640px" }}>
-            <thead className="border-b border-white/[0.08] bg-white/[0.02]">
-              <tr>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Contact</th>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Industry</th>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Status</th>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Last Activity</th>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Next Action</th>
-                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.05]">
-              {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold ${avatarColor(r.id)}`}>
-                        {initials(r.name)}
-                      </div>
-                      <div>
-                        <div className="font-medium text-textPrimary">{r.name}</div>
-                        <div className="text-xs text-textMuted">{r.company || "—"}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-textMuted">{r.industry || "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusClass(r.status)}`}>
+        <>
+          {/* Mobile: render as cards */}
+          <div className="sm:hidden space-y-3">
+            {rows.map((r) => (
+              <div key={r.id} className="rounded-xl border border-white/[0.08] bg-[#16161A] p-4 flex items-center gap-3 hover:border-white/[0.15] transition-all">
+                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${avatarColor(r.id)}`}>
+                  {initials(r.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm text-textPrimary truncate">{r.name}</span>
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(r.status)}`}>
                       {r.status.replace(/-/g, " ")}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-textMuted whitespace-nowrap">{timeAgo(r.last_activity)}</td>
-                  <td className="px-4 py-3 text-sm text-textMuted max-w-[180px] truncate">{r.next_action ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link href={`/crm/clients/${r.id}`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textPrimary hover:bg-white/10 transition">
-                        View
-                      </Link>
-                      <Link href={`/crm/clients/${r.id}/edit`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textMuted hover:bg-white/10 transition">
-                        Edit
-                      </Link>
-                      {r.status === "blueprint-submitted" && (
-                        <Link href={`/crm/blueprint-review/${r.id}`} className="rounded-md bg-purple-500/15 border border-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-500/25 transition">
-                          Blueprint
-                        </Link>
-                      )}
-                    </div>
-                  </td>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-textMuted truncate">{r.company || r.industry || "—"}</span>
+                    <span className="text-textMuted/30">·</span>
+                    <span className="text-xs text-textMuted flex-shrink-0">{timeAgo(r.last_activity)}</span>
+                  </div>
+                </div>
+                <Link
+                  href={`/crm/clients/${r.id}`}
+                  className="flex-shrink-0 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-semibold text-textPrimary hover:bg-white/10 transition"
+                >
+                  View
+                </Link>
+              </div>
+            ))}
+            {rows.length === 0 && (
+              <div className="py-12 text-center text-sm text-textMuted">No contacts match your filters.</div>
+            )}
+          </div>
+
+          {/* Desktop: full table */}
+          <div className="hidden sm:block rounded-xl border border-white/[0.08] overflow-hidden overflow-x-auto">
+            <table className="min-w-full text-left text-sm" style={{ minWidth: "640px" }}>
+              <thead className="border-b border-white/[0.08] bg-white/[0.02]">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Contact</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Industry</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Status</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Last Activity</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Next Action</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 && !loading && (
-            <div className="py-12 text-center text-sm text-textMuted">No contacts match your filters.</div>
-          )}
-        </div>
+              </thead>
+              <tbody className="divide-y divide-white/[0.05]">
+                {rows.map((r) => (
+                  <tr key={r.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold ${avatarColor(r.id)}`}>
+                          {initials(r.name)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-textPrimary">{r.name}</div>
+                          <div className="text-xs text-textMuted">{r.company || "—"}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-textMuted">{r.industry || "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusClass(r.status)}`}>
+                        {r.status.replace(/-/g, " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-textMuted whitespace-nowrap">{timeAgo(r.last_activity)}</td>
+                    <td className="px-4 py-3 text-sm text-textMuted max-w-[180px] truncate">{r.next_action ?? "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/crm/clients/${r.id}`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textPrimary hover:bg-white/10 transition">
+                          View
+                        </Link>
+                        <Link href={`/crm/clients/${r.id}/edit`} className="rounded-md bg-white/5 px-3 py-1 text-xs font-semibold text-textMuted hover:bg-white/10 transition">
+                          Edit
+                        </Link>
+                        {r.status === "blueprint-submitted" && (
+                          <Link href={`/crm/blueprint-review/${r.id}`} className="rounded-md bg-purple-500/15 border border-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-500/25 transition">
+                            Blueprint
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length === 0 && !loading && (
+              <div className="py-12 text-center text-sm text-textMuted">No contacts match your filters.</div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

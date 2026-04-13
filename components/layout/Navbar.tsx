@@ -25,17 +25,17 @@ export function Navbar() {
     >
       <div className="vs-container">
         <div
-          className={`mt-4 flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-5 py-2 sm:py-3 backdrop-blur ${
+          className={`mt-4 flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-4 py-2 sm:px-5 sm:py-3 backdrop-blur ${
             scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.65)]" : ""
           }`}
         >
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src="/images/vs-logo-premium.png"
               alt="VantageStack"
               width={861}
               height={232}
-              className="h-16 w-auto object-contain sm:h-14"
+              className="h-9 w-auto object-contain sm:h-14"
               priority
             />
           </Link>
@@ -50,10 +50,10 @@ export function Navbar() {
               Revenue System™
             </a>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <a
               href="#blueprint"
-              className="vs-button-primary text-xs whitespace-nowrap"
+              className="inline-flex items-center justify-center rounded-full bg-accent text-white font-medium transition-all duration-200 ease-out hover:bg-accent/90 hover:shadow-[0_0_24px_rgba(56,189,248,0.65)] hover:-translate-y-[1px] active:translate-y-0 whitespace-nowrap px-4 py-2 text-xs sm:px-6 sm:py-3 sm:text-sm"
             >
               Get Blueprint
             </a>

@@ -18,6 +18,83 @@ const ISABEL_AVATAR = "/images/isabel-avatar.jpg";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+type BlueprintData = {
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  preferredTime: string;
+  industry: string;
+};
+
+const EMPTY_BLUEPRINT: BlueprintData = {
+  name: "", email: "", phone: "", whatsapp: "", preferredTime: "", industry: "",
+};
+
+/** Extract structured data from conversation — context-aware based on what Isabel just asked */
+function extractFromMessages(messages: Message[]): Partial<BlueprintData> {
+  const allText = messages.map((m) => m.content).join(" ");
+  const data: Partial<BlueprintData> = {};
+
+  // --- Email: appears anywhere in any message ---
+  const emailMatch = allText.match(/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/);
+  if (emailMatch) data.email = emailMatch[0].toLowerCase();
+
+  // --- Phone numbers anywhere ---
+  const allPhoneMatches = allText.match(/(?:\+27|27|0)[6-8]\d[\s\-]?\d{3}[\s\-]?\d{4}/g);
+  if (allPhoneMatches) {
+    data.phone = allPhoneMatches[0].replace(/[\s\-]/g, "");
+    if (allPhoneMatches.length >= 2) {
+      data.whatsapp = allPhoneMatches[1].replace(/[\s\-]/g, "");
+    }
+  }
+
+  // --- WhatsApp same as cell ---
+  if (data.phone && /same|yes.*whatsapp|whatsapp.*same|it['']?s the same|same number/i.test(allText)) {
+    data.whatsapp = data.phone;
+  }
+
+  // --- Time preference ---
+  if (/\bmorning\b/i.test(allText)) data.preferredTime = "Morning";
+  else if (/\bafternoon\b/i.test(allText)) data.preferredTime = "Afternoon";
+
+  // --- Context-aware name extraction ---
+  // Look for Isabel asking for a name, then grab the next user reply
+  const nameAskPatterns = /name|call you|who (am i|are you)|didn'?t catch your name|what'?s your name/i;
+  for (let i = 0; i < messages.length - 1; i++) {
+    const msg = messages[i];
+    const next = messages[i + 1];
+    if (msg.role === "assistant" && nameAskPatterns.test(msg.content) && next.role === "user") {
+      const reply = next.content.trim();
+      const words = reply.split(/\s+/);
+      // Short reply after name question = likely their name
+      if (words.length <= 5 && !/\b(my|the|it|is|are|i|we)\b/i.test(reply)) {
+        data.name = reply;
+        break;
+      }
+      // Handle "I'm John" / "My name is Sarah"
+      const nameMatch = reply.match(/(?:i'?m|my name is|it'?s|call me)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+      if (nameMatch) { data.name = nameMatch[1]; break; }
+    }
+  }
+
+  // --- Context-aware email confirmation: Isabel spells it back ---
+  // "your email is john@example.com, right?" — extract from assistant message
+  const emailConfirmMatch = allText.match(/email is\s+([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})/i);
+  if (emailConfirmMatch) data.email = emailConfirmMatch[1].toLowerCase();
+
+  // --- Industry: look for user mentioning their business type ---
+  const industries = ["e-commerce", "retail", "real estate", "construction", "healthcare", "technology", "financial", "hospitality", "education", "marketing", "food", "restaurant"];
+  for (const ind of industries) {
+    if (new RegExp(ind, "i").test(allText)) {
+      data.industry = ind.charAt(0).toUpperCase() + ind.slice(1);
+      break;
+    }
+  }
+
+  return data;
+}
+
 /** Parse markdown links [text](url) and render as clickable anchors */
 function MessageContent({ content }: { content: string }) {
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -115,6 +192,8 @@ export function IsabelWidget() {
   const [textInput, setTextInput] = useState("");
   const [feedbackSent, setFeedbackSent] = useState<boolean | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [blueprint, setBlueprint] = useState<BlueprintData>(EMPTY_BLUEPRINT);
+  const [showForm, setShowForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
@@ -154,6 +233,17 @@ export function IsabelWidget() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Auto-extract data from conversation into blueprint form
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const extracted = extractFromMessages(messages);
+    setBlueprint((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(extracted).filter(([, v]) => v)) }));
+    // Show form once Isabel has asked the first question (at least 1 exchange)
+    // Only show form once Isabel has captured at least a name or email
+    const hasData = !!(extracted.name || extracted.email || extracted.phone);
+    if (hasData) setShowForm(true);
+  }, [messages]);
 
   const getMicStream = useCallback(async () => {
     if (mediaStreamRef.current) return mediaStreamRef.current;
@@ -365,22 +455,34 @@ export function IsabelWidget() {
               </div>
             </div>
 
-            {/* Talk to interrupt bar */}
-            {isConnected && isSpeaking && (
-              <div className="shrink-0 border-b border-white/[0.05] bg-accent/5 px-4 py-2">
-                <p className="flex items-center justify-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-medium text-accent/90">
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            {/* Active session bar — End button + talk-to-interrupt hint */}
+            {isConnected && (
+              <div className="shrink-0 border-b border-white/[0.05] bg-black/20 px-3 py-2 flex items-center gap-2">
+                {isSpeaking && (
+                  <p className="flex flex-1 items-center gap-1.5 text-[11px] font-medium text-accent/80">
+                    <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                    Talk to interrupt
+                  </p>
+                )}
+                {!isSpeaking && <div className="flex-1" />}
+                <button
+                  onClick={endVoice}
+                  className="flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-1.5 text-[11px] font-semibold text-rose-400 hover:bg-rose-500/20 transition-all"
+                >
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.59 7l-7.59 7.59L5.41 7 4 8.41l8 8 8-8z" />
                   </svg>
-                  Talk to interrupt
-                </p>
+                  End conversation
+                </button>
               </div>
             )}
 
             {/* Messages / empty / feedback */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {canSendFeedback && feedbackSent === null ? (
-                <div className="flex flex-col items-center justify-center gap-5 py-10">
+            <div className="flex-1 overflow-y-auto">
+              {canSendFeedback && !isConnected && !isTransitioning && messages.length > 0 && feedbackSent === null ? (
+                <div className="flex flex-col items-center justify-center gap-5 py-10 px-4">
                   <p className="font-heading text-base font-medium text-textPrimary">How was our chat?</p>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -393,13 +495,13 @@ export function IsabelWidget() {
                   </div>
                   <p className="text-[11px] text-textMuted/70">Your feedback helps Isabel improve</p>
                 </div>
-              ) : feedbackSent !== null ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-8">
+              ) : feedbackSent !== null && !isConnected ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 px-4">
                   <p className="text-sm text-textMuted">Thanks for the feedback! 🙏</p>
                 </div>
               ) : messages.length === 0 ? (
                 /* Empty state — invite to start */
-                <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
+                <div className="flex flex-col items-center justify-center gap-5 py-10 px-4 text-center">
                   <IsabelAvatar className="h-24 w-24" isActive={false} />
                   <div className="space-y-1.5 px-2">
                     <p className="text-sm font-semibold text-textPrimary">Hi, I'm Isabel 👋</p>
@@ -407,7 +509,6 @@ export function IsabelWidget() {
                       I'm VantageStack's AI assistant. Ask me anything, or let's have a voice conversation — I'm here to help.
                     </p>
                   </div>
-                  {/* Quick-start buttons in empty state */}
                   <div className="flex gap-2">
                     <button
                       onClick={handleTextQuickStart}
@@ -430,23 +531,85 @@ export function IsabelWidget() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {messages.map((msg, i) => (
-                    <div key={i} className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      {msg.role === "user" && <div className="min-w-0 flex-1" />}
-                      {msg.role === "assistant" && (
-                        <IsabelAvatar className="h-8 w-8 shrink-0" isActive={isConnected && i === messages.length - 1} />
-                      )}
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
-                        msg.role === "user"
-                          ? "bg-accent/15 text-accent border border-accent/25"
-                          : "bg-white/[0.07] text-textPrimary border border-white/10"
-                      }`}>
-                        {msg.role === "assistant" ? <MessageContent content={msg.content} /> : <p className="whitespace-pre-wrap">{msg.content}</p>}
+                <div className="flex flex-col h-full">
+                  {/* Chat messages — scrollable, compact when form is visible */}
+                  <div className={`overflow-y-auto p-3 space-y-3 ${showForm ? "max-h-[160px]" : "flex-1 p-4 space-y-4"}`}>
+                    {messages.map((msg, i) => (
+                      <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        {msg.role === "assistant" && (
+                          <IsabelAvatar className="h-6 w-6 shrink-0" isActive={isConnected && i === messages.length - 1} />
+                        )}
+                        <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs shadow-sm ${
+                          msg.role === "user"
+                            ? "bg-accent/15 text-accent border border-accent/25"
+                            : "bg-white/[0.07] text-textPrimary border border-white/10"
+                        }`}>
+                          {msg.role === "assistant" ? <MessageContent content={msg.content} /> : <p className="whitespace-pre-wrap">{msg.content}</p>}
+                        </div>
                       </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Live Blueprint form — appears once conversation starts */}
+                  {showForm && (
+                    <div className="flex-1 overflow-y-auto border-t border-white/[0.06] bg-black/20 px-3 py-2.5">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-accent/70">Blueprint — filling live</p>
+                        <span className="flex items-center gap-1 text-[10px] text-textMuted/60">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Auto-capturing
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {(
+                          [
+                            { key: "name", label: "Name" },
+                            { key: "email", label: "Email" },
+                            { key: "phone", label: "Cell no." },
+                            { key: "whatsapp", label: "WhatsApp" },
+                            { key: "preferredTime", label: "Best time" },
+                            { key: "industry", label: "Industry" },
+                          ] as { key: keyof BlueprintData; label: string }[]
+                        ).map(({ key, label }) => {
+                          const val = blueprint[key];
+                          const filled = val.trim().length > 0;
+                          return (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filled ? "bg-emerald-400" : "bg-white/20"}`} />
+                              <span className="text-[10px] text-textMuted/60 w-16 shrink-0">{label}</span>
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={(e) => setBlueprint((prev) => ({ ...prev, [key]: e.target.value }))}
+                                placeholder={filled ? "" : "Waiting…"}
+                                className={`flex-1 rounded-md border px-2 py-0.5 text-[11px] bg-transparent outline-none transition-all ${
+                                  filled
+                                    ? "border-emerald-500/30 text-textPrimary"
+                                    : "border-white/[0.06] text-textMuted/40 placeholder:text-white/20"
+                                }`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Submit CTA */}
+                      {(blueprint.name && blueprint.email && blueprint.phone) && (
+                        <motion.a
+                          href="#blueprint"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={(e) => { e.preventDefault(); document.querySelector("#blueprint")?.scrollIntoView({ behavior: "smooth" }); }}
+                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 py-2 text-[11px] font-semibold text-white hover:opacity-90 transition-all"
+                        >
+                          Submit Blueprint
+                          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </motion.a>
+                      )}
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
+                  )}
                 </div>
               )}
             </div>

@@ -5,7 +5,11 @@ import { IsabelWidget } from "../components/IsabelWidget";
 export const metadata: Metadata = {
   title: "VantageStack — Business Optimization & Revenue Systems",
   description:
-    "Turn your business into a revenue engine with intelligent systems, premium web design, and AI-powered automation."
+    "Turn your business into a revenue engine with intelligent systems, premium web design, and AI-powered automation.",
+  icons: {
+    icon: "/images/vs-logo.png",
+    apple: "/images/vs-logo.png",
+  },
 };
 
 export default function RootLayout({

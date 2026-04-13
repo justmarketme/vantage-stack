@@ -31,7 +31,7 @@ export function Navbar() {
         >
           <Link href="/" className="flex items-center">
             <Image
-              src="/images/vs-logo.png"
+              src="/images/vs-logo-premium.png"
               alt="VantageStack"
               width={280}
               height={100}

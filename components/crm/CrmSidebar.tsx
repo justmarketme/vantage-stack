@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Tooltip } from "../ui/Tooltip";
 
@@ -104,7 +105,14 @@ export function CrmSidebar({ width, onClose }: { width?: number; onClose?: () =>
       {/* Brand + mobile close */}
       <div className="px-4 py-4 border-b border-white/[0.07] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-accent/20 text-accent text-[10px] font-bold">VS</div>
+          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg">
+            <Image
+              src="/images/vs-icon.png"
+              alt="VS"
+              fill
+              className="object-cover"
+            />
+          </div>
           <div>
             <div className="text-xs font-semibold text-textPrimary leading-none">VantageStack</div>
             <div className="text-[10px] text-textMuted mt-0.5">CRM</div>

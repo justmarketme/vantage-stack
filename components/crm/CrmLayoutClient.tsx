@@ -96,8 +96,12 @@ function getPageTitle(pathname: string): string {
   return "CRM";
 }
 
+const COLLAPSED_SIDEBAR_WIDTH = 56;
+const COLLAPSE_KEY = "crm_sidebar_collapsed";
+
 export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [collapsed, setCollapsed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const dragStartX = useRef(0);
@@ -114,11 +118,17 @@ export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const n = Number(saved);
-        if (n >= MIN_WIDTH && n <= MAX_WIDTH) setWidth(n);
-      }
+      if (saved) { const n = Number(saved); if (n >= MIN_WIDTH && n <= MAX_WIDTH) setWidth(n); }
+      const savedCollapsed = localStorage.getItem(COLLAPSE_KEY);
+      if (savedCollapsed) setCollapsed(savedCollapsed === "true");
     } catch {}
+  }, []);
+
+  const toggleCollapse = useCallback(() => {
+    setCollapsed(c => {
+      try { localStorage.setItem(COLLAPSE_KEY, String(!c)); } catch {}
+      return !c;
+    });
   }, []);
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
@@ -157,9 +167,9 @@ export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0B0B0C]" style={{ userSelect: dragging ? "none" : undefined }}>
-      {!isMobile && <CrmSidebar width={width} />}
+      {!isMobile && <CrmSidebar width={width} collapsed={collapsed} onToggleCollapse={toggleCollapse} />}
 
-      {!isMobile && (
+      {!isMobile && !collapsed && (
         <div
           onMouseDown={onMouseDown}
           style={{ left: width - 2 }}
@@ -173,7 +183,10 @@ export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="flex-1 h-screen overflow-y-auto min-w-0" style={{ marginLeft: isMobile ? 0 : width }}>
+      <main
+        className="flex-1 h-screen overflow-y-auto min-w-0 transition-all duration-200"
+        style={{ marginLeft: isMobile ? 0 : (collapsed ? COLLAPSED_SIDEBAR_WIDTH : width) }}
+      >
         {/* Mobile top bar — brand + page title, no hamburger */}
         {isMobile && (
           <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#111113]/95 backdrop-blur-sm border-b border-white/[0.07]">

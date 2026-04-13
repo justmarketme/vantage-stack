@@ -24,10 +24,10 @@ const callLabels: Record<CallState, string> = {
 // iPhone 14 Pro: 393 x 852px logical resolution
 const PHONE_W = 393
 const PHONE_H = 852
-// We render the phone at this display height and scale the iframe inside
-const PHONE_DISPLAY_H = 520
-const PHONE_DISPLAY_W = Math.round((PHONE_W / PHONE_H) * PHONE_DISPLAY_H) // ≈240px
-const PHONE_SCALE = PHONE_DISPLAY_H / PHONE_H // ≈0.61
+// Phone display height matches available vertical space nicely
+const PHONE_DISPLAY_H = 480
+const PHONE_DISPLAY_W = Math.round((PHONE_W / PHONE_H) * PHONE_DISPLAY_H) // ≈222px
+const PHONE_SCALE = PHONE_DISPLAY_H / PHONE_H // ≈0.56
 
 export function DemoCallClient() {
   const [panelOpen, setPanelOpen] = useState(true)
@@ -264,10 +264,10 @@ export function DemoCallClient() {
         </div>
 
         {/* Mockup area */}
-        <div className="flex-1 min-h-0 flex gap-5 p-5 overflow-hidden items-start">
+        <div className="flex-1 min-h-0 flex gap-5 p-5 overflow-hidden items-stretch">
 
           {/* ── DESKTOP / BROWSER MOCKUP ── */}
-          <div className="flex-1 min-w-0 h-full flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col">
             {/* Label */}
             <p className="text-[10px] font-semibold uppercase tracking-widest text-textMuted mb-2 flex items-center gap-2">
               <span className="w-2 h-2 rounded-sm bg-white/20 inline-block" />
@@ -314,7 +314,7 @@ export function DemoCallClient() {
           </div>
 
           {/* ── PHONE MOCKUP ── */}
-          <div className="shrink-0 flex flex-col items-center">
+          <div className="shrink-0 flex flex-col items-center self-start">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-textMuted mb-2 flex items-center gap-2">
               <span className="w-2 h-3 rounded-sm bg-white/20 inline-block" />
               Mobile Preview

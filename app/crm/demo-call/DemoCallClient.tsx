@@ -298,13 +298,33 @@ export function DemoCallClient() {
                   </div>
                 </div>
               </div>
-              {/* Page content */}
-              <iframe
-                srcDoc={previewHTML}
-                className="flex-1 w-full border-0"
-                sandbox="allow-scripts allow-same-origin"
-                title="Desktop preview"
-              />
+              {/* Page content — rendered at real 1280px desktop width then scaled down */}
+              <div className="flex-1 relative overflow-hidden">
+                <iframe
+                  srcDoc={previewHTML}
+                  className="absolute top-0 left-0 border-0 origin-top-left"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="Desktop preview"
+                  style={{
+                    width: '1280px',
+                    height: '800px',
+                    transform: 'scale(var(--browser-scale, 0.5))',
+                  }}
+                  ref={(el) => {
+                    if (!el) return
+                    const resize = () => {
+                      const scale = el.parentElement!.clientWidth / 1280
+                      el.style.setProperty('--browser-scale', String(scale))
+                      el.style.transform = `scale(${scale})`
+                      el.style.height = (el.parentElement!.clientHeight / scale) + 'px'
+                    }
+                    resize()
+                    const ro = new ResizeObserver(resize)
+                    ro.observe(el.parentElement!)
+                    // cleanup handled by GC
+                  }}
+                />
+              </div>
             </div>
             {/* Monitor stand */}
             <div className="shrink-0 flex flex-col items-center mt-1">

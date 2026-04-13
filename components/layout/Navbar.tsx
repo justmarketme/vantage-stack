@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Logo } from "./Logo";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -29,15 +30,8 @@ export function Navbar() {
             scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.65)]" : ""
           }`}
         >
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/images/vs-logo-premium.png"
-              alt="VantageStack"
-              width={350}
-              height={120}
-              className="h-32 w-auto object-contain sm:h-28 -ml-4"
-              priority
-            />
+          <Link href="/">
+            <Logo />
           </Link>
           <nav className="hidden items-center gap-8 text-xs md:flex text-textMuted">
             <a href="#blueprint" className="hover:text-textPrimary transition">

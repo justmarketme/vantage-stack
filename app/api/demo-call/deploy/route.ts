@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     if (mode === 'url' && url) {
       // URL mode: scrape fast for screenshot, crawl for corpus
       const [scrapeResult, crawlContent] = await Promise.all([
-        firecrawlScrape(url).catch(() => ({})),
+        firecrawlScrape(url).catch((): { screenshotUrl?: string; title?: string } => ({})),
         firecrawlCrawl(url).catch(() => ''),
       ])
 

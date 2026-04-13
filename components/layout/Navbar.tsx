@@ -35,7 +35,7 @@ export function Navbar() {
               alt="VantageStack"
               width={861}
               height={232}
-              className="h-9 w-auto object-contain sm:h-20"
+              className="h-12 w-auto object-contain sm:h-20"
               priority
             />
           </Link>

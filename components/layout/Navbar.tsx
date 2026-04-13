@@ -33,9 +33,9 @@ export function Navbar() {
             <Image
               src="/images/vs-logo-premium.png"
               alt="VantageStack"
-              width={400}
-              height={400}
-              className="h-40 w-auto object-contain sm:h-32"
+              width={861}
+              height={232}
+              className="h-16 w-auto object-contain sm:h-14"
               priority
             />
           </Link>

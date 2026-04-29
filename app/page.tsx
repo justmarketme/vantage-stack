@@ -6,6 +6,7 @@ import { Footer } from "../components/layout/Footer";
 import { BlueprintFlow } from "../components/blueprint/BlueprintFlow";
 import { AnimatePresence, motion } from "framer-motion";
 import { ProblemVisual, SolutionVisual, RevenueSystemVisual, SouthAfricaVisual } from "../components/home/SectionVisuals";
+import { Check } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -16,10 +17,11 @@ export default function HomePage() {
         <HeroSection />
         <ProblemSection />
         <SolutionSection />
-        <BlueprintFlow />
         <ServicesSection />
         <RevenueSystemSection />
         <PracticeSection />
+        <PackagesSection />
+        <BlueprintFlow />
         <SouthAfricaSection />
         <FaqSection />
         <FinalCtaSection />
@@ -296,18 +298,18 @@ function ProblemSection() {
 
           {/* Problem photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-rose-500/20 mb-10 h-52 md:h-64"
+            className="relative w-full overflow-hidden rounded-2xl border border-rose-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <img
-              src="https://images.unsplash.com/photo-1553484771-047a44eee27b?w=1400&q=80&auto=format&fit=crop"
+              src="/images/problem.png"
               alt="Stressed business owner at desk"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 md:from-black/80 md:via-black/50 md:to-transparent" />
             <div className="relative z-10 flex h-full items-center justify-between px-8 gap-6">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-rose-300/80 mb-2">The reality</p>
@@ -396,7 +398,7 @@ function SolutionSection() {
 
           {/* Solution flow banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-10 min-h-[280px] md:min-h-[320px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -404,6 +406,12 @@ function SolutionSection() {
           >
             {/* Premium dark mesh background */}
             <div className="absolute inset-0 bg-[#05070f]" />
+            <img 
+              src="/images/solution.png" 
+              alt="Automated revenue pipeline" 
+              className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-screen" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#05070f] via-[#05070f]/80 to-[#05070f]/20" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(56,189,248,0.12),transparent)]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_80%_100%,rgba(52,211,153,0.08),transparent)]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_30%_40%_at_10%_80%,rgba(56,189,248,0.06),transparent)]" />
@@ -418,7 +426,7 @@ function SolutionSection() {
             </svg>
 
             {/* Content */}
-            <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6 py-12 md:py-16">
+            <div className="relative z-10 flex flex-col items-center justify-center gap-6 px-6 py-8 md:py-10">
               <p className="text-[10px] uppercase tracking-[0.28em] text-sky-400/60 font-medium">The VantageStack answer</p>
 
               <p className="font-heading text-2xl md:text-4xl text-white text-center max-w-xl leading-tight">
@@ -582,6 +590,30 @@ function ServicesSection() {
               Three steps. No fluff. Real results.
             </h2>
           </div>
+
+          <motion.div
+            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/15 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <img
+              src="/images/services.png"
+              alt="Interconnected revenue streams"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 md:from-black/80 md:via-black/50 md:to-transparent" />
+            <div className="relative z-10 flex h-full items-center justify-between px-8 gap-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80 mb-2">The Process</p>
+                <p className="font-heading text-xl md:text-2xl text-white max-w-sm leading-snug">
+                  A predictable path to scaling your revenue.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid gap-6 md:gap-8 md:grid-cols-3 text-sm text-textMuted">
             {[
               {
@@ -667,18 +699,18 @@ function RevenueSystemSection() {
 
           {/* Revenue system photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/20 mb-10 h-52 md:h-64"
+            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <img
-              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80&auto=format&fit=crop"
+              src="/images/revenue.png"
               alt="Growth analytics on laptop"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-[center_25%]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 md:from-black/80 md:via-black/50 md:to-transparent" />
             <div className="relative z-10 flex h-full items-center justify-between px-8 gap-6">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80 mb-2">Built for you</p>
@@ -806,6 +838,30 @@ function PracticeSection() {
               Doesn't matter where you're starting — we meet you there.
             </h2>
           </div>
+
+          <motion.div
+            className="relative w-full overflow-hidden rounded-2xl border border-white/10 mb-10 aspect-video md:aspect-[21/9] max-h-[350px] md:max-h-[450px]"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <img
+              src="/images/sa-business-lady.png"
+              alt="Confident South African female business owner"
+              className="absolute inset-0 h-full w-full object-cover object-[center_25%]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 md:from-black/80 md:via-black/50 md:to-transparent" />
+            <div className="relative z-10 flex h-full items-center justify-between px-8 gap-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sky-300/80 mb-2">The Right Fit</p>
+                <p className="font-heading text-xl md:text-2xl text-white max-w-sm leading-snug">
+                  Ambitious service-based businesses ready to scale.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid gap-6 md:grid-cols-3">
             {cards.map((card, i) => (
               <motion.div
@@ -851,18 +907,18 @@ function SouthAfricaSection() {
         >
           {/* SA photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/15 mb-10 h-52 md:h-64"
+            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/15 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <img
-              src="https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1400&q=80&auto=format&fit=crop"
+              src="/images/sa.png"
               alt="Cape Town South Africa skyline"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-[center_35%]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 md:from-black/80 md:via-black/50 md:to-transparent" />
             <div className="relative z-10 flex h-full items-center justify-between px-8 gap-6">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-sky-300/80 mb-2">For South Africa</p>
@@ -1057,6 +1113,132 @@ function FaqSection() {
             <a href="#blueprint" className="vs-button-primary text-sm">
               Complete Your Free Blueprint
             </a>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function PackagesSection() {
+  const packages = [
+    {
+      name: "The Foundation",
+      price: "R799",
+      priceDetail: "/month",
+      description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
+      features: [
+        "Premium South African Website (5 Pages)",
+        "Mobile-first, conversion-optimized design",
+        "Lead Capture Forms (Direct to Email/WhatsApp)",
+        "Basic SEO Setup & Google My Business Setup",
+        "Lightning Fast Hosting & Daily Backups",
+      ],
+      buttonText: "Get Your Blueprint",
+    },
+    {
+      name: "The Growth System",
+      price: "R1,499",
+      priceDetail: "/month",
+      popular: true,
+      description: "A complete system designed to not only get leads but capture them, manage them, and follow up fast.",
+      features: [
+        "Everything in The Foundation",
+        "Automated WhatsApp Follow-Up (Within 5 minutes)",
+        "Basic CRM Pipeline (Track every lead)",
+        "Calendar Integration (Clients book themselves)",
+        "Advanced SEO & Local Search Ranking",
+        "Quarterly Performance Review",
+      ],
+      buttonText: "Get Your Blueprint",
+    },
+    {
+      name: "The Revenue System™",
+      price: "R2,999",
+      priceDetail: "/month",
+      description: "Our flagship AI-driven system. Perfect for established South African businesses looking to scale operations.",
+      features: [
+        "Everything in The Growth System",
+        "Custom AI Assistant (Website & WhatsApp)",
+        "AI Call Handling (Never miss a call)",
+        "Automated Nurture Sequences (Email/SMS)",
+        "Advanced Analytics & ROI Tracking",
+        "Monthly Strategic Consulting",
+      ],
+      buttonText: "Get Your Blueprint",
+    },
+  ];
+
+  return (
+    <section id="pricing" className="vs-section border-t border-white/5 bg-black">
+      <div className="vs-container">
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="mb-14 text-center">
+            <p className="vs-section-heading">The Value Ladder</p>
+            <h2 className="vs-section-title mx-auto max-w-2xl text-center">
+              Simple, transparent South African pricing.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-sm text-textMuted">
+              No hidden fees. No complicated setups. Just pick the system that fits where your business is right now.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
+            {packages.map((pkg, i) => (
+              <motion.div
+                key={pkg.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.5, delay: i * 0.15 }}
+                className={`relative flex flex-col rounded-3xl border ${
+                  pkg.popular ? "border-sky-500/50 bg-sky-950/20" : "border-white/10 bg-white/[0.02]"
+                } p-6 sm:p-8`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                    <div className="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
+                      Most Popular
+                    </div>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
+                  <div className="mt-4 flex items-baseline text-white">
+                    <span className="text-sm font-semibold text-textMuted mr-1">From</span>
+                    <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
+                    <span className="ml-1 text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
+                  </div>
+                  <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
+                </div>
+
+                <ul className="mb-8 flex-1 space-y-4">
+                  {pkg.features.map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-sky-400" : "text-emerald-400"}`} />
+                      <span className="text-sm text-textMuted/90">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <a
+                  href="#blueprint"
+                  className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
+                    pkg.popular
+                      ? "bg-sky-500 text-black hover:bg-sky-400"
+                      : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  {pkg.buttonText}
+                </a>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>

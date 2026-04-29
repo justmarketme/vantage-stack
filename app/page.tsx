@@ -298,7 +298,7 @@ function ProblemSection() {
 
           {/* Problem photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-rose-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-rose-500/20 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -398,7 +398,7 @@ function SolutionSection() {
 
           {/* Solution flow banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -592,7 +592,7 @@ function ServicesSection() {
           </div>
 
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/15 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/15 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -699,7 +699,7 @@ function RevenueSystemSection() {
 
           {/* Revenue system photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/20 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-emerald-500/20 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -840,7 +840,7 @@ function PracticeSection() {
           </div>
 
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-white/10 mb-10 aspect-video md:aspect-[21/9] max-h-[350px] md:max-h-[450px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-white/10 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -907,7 +907,7 @@ function SouthAfricaSection() {
         >
           {/* SA photo banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/15 mb-10 aspect-video md:aspect-[21/9] max-h-[300px] md:max-h-[380px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/15 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}

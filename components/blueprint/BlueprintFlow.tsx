@@ -14,6 +14,8 @@ type FormState = {
   responseSpeed: string;
   biggestChallenge: string;
   revenueRange: string;
+  monthlyBudget: string;
+  packageIntent: string;
   name: string;
   email: string;
   phone: string;
@@ -28,6 +30,8 @@ const initialFormState: FormState = {
   responseSpeed: "",
   biggestChallenge: "",
   revenueRange: "",
+  monthlyBudget: "",
+  packageIntent: "",
   name: "",
   email: "",
   phone: ""
@@ -44,6 +48,8 @@ export function BlueprintFlow() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [currentStep, setCurrentStep] = useState(0);
 
+  const [error, setError] = useState<string | null>(null);
+
   const progress = useMemo(
     () => ((currentStep + 1) / steps.length) * 100,
     [currentStep]
@@ -54,14 +60,48 @@ export function BlueprintFlow() {
     value: string | BlueprintStep
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (error) setError(null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep((step) => step + 1);
     } else {
       setMode("processing");
-      setTimeout(() => setMode("insights"), 1800);
+      setError(null);
+      
+      try {
+        const res = await fetch("/api/blueprint/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientName: form.name,
+            email: form.email,
+            whatsapp: form.phone,
+            websiteUrl: form.websiteUrl,
+            industry: form.industry,
+            revenueRange: form.revenueRange || "Prefer not to say",
+            challenges: [form.biggestChallenge || "Not specified"],
+            currentMarketing: form.leadSource || "Not specified",
+            monthlyBudget: form.monthlyBudget,
+            packageIntent: form.packageIntent,
+          })
+        });
+        
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          console.error("Submission failed", body);
+          setError(body?.error || "Submission failed. Please try again.");
+          setMode("form");
+          return;
+        }
+
+        setTimeout(() => setMode("insights"), 1800);
+      } catch (err) {
+        console.error("Error submitting form", err);
+        setError("Network error. Please try again.");
+        setMode("form");
+      }
     }
   };
 
@@ -385,6 +425,39 @@ export function BlueprintFlow() {
                           <option value="1m-plus">R1m+</option>
                         </select>
                       </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs text-textMuted">
+                            Monthly budget appetite (optional)
+                          </label>
+                          <select
+                            className="vs-input bg-black/40"
+                            value={form.monthlyBudget}
+                            onChange={(e) => handleChange("monthlyBudget", e.target.value)}
+                          >
+                            <option value="">Prefer not to say</option>
+                            <option value="under 5k">Under R5,000</option>
+                            <option value="5k-10k">R5,000 - R10,000</option>
+                            <option value="10k-20k">R10,000 - R20,000</option>
+                            <option value="20k+">R20,000+</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-textMuted">
+                            Which system looks best? (optional)
+                          </label>
+                          <select
+                            className="vs-input bg-black/40"
+                            value={form.packageIntent}
+                            onChange={(e) => handleChange("packageIntent", e.target.value)}
+                          >
+                            <option value="">Not sure / Recommend one</option>
+                            <option value="Foundation">The Foundation (R799)</option>
+                            <option value="Growth">The Growth System (R1,499)</option>
+                            <option value="Revenue">The Revenue System (R2,999)</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -446,6 +519,14 @@ export function BlueprintFlow() {
                       <span>Under 2 minutes to complete.</span>
                     </div>
                     <div className="flex gap-2 justify-end">
+                      {error && (
+                        <div className="flex items-center text-red-400 mr-2">
+                          <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {error}
+                        </div>
+                      )}
                       {currentStep > 0 && (
                         <button
                           type="button"

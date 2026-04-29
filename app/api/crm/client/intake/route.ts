@@ -16,7 +16,7 @@ async function handler(req: Request) {
   }
 
   const data = parsed.data;
-  if (!parseMonthlyBudgetToInt(data.monthlyBudget)) {
+  if (data.monthlyBudget !== undefined && !parseMonthlyBudgetToInt(data.monthlyBudget)) {
     return NextResponse.json(
       { ok: false, error: "Validation failed", issues: [{ path: ["monthlyBudget"], message: "Monthly budget must look like a number (e.g. 5000 or 5k)." }] },
       { status: 400 },

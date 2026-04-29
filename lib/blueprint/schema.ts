@@ -30,7 +30,7 @@ export function normalizeWebsiteUrl(input: string): string {
   }
 }
 
-export function parseMonthlyBudgetToInt(input: string): number | null {
+export function parseMonthlyBudgetToInt(input: string | undefined): number | null {
   const raw = (input || "").trim();
   if (!raw) return null;
   const lower = raw.toLowerCase().replace(/[,]/g, "");
@@ -100,15 +100,16 @@ export const BlueprintSubmitSchema = z.object({
     .refine((v) => v.length >= 1, "Please list at least one challenge (ideally three)."),
   competitors: z
     .union([z.array(z.string()), z.string()])
-    .transform((v) => (Array.isArray(v) ? v : splitListish(v)))
-    .refine((v) => v.length >= 1, "Please list at least one competitor (ideally 2–3)."),
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
   currentMarketing: z.string().trim().min(1, "Please describe how you currently get clients."),
   toolsUsed: z
     .union([z.array(z.string()), z.string()])
-    .transform((v) => (Array.isArray(v) ? v : splitListish(v)))
-    .refine((v) => v.length >= 1, "Please list at least one tool."),
-  monthlyBudget: z.string().trim().min(1, "Monthly marketing budget is required."),
-  successGoals: z.string().trim().min(1, "Please describe what success looks like in six months."),
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
+  monthlyBudget: z.string().trim().optional(),
+  packageIntent: z.string().trim().optional(),
+  successGoals: z.string().trim().optional(),
 });
 
 export type BlueprintSubmit = z.infer<typeof BlueprintSubmitSchema>;

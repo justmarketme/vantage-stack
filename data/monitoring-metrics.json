@@ -1,7 +1,39 @@
 {
-  "updated_at": "2026-04-08T00:44:30.816Z",
+  "updated_at": "2026-04-29T03:05:52.759Z",
   "api": {
     "points": [
+      {
+        "ts": "2026-04-29T03:05:52.757Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 2553,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-29T03:05:50.003Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1142,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-29T03:04:56.270Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 1216,
+        "ok": false,
+        "status": 500
+      },
+      {
+        "ts": "2026-04-29T03:04:43.313Z",
+        "route": "/api/crm/clients",
+        "method": "GET",
+        "ms": 4160,
+        "ok": false,
+        "status": 500
+      },
       {
         "ts": "2026-04-08T00:44:30.810Z",
         "route": "/api/crm/clients",

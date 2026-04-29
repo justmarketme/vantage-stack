@@ -56,7 +56,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
     insert into public.clients (
       name, email, whatsapp, website_url, industry, revenue_range,
       challenges, competitors, current_marketing, tools_used, monthly_budget,
-      success_goals, status, company, created_by
+      success_goals, status, company, created_by, package_intent
     ) values (
       ${payload.clientName},
       ${payload.email},
@@ -64,15 +64,16 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${website_url || null},
       ${payload.industry},
       ${payload.revenueRange},
-      ${payload.challenges as any}::jsonb,
-      ${payload.competitors as any}::jsonb,
+      ${payload.challenges || null}::jsonb,
+      ${payload.competitors || null}::jsonb,
       ${payload.currentMarketing},
-      ${payload.toolsUsed as any}::jsonb,
+      ${payload.toolsUsed || null}::jsonb,
       ${monthly_budget},
-      ${payload.successGoals},
+      ${payload.successGoals || null},
       ${status},
       ${company},
-      ${createdBy || null}
+      ${createdBy || null},
+      ${payload.packageIntent || null}
     )
     on conflict (email) do update set
       name = excluded.name,
@@ -86,6 +87,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       tools_used = excluded.tools_used,
       monthly_budget = excluded.monthly_budget,
       success_goals = excluded.success_goals,
+      package_intent = excluded.package_intent,
       status = excluded.status,
       company = coalesce(excluded.company, public.clients.company),
       created_by = coalesce(public.clients.created_by, excluded.created_by),
@@ -155,7 +157,50 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       tools_used: payload.toolsUsed,
       revenue_range: payload.revenueRange,
     });
+    
+    // Trigger automated WhatsApp follow-up if applicable
+    if (payload.whatsapp) {
+      await sendIntakeWhatsAppFollowUp({
+        to: payload.whatsapp,
+        name: payload.clientName,
+        intent: payload.packageIntent,
+        challenge: payload.challenges?.[0],
+      });
+    }
   }
 
   return { ok: true as const, client_id: clientId, status };
+}
+
+async function sendIntakeWhatsAppFollowUp(params: { to: string; name: string; intent?: string; challenge?: string }) {
+  const accountSid = (process.env.TWILIO_ACCOUNT_SID || "").trim();
+  const authToken = (process.env.TWILIO_AUTH_TOKEN || "").trim();
+  const from = (process.env.TWILIO_WHATSAPP_FROM || "").trim();
+  if (!accountSid || !authToken || !from) return; 
+
+  const to = params.to.startsWith("whatsapp:") ? params.to : `whatsapp:${params.to}`;
+  
+  let packageText = "";
+  if (params.intent === "Foundation") packageText = "I see you're looking at The Foundation.";
+  else if (params.intent === "Growth") packageText = "I see you're looking at The Growth System.";
+  else if (params.intent === "Revenue") packageText = "I see you're looking at The Revenue System.";
+  
+  let painText = "";
+  if (params.challenge && params.challenge !== "Not specified") {
+     painText = ` You mentioned struggling with ${params.challenge.toLowerCase()}.`;
+  }
+  
+  const bodyText = `Hi ${params.name}, this is Jono from VantageStack. ${packageText}${painText} We're preparing your Growth Optimization Blueprint and will send it over shortly. Let me know if you have any immediate questions!`;
+  
+  const body = new URLSearchParams({ From: from, To: to, Body: bodyText });
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+  try {
+    await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+  } catch (e) {
+    console.error("Failed to send WhatsApp follow-up", e);
+  }
 }

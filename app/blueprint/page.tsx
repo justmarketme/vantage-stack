@@ -1,6 +1,6 @@
 import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
-import { BlueprintIntakeForm } from "../../components/blueprint/BlueprintIntakeForm";
+import { UnifiedBlueprintForm } from "../../components/blueprint/UnifiedBlueprintForm";
 
 export default function BlueprintPage() {
   return (
@@ -10,7 +10,7 @@ export default function BlueprintPage() {
         <section className="vs-section">
           <div className="vs-container">
             <div className="max-w-3xl">
-              <BlueprintIntakeForm />
+              <UnifiedBlueprintForm mode="detailed" />
             </div>
           </div>
         </section>

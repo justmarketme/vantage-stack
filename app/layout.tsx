@@ -3,9 +3,9 @@ import "./globals.css";
 import { IsabelWidget } from "../components/IsabelWidget";
 
 export const metadata: Metadata = {
-  title: "VantageStack — Business Optimization & Revenue Systems",
+  title: "VantageStack — Premium Business Systems for South African Service Businesses",
   description:
-    "Turn your business into a revenue engine with intelligent systems, premium web design, and AI-powered automation.",
+    "VantageStack helps South African service businesses capture more leads, respond faster, and close more consistently — with premium web design, smart automation, and AI-assisted tools.",
   icons: {
     icon: "/images/vs-logo.png",
     apple: "/images/vs-logo.png",

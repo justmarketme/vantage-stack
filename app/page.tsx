@@ -92,10 +92,10 @@ function HeroSection() {
               <span className="text-accent">revenue engine.</span>
             </h1>
             <p className="max-w-xl text-sm md:text-base text-textMuted">
-              VantageStack combines premium web design, intelligent systems, and
-              AI-powered automation to turn South African businesses into
-              predictable revenue machines. Not just more traffic. Smarter
-              systems.
+              VantageStack combines premium web design, smart automation, and
+              AI-assisted tools to help South African service businesses capture
+              more leads and close more consistently. Not just more traffic.
+              Smarter systems.
             </p>
             <p className="max-w-xl text-xs md:text-sm text-textMuted/90">
               Every missed call, slow reply, or broken flow is lost revenue.
@@ -138,7 +138,7 @@ function HeroSection() {
                   AI Call Flow
                 </span>
                 <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-100">
-                  Live system simulation
+                  How it works
                 </span>
               </div>
 
@@ -182,7 +182,7 @@ function HeroSection() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <span>Latency</span>
-                                  <span className="text-[10px] text-emerald-300">&lt; 500ms</span>
+                                  <span className="text-[10px] text-emerald-300">Fast response</span>
                                 </div>
                               </div>
                             </motion.div>
@@ -388,7 +388,7 @@ function SolutionSection() {
           <div className="mb-10">
             <p className="vs-section-heading">The fix</p>
             <h2 className="vs-section-title max-w-xl">
-              We seal the leaks — and build a system that grows your revenue automatically.
+              We close the gaps — and connect the pieces that turn visitors into paying clients.
             </h2>
             <p className="mt-3 max-w-lg text-sm text-textMuted">
               Think of it like plumbing for your business. Right now, water is
@@ -692,8 +692,7 @@ function RevenueSystemSection() {
           <div className="mb-10">
             <p className="vs-section-heading">VantageStack Revenue System™</p>
             <h2 className="vs-section-title max-w-2xl">
-              Your business working for you — 24 hours a day, 7 days a week,
-              even while you sleep.
+              A connected system that keeps working — even when you're not available.
             </h2>
           </div>
 
@@ -715,7 +714,7 @@ function RevenueSystemSection() {
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80 mb-2">Built for you</p>
                 <p className="font-heading text-xl md:text-2xl text-white max-w-sm leading-snug">
-                  Capture → Qualify → Book → Close. On autopilot.
+                  Capture → Qualify → Book → Close. Consistently.
                 </p>
               </div>
               <div className="hidden md:flex flex-col gap-2 flex-shrink-0">
@@ -1026,7 +1025,7 @@ function FaqSection() {
     },
     {
       q: "How much does this cost? Can a small South African business actually afford it?",
-      a: "VantageStack is built for SMBs — not corporates. You pay a predictable monthly fee, no surprise invoices. Most clients recover the cost within 60–90 days from just a handful of extra jobs that would have otherwise slipped through. Think of it as hiring a salesperson for a fraction of the cost.",
+      a: "VantageStack is built for South African SMBs — not corporates. Monthly retainers start from R2,500 for a foundational website and lead capture, up to R8,500 for our full operational system with AI-assisted call handling. You pay a predictable monthly fee with no surprise invoices. Most clients recover the cost within 60–90 days from the extra jobs that would have otherwise slipped through.",
     },
     {
       q: "What is an AI call assistant — and will it sound robotic to my customers?",
@@ -1046,7 +1045,7 @@ function FaqSection() {
     },
     {
       q: "What makes VantageStack different from every other web agency in South Africa?",
-      a: "Most agencies hand you a website and disappear. VantageStack builds your entire revenue engine — website, CRM, AI call agents, automated follow-up, and workflow automations that run your business in the background. Think AI agents handling reception, qualifying inbound leads, running outbound call campaigns, booking appointments, chasing unpaid invoices, sending onboarding messages, and routing the right calls to the right people. Any repetitive admin task a human does manually — we automate it. We measure success in rand generated, not page views. And if your system isn't producing results, we fix it.",
+      a: "Most agencies hand you a website and disappear. VantageStack builds and maintains the operational systems behind your business — website, CRM, AI-assisted call handling, automated follow-up, and workflow automations that handle the repetitive work. Think: reception covered, leads qualified, appointments booked, follow-ups sent — consistently, without you chasing it. We start where you have the biggest gap, and we build from there. We measure success in rand generated and leads converted, not page views. And if something isn't working, we fix it.",
     },
   ];
 
@@ -1126,7 +1125,7 @@ function PackagesSection() {
       name: "The Foundation",
       price: "R2,500",
       priceDetail: "/month",
-      description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
+      description: "The right place to start. A professional, lead-generating website built for the South African market.",
       features: [
         "Premium South African Website (5 Pages)",
         "Mobile-first, conversion-optimized design",
@@ -1141,7 +1140,7 @@ function PackagesSection() {
       price: "R4,800",
       priceDetail: "/month",
       popular: true,
-      description: "A complete system designed to not only get leads but capture them, manage them, and follow up fast.",
+      description: "The next step up. Add automation and a CRM so every lead is captured, tracked, and followed up — without more effort from you.",
       features: [
         "Everything in The Foundation",
         "Google My Business Setup",
@@ -1156,7 +1155,7 @@ function PackagesSection() {
       name: "The Revenue System™",
       price: "R8,500",
       priceDetail: "/month",
-      description: "Our flagship AI-driven system. Perfect for established South African businesses looking to scale operations.",
+      description: "Our full operational system. For established service businesses ready to handle more volume without adding headcount.",
       features: [
         "Everything in The Growth System",
         "Advanced SEO & Local Search Ranking",
@@ -1180,12 +1179,12 @@ function PackagesSection() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="mb-14 text-center">
-            <p className="vs-section-heading">The Value Ladder</p>
+            <p className="vs-section-heading">Start here. Grow from there.</p>
             <h2 className="vs-section-title mx-auto max-w-2xl text-center">
               Simple, transparent South African pricing.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm text-textMuted">
-              No hidden fees. No complicated setups. Just pick the system that fits where your business is right now.
+              Most clients start with one service, see results, and expand. No lock-in — you own everything. Pick the tier that fits where you are right now.
             </p>
           </div>
 

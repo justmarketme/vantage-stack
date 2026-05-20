@@ -1,122 +1,165 @@
 # VantageStack Knowledge Base for Isabel
 
-This document contains the key information about VantageStack for Isabel to answer visitor questions. Add this to your ElevenLabs agent's knowledge base via the dashboard or API.
+This document contains the key information about VantageStack for Isabel to answer visitor questions.
 
 ---
 
 ## About VantageStack
 
-VantageStack combines premium web design, intelligent systems, and AI-powered automation to turn South African businesses into predictable revenue machines. We are not a web design agency—we design, optimize, and automate your business using intelligent systems.
+VantageStack is a South African productized service that combines premium web design, smart automation, and AI-assisted tools to help service businesses capture more leads and close more consistently. We are not a web design agency — we design, build, and maintain the operational systems behind your business.
 
 **Tagline:** Turn your business into a revenue engine.
 
-**Value proposition:** Not just more traffic. Smarter systems. Every missed call, slow reply, or broken flow is lost revenue. We fix that—systematically.
+**Value proposition:** We start where you have the biggest gap and build from there. Every missed call, slow reply, or broken flow is lost revenue. We fix that — systematically.
 
 ---
 
 ## The Problem We Solve
 
-Most South African businesses struggle not because of traffic, but because their systems have gaps:
-- Misaligned websites
-- Manual follow-ups
-- Disconnected tools that do not talk to each other
+Most South African service businesses struggle not because of traffic, but because their systems have gaps:
+- Enquiries that go unanswered or receive a slow reply
+- No consistent follow-up after a lead comes in
+- No visibility into which leads are in the pipeline and where they stand
+- Tools that don't talk to each other
 
-**Where money is lost:**
-- High-intent visitors not converting on your site
-- Leads waiting days for a response
-- No consistent follow-up or nurturing
-- No clear visibility into your funnel and bottlenecks
-
-The real risk is the silent loss of qualified opportunities because systems are not optimized.
+**Where money leaks:**
+- High-intent visitors leaving without making contact
+- Leads waiting days for a response — and choosing someone else
+- No follow-up system, so warm leads go cold
+- No clear view of what's working and what isn't
 
 ---
 
 ## The VantageStack Answer
 
-We build revenue systems, not just websites. We align premium web design with intelligent systems and AI automation. We design the entire journey—from first impression to closed deal—so each part of your business supports a single outcome: revenue.
+We build the operational infrastructure behind service businesses — not just a website. Our work spans premium web design, lead capture systems, AI-assisted call handling, automated follow-up, and CRM pipelines.
 
 **How we think:**
-- Design that earns trust and lifts conversion
-- Systems that capture and qualify every lead
-- Automation that scales your follow-up without more headcount
+- Design that earns trust and prompts action
+- Systems that capture and qualify every lead without manual effort
+- Automation that handles the repetitive work so you and your team don't have to
 
 ---
 
 ## How We Work (3 Steps)
 
 ### Step 1: Growth Optimization Blueprint
-A focused diagnostic that maps where your business is losing revenue and what to fix first.
-**Outcome:** Clear visibility into where your revenue is leaking.
+A focused diagnostic that maps where your business is losing leads and what to fix first. This is free and takes less than 5 minutes to complete.
+**Outcome:** A clear picture of where to focus first.
 
-### Step 2: Revenue System Installation
-We design and install your full revenue system—from website to lead capture, automation, and conversion flows.
-**Outcome:** A fully connected system that captures and converts demand.
+### Step 2: System Installation
+We design and install your system — from website to lead capture, automation, and follow-up flows. The scope depends on which package fits where you are now.
+**Outcome:** A connected system that captures and converts more of your existing traffic.
 
-### Step 3: Revenue Optimization
-Ongoing improvements to your system to increase conversion rates, response speed, and pipeline consistency.
-**Outcome:** Higher conversion rates and more predictable monthly revenue.
+### Step 3: Ongoing Optimization
+Monthly improvements to your system — conversion rates, response speed, pipeline visibility.
+**Outcome:** Consistent, incremental improvement month on month.
 
 ---
 
-## VantageStack Revenue System™
+## Our Services & Pricing
 
-Plug-in revenue infrastructure that captures, qualifies, and converts demand on autopilot.
+### The Foundation — From R2,500/month
+The right place to start. A professional, lead-generating website built for the South African market.
 
-**Simple system model:**
-1. **Capture** – Never miss a high-intent lead again. Every call, form, and chat is captured automatically.
-2. **Convert** – Qualify, route, and follow up so your team only speaks to ready-to-buy opportunities.
-3. **Scale** – Add volume without adding headcount with automation built around your existing tools.
+**Includes:**
+- Premium South African website (5 pages)
+- Mobile-first, conversion-optimised design
+- Lead capture forms (direct to email/WhatsApp)
+- Basic SEO setup
+- Fast hosting & daily backups
 
-**System sequence:** Capture → Qualify → Book → Close
+Best for: Businesses that don't yet have a professional web presence, or have an outdated site that isn't generating enquiries.
 
-**Includes:** Optional AI call handling, automated follow-ups, and intelligent routing.
+---
 
-### AI Call Assistant
-Never miss a high-intent lead again. Always-on AI answers calls, captures intent, and books next steps while your team is busy. Available as a standalone add-on or part of your full system.
+### The Growth System — From R4,800/month
+The next step up. Everything in The Foundation, plus automation and a CRM so every lead is captured, tracked, and followed up — without extra effort from you.
 
-### Intelligent Lead Capture
-Smart forms and flows that qualify in real-time, reduce manual data entry, and feed clean opportunities into your CRM and pipeline.
+**Includes everything in The Foundation, plus:**
+- Google My Business setup
+- Automated WhatsApp follow-up (within 5 minutes of an enquiry)
+- Basic CRM pipeline (track every lead)
+- Calendar integration (clients book themselves)
+- Quarterly performance review
 
-**Benefits:**
-- Faster response times on every high-intent touchpoint
-- Higher conversion rates from visit to booked call
-- More predictable pipeline with clean, consistent data
-- A plug-in system that works with your existing tools
+Best for: Businesses already getting leads but losing some through slow follow-up or no visibility.
+
+---
+
+### The Revenue System™ — From R8,500/month
+Our full operational system. For established service businesses ready to handle more volume without adding headcount.
+
+**Includes everything in The Growth System, plus:**
+- Advanced SEO & local search ranking
+- Custom AI assistant (website & WhatsApp)
+- AI-assisted call handling (never miss a call)
+- Automated nurture sequences (email/SMS)
+- Advanced analytics & ROI tracking
+- Monthly strategic consulting
+
+Best for: Established businesses ready to systematise their operations and grow without burning out their team.
+
+---
+
+## The Ascension Path
+
+Most clients start with The Foundation — one problem solved well — and expand as they see results. You are never locked in. You own your website, your domain, and all your data. If your needs grow, upgrading is straightforward.
+
+---
+
+## AI Call Assistant
+
+Our AI-assisted call handling speaks in a natural, warm voice — not robotic. It holds real conversations, captures intent, and books next steps. It supports multiple languages including English, Afrikaans, and Zulu, so your callers always feel at home.
+
+It can act as:
+- A receptionist (answering and routing calls)
+- An inbound handler (qualifying leads in real time)
+- An outbound caller (following up, confirming appointments)
+
+It transfers to a human the moment it needs to. Available as part of The Revenue System™.
 
 ---
 
 ## What This Looks Like in Practice
 
 ### For businesses starting from scratch
-We design and build your full revenue system—from your website to lead capture and follow-up—so every opportunity is captured and converted.
-**Typically includes:** Full system setup.
-**Outcome:** Every opportunity captured and converted from day one.
+We design and build your full system — from website to lead capture and follow-up — so every opportunity is captured from day one. Start with The Foundation.
 
 ### For businesses already getting leads
-We identify where revenue is being lost and rebuild your system to improve conversion rates, response speed, and pipeline visibility.
-**Focused on:** Fixing and optimizing existing systems.
-**Outcome:** No more lost revenue—clear fixes and better conversion.
+We identify where revenue is slipping through and rebuild the system to improve conversion rates, response speed, and pipeline visibility. The Growth System is usually the right fit.
 
 ### For businesses ready to scale
-We layer automation, AI assistants, and advanced workflows on top of your system to handle more volume without adding more people.
-**Built for:** Growth without operational overload.
-**Outcome:** More volume and revenue without operational overload.
+We layer AI-assisted tools and advanced workflows on top of what's already working — so you handle more volume without adding more people. The Revenue System™ is built for this.
 
 ---
 
 ## Built for South Africa
 
-VantageStack is built with South African realities in mind: bandwidth, buying cycles, decision-making structures, and market nuance.
+VantageStack is built with South African realities in mind: bandwidth constraints, WhatsApp-first communication, local buying behaviour, and rand-denominated pricing.
 
-- UX and content calibrated for South African audiences
-- Pricing, positioning, and systems aligned to local realities
-- Systems should feel grounded in your market while operating at a global standard
+- Websites load fast even on 3G connections
+- Pricing and positioning calibrated to the local market
+- WhatsApp integrated as a primary communication channel
+- Systems designed around how South African buyers actually decide
+
+---
+
+## What Makes VantageStack Different
+
+Most agencies hand you a website and disappear. VantageStack builds and maintains the operational systems behind your business — and measures success in leads converted and rand generated, not page views. We start where you have the biggest gap and build from there. If something isn't working, we fix it.
+
+---
+
+## Ownership & Lock-in
+
+You own your website, your domain, and all your customer data. VantageStack never holds your business hostage. If you ever leave, everything is handed over cleanly. We earn your loyalty through results, not contracts.
 
 ---
 
 ## Next Step
 
-Start with your Growth Optimization Blueprint. We audit your current systems and show you the clearest path to more predictable revenue.
+Start with your free Growth Optimization Blueprint. It takes less than 5 minutes. We audit your current situation and show you the clearest path to capturing more of your existing traffic.
 
 **Primary CTA:** Get Your Growth Optimization Blueprint
 
@@ -124,11 +167,12 @@ Start with your Growth Optimization Blueprint. We audit your current systems and
 
 ## Site Navigation (for directing users)
 
-When directing visitors to a specific section of the website, use these links. The page scrolls smoothly when they click:
+When directing visitors to a specific section, use these links:
 
 - **Blueprint form** (Growth Optimization Blueprint): `#blueprint`
 - **Services** (How we work, 3 steps): `#services`
 - **Revenue System** (VantageStack Revenue System™): `#revenue-system`
 - **For South Africa**: `#sa`
+- **Pricing**: `#pricing`
 
-When you tell someone about a section, offer to take them there. Example: "Would you like me to take you to the Blueprint form? You can [click here to go there](#blueprint)."
+When you tell someone about a section, offer to take them there. Example: "Would you like me to take you to the pricing section? You can [click here to go there](#pricing)."

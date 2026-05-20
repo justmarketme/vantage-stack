@@ -7,6 +7,14 @@ export function Footer() {
           <p className="text-[11px] uppercase tracking-[0.16em]">
             Business optimization & revenue systems.
           </p>
+          {process.env.NODE_ENV === "development" && (
+            <a
+              href="/admin"
+              className="text-[11px] uppercase tracking-[0.16em] text-accent hover:text-textPrimary transition"
+            >
+              Open Backend (local)
+            </a>
+          )}
         </div>
       </div>
     </footer>

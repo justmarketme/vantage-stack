@@ -11,7 +11,7 @@ function canViewDesignSystem(): boolean {
 }
 
 export const metadata = {
-  title: "Design system — van-tij-stack",
+  title: "Design system — VantageStack",
   description: "Internal viewer for VantageStack design tokens and component library.",
 };
 

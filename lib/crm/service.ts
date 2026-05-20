@@ -107,6 +107,7 @@ export async function listClients(
         c.assigned_to::text as assigned_to,
         c.email::text as email,
         c.website_url::text as website_url,
+        c.service_interest::text as service_interest,
         (c.blueprint_markdown is not null) as has_blueprint
       from public.clients c
       where ${whereSql}
@@ -151,7 +152,9 @@ export async function getClientDetail(db: Sql, id: string) {
       c.current_marketing::text as current_marketing,
       c.success_goals::text as success_goals,
       c.created_by::text as created_by,
-      c.blueprint_markdown::text as blueprint_markdown
+      c.blueprint_markdown::text as blueprint_markdown,
+      c.service_interest::text as service_interest,
+      c.package_intent::text as package_intent
     from public.clients c
     where c.id = ${id}::uuid
     limit 1

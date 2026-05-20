@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { statusBadgeClass } from "../../../../components/crm/statusStyles";
+import { SERVICE_INTEREST_LABELS } from "../../../../lib/blueprint/schema";
 
 export default function ClientProfilePage() {
   const params = useParams();
@@ -175,6 +176,22 @@ export default function ClientProfilePage() {
               <dt className="text-textMuted text-xs uppercase tracking-wider">Health score</dt>
               <dd className="text-textPrimary">{data.health_score ?? "—"}</dd>
             </div>
+            {p.service_interest ? (
+              <div>
+                <dt className="text-textMuted text-xs uppercase tracking-wider">Service interest</dt>
+                <dd>
+                  <span className="inline-block rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-300">
+                    {SERVICE_INTEREST_LABELS[p.service_interest as keyof typeof SERVICE_INTEREST_LABELS] ?? p.service_interest}
+                  </span>
+                </dd>
+              </div>
+            ) : null}
+            {p.package_intent ? (
+              <div>
+                <dt className="text-textMuted text-xs uppercase tracking-wider">Package intent</dt>
+                <dd className="text-textPrimary">{p.package_intent}</dd>
+              </div>
+            ) : null}
           </dl>
           <div>
             <h4 className="text-xs uppercase tracking-wider text-textMuted mb-2">Success goals</h4>

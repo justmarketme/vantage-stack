@@ -142,6 +142,7 @@ export async function ensureCrmSchema(db: Sql) {
       alter table public.clients add column if not exists created_by text;
       alter table public.clients add column if not exists blueprint_markdown text;
       alter table public.clients add column if not exists package_intent text;
+      alter table public.clients add column if not exists service_interest text;
       create index if not exists clients_status_idx on public.clients (status);
       create index if not exists clients_created_idx on public.clients (created_at desc);
     `),

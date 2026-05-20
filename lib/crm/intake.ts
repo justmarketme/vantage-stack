@@ -1,6 +1,6 @@
 import type { Sql } from "postgres";
-import type { BlueprintSubmit } from "../blueprint/schema";
-import { normalizeWebsiteUrl, parseMonthlyBudgetToInt } from "../blueprint/schema";
+import type { BlueprintSubmit, ServiceInterest } from "../blueprint/schema";
+import { normalizeWebsiteUrl, parseMonthlyBudgetToInt, SERVICE_INTEREST_LABELS } from "../blueprint/schema";
 import { ensureCrmSchema } from "./db";
 import { ensureAnalyticsTables } from "../analytics/db";
 import { trackClientEvent } from "../analytics/engine-v2";
@@ -56,7 +56,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
     insert into public.clients (
       name, email, whatsapp, website_url, industry, revenue_range,
       challenges, competitors, current_marketing, tools_used, monthly_budget,
-      success_goals, status, company, created_by, package_intent
+      success_goals, status, company, created_by, package_intent, service_interest
     ) values (
       ${payload.clientName},
       ${payload.email},
@@ -73,7 +73,8 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${status},
       ${company},
       ${createdBy || null},
-      ${payload.packageIntent || null}
+      ${payload.packageIntent || null},
+      ${payload.serviceInterest || null}
     )
     on conflict (email) do update set
       name = excluded.name,
@@ -88,6 +89,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       monthly_budget = excluded.monthly_budget,
       success_goals = excluded.success_goals,
       package_intent = excluded.package_intent,
+      service_interest = coalesce(excluded.service_interest, public.clients.service_interest),
       status = excluded.status,
       company = coalesce(excluded.company, public.clients.company),
       created_by = coalesce(public.clients.created_by, excluded.created_by),
@@ -163,6 +165,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       await sendIntakeWhatsAppFollowUp({
         to: payload.whatsapp,
         name: payload.clientName,
+        serviceInterest: payload.serviceInterest,
         intent: payload.packageIntent,
         challenge: payload.challenges?.[0],
       });
@@ -172,25 +175,45 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
   return { ok: true as const, client_id: clientId, status };
 }
 
-async function sendIntakeWhatsAppFollowUp(params: { to: string; name: string; intent?: string; challenge?: string }) {
+async function sendIntakeWhatsAppFollowUp(params: {
+  to: string;
+  name: string;
+  serviceInterest?: ServiceInterest;
+  intent?: string;
+  challenge?: string;
+}) {
   const accountSid = (process.env.TWILIO_ACCOUNT_SID || "").trim();
   const authToken = (process.env.TWILIO_AUTH_TOKEN || "").trim();
   const from = (process.env.TWILIO_WHATSAPP_FROM || "").trim();
-  if (!accountSid || !authToken || !from) return; 
+  if (!accountSid || !authToken || !from) return;
 
   const to = params.to.startsWith("whatsapp:") ? params.to : `whatsapp:${params.to}`;
-  
-  let packageText = "";
-  if (params.intent === "Foundation") packageText = "I see you're looking at The Foundation.";
-  else if (params.intent === "Growth") packageText = "I see you're looking at The Growth System.";
-  else if (params.intent === "Revenue") packageText = "I see you're looking at The Revenue System.";
-  
+
+  let contextText = "";
+  if (params.serviceInterest) {
+    const serviceMessages: Record<ServiceInterest, string> = {
+      gmb: "I see you want to get your Google Business Profile set up and ranking.",
+      whatsapp_automation: "I see you're interested in automating your WhatsApp follow-ups.",
+      lead_routing: "I see you want to build a smarter lead routing system.",
+      follow_up: "I see you want to set up automated follow-up sequences.",
+      website: "I see you're looking for a new website.",
+      full_service: "I see you're interested in our full-service growth package.",
+    };
+    contextText = serviceMessages[params.serviceInterest];
+  } else if (params.intent === "Foundation") {
+    contextText = "I see you're looking at The Foundation.";
+  } else if (params.intent === "Growth") {
+    contextText = "I see you're looking at The Growth System.";
+  } else if (params.intent === "Revenue") {
+    contextText = "I see you're looking at The Revenue System.";
+  }
+
   let painText = "";
   if (params.challenge && params.challenge !== "Not specified") {
-     painText = ` You mentioned struggling with ${params.challenge.toLowerCase()}.`;
+    painText = ` You mentioned struggling with ${params.challenge.toLowerCase()}.`;
   }
-  
-  const bodyText = `Hi ${params.name}, this is Jono from VantageStack. ${packageText}${painText} We're preparing your Growth Optimization Blueprint and will send it over shortly. Let me know if you have any immediate questions!`;
+
+  const bodyText = `Hi ${params.name}, this is Jono from The VantageStack Team. ${contextText}${painText} We're preparing your Growth Optimization Blueprint and will send it over shortly. Let me know if you have any immediate questions!`;
   
   const body = new URLSearchParams({ From: from, To: to, Body: bodyText });
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");

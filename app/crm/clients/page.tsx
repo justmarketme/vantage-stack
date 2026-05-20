@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tooltip } from "../../../components/ui/Tooltip";
+import { SERVICE_INTEREST_LABELS } from "../../../lib/blueprint/schema";
 
 type Row = {
   id: string;
@@ -16,6 +17,7 @@ type Row = {
   next_action: string | null;
   email?: string;
   monthly_budget?: number;
+  service_interest?: string | null;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -305,6 +307,14 @@ function CrmClientsListPageInner() {
                   <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Last Activity</span>
                   <span className="text-textPrimary/80">{timeAgo(r.last_activity)}</span>
                 </div>
+                {r.service_interest && (
+                  <div className="col-span-2">
+                    <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Service</span>
+                    <span className="inline-block rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-300">
+                      {SERVICE_INTEREST_LABELS[r.service_interest as keyof typeof SERVICE_INTEREST_LABELS] ?? r.service_interest}
+                    </span>
+                  </div>
+                )}
                 {r.next_action && (
                   <div className="col-span-2">
                     <span className="block text-[10px] uppercase tracking-wider text-textMuted/50 mb-0.5">Next Action</span>
@@ -406,6 +416,7 @@ function CrmClientsListPageInner() {
                 <tr>
                   <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Contact</th>
                   <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Industry</th>
+                  <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Service</th>
                   <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Status</th>
                   <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Last Activity</th>
                   <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-textMuted">Next Action</th>
@@ -427,6 +438,13 @@ function CrmClientsListPageInner() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-textMuted">{r.industry || "—"}</td>
+                    <td className="px-4 py-3">
+                      {r.service_interest ? (
+                        <span className="inline-flex rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-[11px] text-sky-300">
+                          {SERVICE_INTEREST_LABELS[r.service_interest as keyof typeof SERVICE_INTEREST_LABELS] ?? r.service_interest}
+                        </span>
+                      ) : <span className="text-textMuted/40">—</span>}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${statusClass(r.status)}`}>
                         {r.status.replace(/-/g, " ")}

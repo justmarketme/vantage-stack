@@ -110,7 +110,21 @@ export const BlueprintSubmitSchema = z.object({
   monthlyBudget: z.string().trim().optional(),
   packageIntent: z.string().trim().optional(),
   successGoals: z.string().trim().optional(),
+  serviceInterest: z
+    .enum(["gmb", "whatsapp_automation", "lead_routing", "follow_up", "website", "full_service"])
+    .optional(),
 });
 
 export type BlueprintSubmit = z.infer<typeof BlueprintSubmitSchema>;
+
+export type ServiceInterest = NonNullable<BlueprintSubmit["serviceInterest"]>;
+
+export const SERVICE_INTEREST_LABELS: Record<ServiceInterest, string> = {
+  gmb: "Google My Business Setup",
+  whatsapp_automation: "WhatsApp Automation",
+  lead_routing: "Lead Routing",
+  follow_up: "Follow-Up Systems",
+  website: "Website",
+  full_service: "Full Service",
+};
 

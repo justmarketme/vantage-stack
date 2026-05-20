@@ -138,7 +138,7 @@ function HeroSection() {
                   AI Call Flow
                 </span>
                 <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-100">
-                  Live system simulation
+                  Illustrative system flow
                 </span>
               </div>
 
@@ -182,7 +182,7 @@ function HeroSection() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <span>Latency</span>
-                                  <span className="text-[10px] text-emerald-300">&lt; 500ms</span>
+                                  <span className="text-[10px] text-emerald-300">Target response</span>
                                 </div>
                               </div>
                             </motion.div>

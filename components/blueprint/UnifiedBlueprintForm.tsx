@@ -22,6 +22,16 @@ type FormState = {
   monthlyBudget: string;
   packageIntent: string;
   successGoals: string;
+  primaryIntent: string;
+  enquiryVolume: string;
+  followUpMethod: string;
+  missedCallHandling: string;
+  currentWebsiteStatus: string;
+  googleMapsStatus: string;
+  websiteGoal: string;
+  biggestTimeWaste: string;
+  existingCrmStatus: string;
+  preferredContactTime: string;
 };
 
 const initial: FormState = {
@@ -38,6 +48,16 @@ const initial: FormState = {
   monthlyBudget: "",
   packageIntent: "",
   successGoals: "",
+  primaryIntent: "",
+  enquiryVolume: "",
+  followUpMethod: "",
+  missedCallHandling: "",
+  currentWebsiteStatus: "",
+  googleMapsStatus: "",
+  websiteGoal: "",
+  biggestTimeWaste: "",
+  existingCrmStatus: "",
+  preferredContactTime: "",
 };
 
 type FieldKey = keyof FormState;
@@ -49,13 +69,23 @@ const OPTIONAL_FIELDS: ReadonlySet<FieldKey> = new Set<FieldKey>([
   "competitors",
   "toolsUsed",
   "successGoals",
+  "primaryIntent",
+  "enquiryVolume",
+  "followUpMethod",
+  "missedCallHandling",
+  "currentWebsiteStatus",
+  "googleMapsStatus",
+  "websiteGoal",
+  "biggestTimeWaste",
+  "existingCrmStatus",
+  "preferredContactTime",
 ]);
 
 const stepsByMode: Record<BlueprintMode, Array<{ title: string; fields: FieldKey[] }>> = {
   quick: [
-    { title: "Your business", fields: ["clientName", "industry", "revenueRange"] },
-    { title: "Growth context", fields: ["challenges", "currentMarketing", "monthlyBudget", "packageIntent"] },
-    { title: "Contact", fields: ["email", "whatsapp", "websiteUrl"] },
+    { title: "Your business", fields: ["clientName", "industry", "revenueRange", "primaryIntent"] },
+    { title: "Growth context", fields: ["currentMarketing", "monthlyBudget", "packageIntent"] },
+    { title: "Contact", fields: ["email", "whatsapp", "websiteUrl", "preferredContactTime"] },
   ],
   detailed: [
     { title: "Contact", fields: ["clientName", "email", "whatsapp", "websiteUrl"] },
@@ -66,6 +96,21 @@ const stepsByMode: Record<BlueprintMode, Array<{ title: string; fields: FieldKey
     },
   ],
 };
+
+function getStep2Fields(primaryIntent: string): FieldKey[] {
+  const base: FieldKey[] = ["currentMarketing", "monthlyBudget", "packageIntent"];
+  switch (primaryIntent) {
+    case "leads":
+    case "followup":
+      return ["enquiryVolume", "followUpMethod", "missedCallHandling", ...base];
+    case "website":
+      return ["currentWebsiteStatus", "googleMapsStatus", "websiteGoal", ...base];
+    case "automate":
+      return ["biggestTimeWaste", "existingCrmStatus", ...base];
+    default:
+      return base;
+  }
+}
 
 const selectPresets: Partial<Record<FieldKey, string[]>> = {
   industry: [
@@ -109,6 +154,20 @@ const selectPresets: Partial<Record<FieldKey, string[]>> = {
     "Over R100k/month",
     "Other",
   ],
+  enquiryVolume: ["Less than 10 per week", "10–30 per week", "30–60 per week", "60+ per week"],
+  followUpMethod: ["Manually (WhatsApp / phone)", "Spreadsheet", "CRM", "We don't really follow up"],
+  missedCallHandling: ["They usually call back", "We miss it", "Not sure"],
+  currentWebsiteStatus: ["Yes, but it's outdated", "Yes, and it works fine", "No website yet"],
+  googleMapsStatus: ["Yes, on Google Maps", "No", "Not sure"],
+  websiteGoal: ["Call me", "Fill a form / enquire", "Book directly", "Just find my details"],
+  biggestTimeWaste: [
+    "Replying to WhatsApp enquiries",
+    "Sending follow-ups",
+    "Booking appointments",
+    "Admin and reporting",
+  ],
+  existingCrmStatus: ["Yes, we have a CRM", "No CRM", "We use spreadsheets"],
+  preferredContactTime: ["Morning (8–12)", "Afternoon (12–5)", "Evening (after 5)", "Anytime"],
 };
 
 // packageIntent stores a short value (Foundation/Growth/Revenue) consumed by the
@@ -117,6 +176,14 @@ const packageOptions: Array<{ value: string; label: string }> = [
   { value: "Foundation", label: "The Foundation" },
   { value: "Growth", label: "The Growth System" },
   { value: "Revenue", label: "The Revenue System" },
+];
+
+const primaryIntentOptions: Array<{ value: string; label: string }> = [
+  { value: "leads", label: "I'm losing leads and don't know where" },
+  { value: "followup", label: "My follow-up is slow or inconsistent" },
+  { value: "website", label: "I need a proper website / online presence" },
+  { value: "automate", label: "I want to automate repetitive tasks" },
+  { value: "exploring", label: "I just want to see what's possible" },
 ];
 
 const textareaTemplates: Partial<Record<FieldKey, string[]>> = {
@@ -132,53 +199,42 @@ const textareaTemplates: Partial<Record<FieldKey, string[]>> = {
 
 function fieldLabel(k: FieldKey): string {
   switch (k) {
-    case "clientName":
-      return "Client name / business name";
-    case "email":
-      return "Email address";
-    case "whatsapp":
-      return "WhatsApp number";
-    case "websiteUrl":
-      return "Website URL (optional)";
-    case "industry":
-      return "Industry / niche";
-    case "revenueRange":
-      return "Current monthly revenue range";
-    case "challenges":
-      return "Biggest business challenges";
-    case "competitors":
-      return "Top 2–3 competitors (optional)";
-    case "currentMarketing":
-      return "How do you currently get clients?";
-    case "toolsUsed":
-      return "Tools you’re currently using (optional)";
-    case "monthlyBudget":
-      return "Monthly marketing budget (optional)";
-    case "packageIntent":
-      return "Which system looks best? (optional)";
-    case "successGoals":
-      return "What does success look like in 6 months? (optional)";
+    case "clientName": return "Client name / business name";
+    case "email": return "Email address";
+    case "whatsapp": return "WhatsApp number";
+    case "websiteUrl": return "Website URL (optional)";
+    case "industry": return "Industry / niche";
+    case "revenueRange": return "Current monthly revenue range";
+    case "challenges": return "Biggest business challenges";
+    case "competitors": return "Top 2–3 competitors (optional)";
+    case "currentMarketing": return "How do you currently get clients?";
+    case "toolsUsed": return "Tools you're currently using (optional)";
+    case "monthlyBudget": return "Monthly marketing budget (optional)";
+    case "packageIntent": return "Which system looks best? (optional)";
+    case "successGoals": return "What does success look like in 6 months? (optional)";
+    case "primaryIntent": return "What's the main reason you're here today? (optional)";
+    case "enquiryVolume": return "How many enquiries do you receive per week?";
+    case "followUpMethod": return "How do you currently manage follow-ups?";
+    case "missedCallHandling": return "What happens when someone calls and no one answers?";
+    case "currentWebsiteStatus": return "Do you currently have a website?";
+    case "googleMapsStatus": return "Are you on Google Maps / Google My Business?";
+    case "websiteGoal": return "What do you want people to do when they find you online?";
+    case "biggestTimeWaste": return "What's eating the most time right now?";
+    case "existingCrmStatus": return "Do you already have a CRM or system?";
+    case "preferredContactTime": return "Best time to reach you on WhatsApp (optional)";
   }
 }
 
 function fieldHint(k: FieldKey): string | null {
   switch (k) {
-    case "whatsapp":
-      return "Include country code if possible (e.g. +27…).";
-    case "websiteUrl":
-      return "If provided, we’ll validate it (https:// will be assumed).";
-    case "revenueRange":
-      return "Example: R50k–R150k/month.";
-    case "challenges":
-      return "Add one or more. One per line works well.";
-    case "competitors":
-      return "Add 2–3 competitors. One per line works well.";
-    case "toolsUsed":
-      return "Example: Google Ads, Meta Ads, HubSpot, WordPress, Shopify, etc.";
-    case "monthlyBudget":
-      return "Example: 5000 or 5k (currency symbols are ok).";
-    default:
-      return null;
+    case "whatsapp": return "Include country code if possible (e.g. +27…).";
+    case "websiteUrl": return "If provided, we'll validate it (https:// will be assumed).";
+    case "revenueRange": return "Example: R50k–R150k/month.";
+    case "challenges": return "Add one or more. One per line works well.";
+    case "competitors": return "Add 2–3 competitors. One per line works well.";
+    case "toolsUsed": return "Example: Google Ads, Meta Ads, HubSpot, WordPress, Shopify, etc.";
+    case "monthlyBudget": return "Example: 5000 or 5k (currency symbols are ok).";
+    default: return null;
   }
 }
 
@@ -227,7 +283,11 @@ export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMo
   const [otherEnabled, setOtherEnabled] = useState<Partial<Record<FieldKey, boolean>>>({});
 
   const progress = useMemo(() => Math.round(((step + 1) / steps.length) * 100), [step, steps.length]);
-  const stepFields = steps[step]!.fields;
+
+  const stepFields = useMemo(
+    () => (mode === "quick" && step === 1 ? getStep2Fields(form.primaryIntent) : steps[step]!.fields),
+    [mode, step, form.primaryIntent, steps],
+  );
 
   function setField(key: FieldKey, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -285,6 +345,16 @@ export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMo
         monthlyBudget: form.monthlyBudget.trim(),
         packageIntent: form.packageIntent.trim(),
         successGoals: form.successGoals.trim(),
+        primaryIntent: form.primaryIntent.trim(),
+        enquiryVolume: form.enquiryVolume.trim(),
+        followUpMethod: form.followUpMethod.trim(),
+        missedCallHandling: form.missedCallHandling.trim(),
+        currentWebsiteStatus: form.currentWebsiteStatus.trim(),
+        googleMapsStatus: form.googleMapsStatus.trim(),
+        websiteGoal: form.websiteGoal.trim(),
+        biggestTimeWaste: form.biggestTimeWaste.trim(),
+        existingCrmStatus: form.existingCrmStatus.trim(),
+        preferredContactTime: form.preferredContactTime.trim(),
       };
 
       const parsed = BlueprintSubmitSchema.safeParse(payload);
@@ -328,9 +398,9 @@ export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMo
       <div className="vs-card">
         <div className="space-y-3">
           <p className="vs-section-heading">Blueprint submitted</p>
-          <h2 className="font-heading text-2xl md:text-3xl">You’re in.</h2>
+          <h2 className="font-heading text-2xl md:text-3xl">You're in.</h2>
           <p className="text-sm text-textMuted max-w-2xl">
-            Thanks—your Growth Optimization Blueprint is being prepared now. You’ll receive your report via email within
+            Thanks—your Growth Optimization Blueprint is being prepared now. You'll receive your report via email within
             24 hours.
           </p>
           <p className="text-xs text-textMuted/80">Reference: {success.clientId}</p>
@@ -381,6 +451,26 @@ export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMo
                 >
                   <option value="">Not sure / Recommend one</option>
                   {packageOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
+
+          if (key === "primaryIntent") {
+            return (
+              <div key={key} className="space-y-2">
+                <label className="block text-sm text-textPrimary/90">{label}</label>
+                <select
+                  className="vs-input"
+                  value={form.primaryIntent}
+                  onChange={(e) => setField("primaryIntent", e.target.value)}
+                >
+                  <option value="">Select an option</option>
+                  {primaryIntentOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -581,7 +671,10 @@ export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMo
             className="vs-button-primary text-sm disabled:opacity-40"
             disabled={submitting}
             onClick={async () => {
-              const allFields = steps.flatMap((s) => s.fields);
+              const allFields =
+                mode === "quick"
+                  ? [...steps[0]!.fields, ...getStep2Fields(form.primaryIntent), ...steps[2]!.fields]
+                  : steps.flatMap((s) => s.fields);
               if (!validateFields(allFields)) {
                 setSubmitError("Please fix the highlighted fields.");
                 return;

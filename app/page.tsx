@@ -138,7 +138,7 @@ function HeroSection() {
                   AI Call Flow
                 </span>
                 <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-100">
-                  Live system simulation
+                  Illustrative system flow
                 </span>
               </div>
 
@@ -182,7 +182,7 @@ function HeroSection() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <span>Latency</span>
-                                  <span className="text-[10px] text-emerald-300">&lt; 500ms</span>
+                                  <span className="text-[10px] text-emerald-300">Target response</span>
                                 </div>
                               </div>
                             </motion.div>
@@ -398,7 +398,7 @@ function SolutionSection() {
 
           {/* Solution flow banner */}
           <motion.div
-            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-8 aspect-video md:aspect-[24/7] max-h-[220px] md:max-h-[280px]"
+            className="relative w-full overflow-hidden rounded-2xl border border-sky-500/20 mb-8 min-h-[300px] md:aspect-[24/7] md:min-h-0 md:max-h-[320px]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -406,13 +406,15 @@ function SolutionSection() {
           >
             {/* Premium dark mesh background */}
             <div className="absolute inset-0 bg-[#05070f]" />
-            <img 
-              src="/images/solution.png" 
-              alt="Automated revenue pipeline" 
-              className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-screen" 
+            <img
+              src="/images/solution.png"
+              alt="Automated revenue pipeline"
+              className="absolute inset-0 h-full w-full object-cover object-top opacity-40 mix-blend-screen"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#05070f] via-[#05070f]/80 to-[#05070f]/20" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(56,189,248,0.12),transparent)]" />
+            {/* Gradient: lighter at top so the image breathes, darker at bottom to ground the nodes */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#05070f] via-[#05070f]/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#05070f]/60 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(56,189,248,0.15),transparent)]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_80%_100%,rgba(52,211,153,0.08),transparent)]" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_30%_40%_at_10%_80%,rgba(56,189,248,0.06),transparent)]" />
             {/* Fine grid */}
@@ -426,7 +428,7 @@ function SolutionSection() {
             </svg>
 
             {/* Content */}
-            <div className="relative z-10 flex flex-col items-center justify-center gap-6 px-6 py-8 md:py-10">
+            <div className="relative z-10 flex flex-col items-center justify-center gap-5 px-4 py-8 md:gap-6 md:px-6 md:py-10 h-full">
               <p className="text-[10px] uppercase tracking-[0.28em] text-sky-400/60 font-medium">The VantageStack answer</p>
 
               <p className="font-heading text-2xl md:text-4xl text-white text-center max-w-xl leading-tight">
@@ -434,97 +436,99 @@ function SolutionSection() {
                 <span className="text-sky-400">Every lead. Every close.</span>
               </p>
 
-              {/* Premium flow nodes */}
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {[
-                  {
-                    label: "Website",
-                    step: "01",
-                    icon: (
-                      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
-                        <circle cx="10" cy="10" r="8"/>
-                        <path d="M10 2C10 2 7 6 7 10s3 8 3 8M10 2c0 0 3 4 3 8s-3 8-3 8M2 10h16"/>
-                      </svg>
-                    ),
-                    active: false,
-                  },
-                  {
-                    label: "Capture",
-                    step: "02",
-                    icon: (
-                      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14M3 9h10M3 13.5h6"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11l2 2-2 2"/>
-                      </svg>
-                    ),
-                    active: false,
-                  },
-                  {
-                    label: "AI",
-                    step: "03",
-                    icon: (
-                      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
-                        <rect x="3" y="6" width="14" height="10" rx="2"/>
-                        <path strokeLinecap="round" d="M7 6V4.5a3 3 0 016 0V6"/>
-                        <circle cx="8" cy="11" r="1" fill="currentColor"/>
-                        <circle cx="12" cy="11" r="1" fill="currentColor"/>
-                      </svg>
-                    ),
-                    active: true,
-                  },
-                  {
-                    label: "CRM",
-                    step: "04",
-                    icon: (
-                      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 17V7l7-4 7 4v10"/>
-                        <rect x="7" y="11" width="6" height="6" rx="0.5"/>
-                      </svg>
-                    ),
-                    active: false,
-                  },
-                  {
-                    label: "Revenue",
-                    step: "05",
-                    icon: (
-                      <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 15.5l4-4 3 3 4-5 4 3"/>
-                      </svg>
-                    ),
-                    active: false,
-                  },
-                ].map((node, i) => (
-                  <div key={node.label} className="flex items-center gap-3">
-                    <motion.div
-                      className={`group flex flex-col items-center gap-1.5 rounded-2xl border px-5 py-3.5 transition-all ${
-                        node.active
-                          ? "border-sky-400/50 bg-sky-500/10 text-sky-300 shadow-[0_0_24px_rgba(56,189,248,0.15)]"
-                          : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white/90"
-                      }`}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.15 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <span className="text-[9px] font-mono tracking-widest opacity-50">{node.step}</span>
-                      {node.icon}
-                      <span className="text-[11px] font-medium tracking-wide">{node.label}</span>
-                    </motion.div>
-                    {i < 4 && (
-                      <motion.svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="h-4 w-4 text-white/20 flex-shrink-0"
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+              {/* Flow nodes — horizontal scroll on mobile, centred row on desktop */}
+              <div className="w-full overflow-x-auto scrollbar-none">
+                <div className="flex items-center justify-start md:justify-center gap-2 md:gap-3 px-2 md:px-0 pb-1">
+                  {[
+                    {
+                      label: "Website",
+                      step: "01",
+                      icon: (
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
+                          <circle cx="10" cy="10" r="8"/>
+                          <path d="M10 2C10 2 7 6 7 10s3 8 3 8M10 2c0 0 3 4 3 8s-3 8-3 8M2 10h16"/>
+                        </svg>
+                      ),
+                      active: false,
+                    },
+                    {
+                      label: "Capture",
+                      step: "02",
+                      icon: (
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14M3 9h10M3 13.5h6"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11l2 2-2 2"/>
+                        </svg>
+                      ),
+                      active: false,
+                    },
+                    {
+                      label: "AI",
+                      step: "03",
+                      icon: (
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
+                          <rect x="3" y="6" width="14" height="10" rx="2"/>
+                          <path strokeLinecap="round" d="M7 6V4.5a3 3 0 016 0V6"/>
+                          <circle cx="8" cy="11" r="1" fill="currentColor"/>
+                          <circle cx="12" cy="11" r="1" fill="currentColor"/>
+                        </svg>
+                      ),
+                      active: true,
+                    },
+                    {
+                      label: "CRM",
+                      step: "04",
+                      icon: (
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 17V7l7-4 7 4v10"/>
+                          <rect x="7" y="11" width="6" height="6" rx="0.5"/>
+                        </svg>
+                      ),
+                      active: false,
+                    },
+                    {
+                      label: "Revenue",
+                      step: "05",
+                      icon: (
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 15.5l4-4 3 3 4-5 4 3"/>
+                        </svg>
+                      ),
+                      active: false,
+                    },
+                  ].map((node, i) => (
+                    <div key={node.label} className="flex items-center gap-2 md:gap-3 shrink-0">
+                      <motion.div
+                        className={`group flex flex-col items-center gap-1.5 rounded-xl border px-3 py-2.5 md:rounded-2xl md:px-5 md:py-3.5 transition-all ${
+                          node.active
+                            ? "border-sky-400/50 bg-sky-500/10 text-sky-300 shadow-[0_0_24px_rgba(56,189,248,0.15)]"
+                            : "border-white/10 bg-white/[0.04] text-white/70 hover:border-white/20 hover:text-white/90"
+                        }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.3 + i * 0.1 }}
+                        transition={{ delay: 0.15 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" strokeWidth={1.5} d="M13.5 4.5L19.5 12l-6 7.5M4.5 12h15"/>
-                      </motion.svg>
-                    )}
-                  </div>
-                ))}
+                        <span className="text-[9px] font-mono tracking-widest opacity-50">{node.step}</span>
+                        {node.icon}
+                        <span className="text-[10px] md:text-[11px] font-medium tracking-wide">{node.label}</span>
+                      </motion.div>
+                      {i < 4 && (
+                        <motion.svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="h-3 w-3 md:h-4 md:w-4 text-white/20 shrink-0"
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.3 + i * 0.1 }}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" strokeWidth={1.5} d="M13.5 4.5L19.5 12l-6 7.5M4.5 12h15"/>
+                        </motion.svg>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -1128,11 +1132,11 @@ function PackagesSection() {
       priceDetail: "/month",
       description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
       features: [
-        "Premium South African Website (5 Pages)",
+        "Conversion-ready website (part of your always-on system)",
         "Mobile-first, conversion-optimized design",
         "Lead Capture Forms (Direct to Email/WhatsApp)",
         "Basic SEO Setup",
-        "Lightning Fast Hosting & Daily Backups",
+        "Lightning Fast Hosting, Security & Daily Backups",
       ],
       buttonText: "Get Your Blueprint",
     },

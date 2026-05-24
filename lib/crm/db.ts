@@ -142,6 +142,8 @@ export async function ensureCrmSchema(db: Sql) {
       alter table public.clients add column if not exists created_by text;
       alter table public.clients add column if not exists blueprint_markdown text;
       alter table public.clients add column if not exists package_intent text;
+      alter table public.clients add column if not exists primary_intent text;
+      alter table public.clients add column if not exists preferred_contact_time text;
       alter table public.clients add column if not exists social_instagram text;
       alter table public.clients add column if not exists social_tiktok text;
       alter table public.clients add column if not exists social_facebook text;

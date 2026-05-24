@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { BlueprintSubmitSchema, normalizeWebsiteUrl, parseMonthlyBudgetToInt } from "../../lib/blueprint/schema";
@@ -6,16 +6,13 @@ import { FormField } from "../ui/FormField";
 import { ProgressBar } from "../ui/ProgressBar";
 import { getCompetitorSuggestions } from "../../lib/crm/industry-data";
 
+export type BlueprintMode = "quick" | "detailed";
+
 type FormState = {
   clientName: string;
   email: string;
   whatsapp: string;
   websiteUrl: string;
-  socialInstagram: string;
-  socialTiktok: string;
-  socialFacebook: string;
-  socialX: string;
-  socialYoutube: string;
   industry: string;
   revenueRange: string;
   challenges: string;
@@ -23,7 +20,23 @@ type FormState = {
   currentMarketing: string;
   toolsUsed: string;
   monthlyBudget: string;
+  packageIntent: string;
   successGoals: string;
+  primaryIntent: string;
+  enquiryVolume: string;
+  followUpMethod: string;
+  missedCallHandling: string;
+  currentWebsiteStatus: string;
+  googleMapsStatus: string;
+  websiteGoal: string;
+  biggestTimeWaste: string;
+  existingCrmStatus: string;
+  preferredContactTime: string;
+  socialInstagram: string;
+  socialTiktok: string;
+  socialFacebook: string;
+  socialX: string;
+  socialYoutube: string;
 };
 
 const initial: FormState = {
@@ -31,11 +44,6 @@ const initial: FormState = {
   email: "",
   whatsapp: "",
   websiteUrl: "",
-  socialInstagram: "",
-  socialTiktok: "",
-  socialFacebook: "",
-  socialX: "",
-  socialYoutube: "",
   industry: "",
   revenueRange: "",
   challenges: "",
@@ -43,20 +51,82 @@ const initial: FormState = {
   currentMarketing: "",
   toolsUsed: "",
   monthlyBudget: "",
+  packageIntent: "",
   successGoals: "",
+  primaryIntent: "",
+  enquiryVolume: "",
+  followUpMethod: "",
+  missedCallHandling: "",
+  currentWebsiteStatus: "",
+  googleMapsStatus: "",
+  websiteGoal: "",
+  biggestTimeWaste: "",
+  existingCrmStatus: "",
+  preferredContactTime: "",
+  socialInstagram: "",
+  socialTiktok: "",
+  socialFacebook: "",
+  socialX: "",
+  socialYoutube: "",
 };
 
 type FieldKey = keyof FormState;
 
-const steps: Array<{ title: string; fields: FieldKey[] }> = [
-  { title: "Contact", fields: ["clientName", "email", "whatsapp", "websiteUrl"] },
-  { title: "Social media", fields: ["socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube"] },
-  { title: "Business", fields: ["industry", "revenueRange", "monthlyBudget"] },
-  {
-    title: "Growth context",
-    fields: ["challenges", "competitors", "currentMarketing", "toolsUsed", "successGoals"],
-  },
-];
+const OPTIONAL_FIELDS: ReadonlySet<FieldKey> = new Set<FieldKey>([
+  "websiteUrl",
+  "monthlyBudget",
+  "packageIntent",
+  "competitors",
+  "toolsUsed",
+  "successGoals",
+  "primaryIntent",
+  "enquiryVolume",
+  "followUpMethod",
+  "missedCallHandling",
+  "currentWebsiteStatus",
+  "googleMapsStatus",
+  "websiteGoal",
+  "biggestTimeWaste",
+  "existingCrmStatus",
+  "preferredContactTime",
+  "socialInstagram",
+  "socialTiktok",
+  "socialFacebook",
+  "socialX",
+  "socialYoutube",
+]);
+
+const stepsByMode: Record<BlueprintMode, Array<{ title: string; fields: FieldKey[] }>> = {
+  quick: [
+    { title: "Your business", fields: ["clientName", "industry", "revenueRange", "primaryIntent"] },
+    { title: "Growth context", fields: ["currentMarketing", "monthlyBudget", "packageIntent"] },
+    { title: "Contact", fields: ["email", "whatsapp", "websiteUrl", "preferredContactTime"] },
+  ],
+  detailed: [
+    { title: "Contact", fields: ["clientName", "email", "whatsapp", "websiteUrl"] },
+    { title: "Social media", fields: ["socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube"] },
+    { title: "Business", fields: ["industry", "revenueRange", "monthlyBudget"] },
+    {
+      title: "Growth context",
+      fields: ["challenges", "competitors", "currentMarketing", "toolsUsed", "successGoals", "packageIntent"],
+    },
+  ],
+};
+
+function getStep2Fields(primaryIntent: string): FieldKey[] {
+  const base: FieldKey[] = ["currentMarketing", "monthlyBudget", "packageIntent"];
+  switch (primaryIntent) {
+    case "leads":
+    case "followup":
+      return ["enquiryVolume", "followUpMethod", "missedCallHandling", ...base];
+    case "website":
+      return ["currentWebsiteStatus", "googleMapsStatus", "websiteGoal", ...base];
+    case "automate":
+      return ["biggestTimeWaste", "existingCrmStatus", ...base];
+    default:
+      return base;
+  }
+}
 
 const selectPresets: Partial<Record<FieldKey, string[]>> = {
   industry: [
@@ -75,6 +145,7 @@ const selectPresets: Partial<Record<FieldKey, string[]>> = {
     "Other",
   ],
   revenueRange: [
+    "Prefer not to say",
     "Under R50k/month",
     "R50k - R150k/month",
     "R150k - R500k/month",
@@ -99,7 +170,37 @@ const selectPresets: Partial<Record<FieldKey, string[]>> = {
     "Over R100k/month",
     "Other",
   ],
+  enquiryVolume: ["Less than 10 per week", "10â€“30 per week", "30â€“60 per week", "60+ per week"],
+  followUpMethod: ["Manually (WhatsApp / phone)", "Spreadsheet", "CRM", "We don't really follow up"],
+  missedCallHandling: ["They usually call back", "We miss it", "Not sure"],
+  currentWebsiteStatus: ["Yes, but it's outdated", "Yes, and it works fine", "No website yet"],
+  googleMapsStatus: ["Yes, on Google Maps", "No", "Not sure"],
+  websiteGoal: ["Call me", "Fill a form / enquire", "Book directly", "Just find my details"],
+  biggestTimeWaste: [
+    "Replying to WhatsApp enquiries",
+    "Sending follow-ups",
+    "Booking appointments",
+    "Admin and reporting",
+  ],
+  existingCrmStatus: ["Yes, we have a CRM", "No CRM", "We use spreadsheets"],
+  preferredContactTime: ["Morning (8â€“12)", "Afternoon (12â€“5)", "Evening (after 5)", "Anytime"],
 };
+
+// packageIntent stores a short value (Foundation/Growth/Revenue) consumed by the
+// intake pipeline's WhatsApp follow-up, while showing the full package name.
+const packageOptions: Array<{ value: string; label: string }> = [
+  { value: "Foundation", label: "The Foundation" },
+  { value: "Growth", label: "The Growth System" },
+  { value: "Revenue", label: "The Revenue System" },
+];
+
+const primaryIntentOptions: Array<{ value: string; label: string }> = [
+  { value: "leads", label: "I'm losing leads and don't know where" },
+  { value: "followup", label: "My follow-up is slow or inconsistent" },
+  { value: "website", label: "I need a proper website / online presence" },
+  { value: "automate", label: "I want to automate repetitive tasks" },
+  { value: "exploring", label: "I just want to see what's possible" },
+];
 
 const textareaTemplates: Partial<Record<FieldKey, string[]>> = {
   challenges: [
@@ -109,99 +210,74 @@ const textareaTemplates: Partial<Record<FieldKey, string[]>> = {
     "Difficulty scaling marketing profitably",
     "Other",
   ],
-  toolsUsed: [
-    "Google Ads",
-    "Meta Ads",
-    "HubSpot",
-    "GoHighLevel",
-    "WordPress",
-    "Shopify",
-    "Other",
-  ],
+  toolsUsed: ["Google Ads", "Meta Ads", "HubSpot", "GoHighLevel", "WordPress", "Shopify", "Other"],
 };
 
 function fieldLabel(k: FieldKey): string {
   switch (k) {
-    case "clientName":
-      return "Client name / business name";
-    case "email":
-      return "Email address";
-    case "whatsapp":
-      return "WhatsApp number";
-    case "websiteUrl":
-      return "Website URL (optional)";
-    case "socialInstagram":
-      return "Instagram (optional)";
-    case "socialTiktok":
-      return "TikTok (optional)";
-    case "socialFacebook":
-      return "Facebook (optional)";
-    case "socialX":
-      return "X / Twitter (optional)";
-    case "socialYoutube":
-      return "YouTube (optional)";
-    case "industry":
-      return "Industry / niche";
-    case "revenueRange":
-      return "Current monthly revenue range";
-    case "challenges":
-      return "Three biggest business challenges";
-    case "competitors":
-      return "Top 2–3 competitors";
-    case "currentMarketing":
-      return "How do you currently get clients?";
-    case "toolsUsed":
-      return "Tools you’re currently using";
-    case "monthlyBudget":
-      return "Monthly marketing budget";
-    case "successGoals":
-      return "What does success look like in 6 months?";
+    case "clientName": return "Client name / business name";
+    case "email": return "Email address";
+    case "whatsapp": return "WhatsApp number";
+    case "websiteUrl": return "Website URL (optional)";
+    case "industry": return "Industry / niche";
+    case "revenueRange": return "Current monthly revenue range";
+    case "challenges": return "Biggest business challenges";
+    case "competitors": return "Top 2â€“3 competitors (optional)";
+    case "currentMarketing": return "How do you currently get clients?";
+    case "toolsUsed": return "Tools you're currently using (optional)";
+    case "monthlyBudget": return "Monthly marketing budget (optional)";
+    case "packageIntent": return "Which system looks best? (optional)";
+    case "successGoals": return "What does success look like in 6 months? (optional)";
+    case "primaryIntent": return "What's the main reason you're here today? (optional)";
+    case "enquiryVolume": return "How many enquiries do you receive per week?";
+    case "followUpMethod": return "How do you currently manage follow-ups?";
+    case "missedCallHandling": return "What happens when someone calls and no one answers?";
+    case "currentWebsiteStatus": return "Do you currently have a website?";
+    case "googleMapsStatus": return "Are you on Google Maps / Google My Business?";
+    case "websiteGoal": return "What do you want people to do when they find you online?";
+    case "biggestTimeWaste": return "What's eating the most time right now?";
+    case "existingCrmStatus": return "Do you already have a CRM or system?";
+    case "preferredContactTime": return "Best time to reach you on WhatsApp (optional)";
+    case "socialInstagram": return "Instagram profile URL (optional)";
+    case "socialTiktok": return "TikTok profile URL (optional)";
+    case "socialFacebook": return "Facebook page URL (optional)";
+    case "socialX": return "X (Twitter) profile URL (optional)";
+    case "socialYoutube": return "YouTube channel URL (optional)";
   }
 }
 
 function fieldHint(k: FieldKey): string | null {
   switch (k) {
-    case "whatsapp":
-      return "Include country code if possible (e.g. +27…).";
-    case "websiteUrl":
-      return "If provided, we’ll validate it (https:// will be assumed).";
-    case "socialInstagram":
-      return "e.g. https://instagram.com/yourbusiness or @yourbusiness";
-    case "socialTiktok":
-      return "e.g. https://tiktok.com/@yourbusiness or @yourbusiness";
-    case "socialFacebook":
-      return "e.g. https://facebook.com/yourbusiness";
-    case "socialX":
-      return "e.g. https://x.com/yourbusiness or @yourbusiness";
-    case "socialYoutube":
-      return "e.g. https://youtube.com/@yourchannel";
-    case "revenueRange":
-      return "Example: R50k–R150k/month.";
-    case "challenges":
-      return "Add 3 items. One per line works well.";
-    case "competitors":
-      return "Add 2–3 competitors. One per line works well.";
-    case "toolsUsed":
-      return "Example: Google Ads, Meta Ads, HubSpot, WordPress, Shopify, etc.";
-    case "monthlyBudget":
-      return "Example: 5000 or 5k (currency symbols are ok).";
-    default:
-      return null;
+    case "whatsapp": return "Include country code if possible (e.g. +27â€¦).";
+    case "websiteUrl": return "If provided, we'll validate it (https:// will be assumed).";
+    case "revenueRange": return "Example: R50kâ€“R150k/month.";
+    case "challenges": return "Add one or more. One per line works well.";
+    case "competitors": return "Add 2â€“3 competitors. One per line works well.";
+    case "toolsUsed": return "Example: Google Ads, Meta Ads, HubSpot, WordPress, Shopify, etc.";
+    case "monthlyBudget": return "Example: 5000 or 5k (currency symbols are ok).";
+    default: return null;
   }
 }
 
 function isTextarea(k: FieldKey) {
-  return ["challenges", "competitors", "currentMarketing", "toolsUsed", "successGoals"].includes(k);
+  return ["challenges", "competitors", "toolsUsed", "successGoals"].includes(k);
 }
 
 function validateField(key: FieldKey, next: string): string | null {
-  // Lightweight per-field validation (mirrors server-side rules).
-  const socialKeys: FieldKey[] = ["socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube"];
-  if (key === "websiteUrl" || socialKeys.includes(key)) {
-    return null; // all optional
+  const optional = OPTIONAL_FIELDS.has(key);
+  const empty = !next.trim();
+
+  if (key === "websiteUrl") {
+    if (empty) return null;
+    return normalizeWebsiteUrl(next) ? null : "Please enter a valid website URL (or leave blank).";
   }
 
-  if (!next.trim()) return "This field is required.";
+  if (key === "monthlyBudget") {
+    if (empty) return null;
+    return parseMonthlyBudgetToInt(next) ? null : "Monthly budget must look like a number (e.g. 5000 or 5k).";
+  }
+
+  if (empty) return optional ? null : "This field is required.";
 
   if (key === "email") {
     const email = next.trim().toLowerCase();
@@ -213,44 +289,26 @@ function validateField(key: FieldKey, next: string): string | null {
     return digits.length >= 8 && digits.length <= 15 ? null : "Please enter a valid WhatsApp number.";
   }
 
-  if (key === "monthlyBudget") {
-    return parseMonthlyBudgetToInt(next) ? null : "Monthly budget must look like a number (e.g. 5000 or 5k).";
-  }
-
   return null;
 }
 
-export function BlueprintIntakeForm() {
+export function UnifiedBlueprintForm({ mode = "detailed" }: { mode?: BlueprintMode }) {
+  const steps = stepsByMode[mode];
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initial);
-  const [touched, setTouched] = useState<Record<FieldKey, boolean>>({
-    clientName: false,
-    email: false,
-    whatsapp: false,
-    websiteUrl: false,
-    socialInstagram: false,
-    socialTiktok: false,
-    socialFacebook: false,
-    socialX: false,
-    socialYoutube: false,
-    industry: false,
-    revenueRange: false,
-    challenges: false,
-    competitors: false,
-    currentMarketing: false,
-    toolsUsed: false,
-    monthlyBudget: false,
-    successGoals: false,
-  });
+  const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ clientId: string } | null>(null);
   const [otherEnabled, setOtherEnabled] = useState<Partial<Record<FieldKey, boolean>>>({});
 
-  const progress = useMemo(() => Math.round(((step + 1) / steps.length) * 100), [step]);
+  const progress = useMemo(() => Math.round(((step + 1) / steps.length) * 100), [step, steps.length]);
 
-  const stepFields = steps[step]!.fields;
+  const stepFields = useMemo(
+    () => (mode === "quick" && step === 1 ? getStep2Fields(form.primaryIntent) : steps[step]!.fields),
+    [mode, step, form.primaryIntent, steps],
+  );
 
   function setField(key: FieldKey, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -279,9 +337,9 @@ export function BlueprintIntakeForm() {
     setErrors((prev) => ({ ...prev, [key]: err || undefined }));
   }
 
-  function validateStep(): boolean {
+  function validateFields(fields: FieldKey[]): boolean {
     const nextErrors: Partial<Record<FieldKey, string>> = {};
-    for (const f of stepFields) {
+    for (const f of fields) {
       setTouched((prev) => ({ ...prev, [f]: true }));
       const err = validateField(f, form[f]);
       if (err) nextErrors[f] = err;
@@ -294,17 +352,11 @@ export function BlueprintIntakeForm() {
     setSubmitError(null);
     setSubmitting(true);
     try {
-      // Final validation (single source of truth).
       const payload = {
         clientName: form.clientName.trim(),
         email: form.email.trim().toLowerCase(),
         whatsapp: form.whatsapp.trim(),
         websiteUrl: form.websiteUrl.trim(),
-        socialInstagram: form.socialInstagram.trim(),
-        socialTiktok: form.socialTiktok.trim(),
-        socialFacebook: form.socialFacebook.trim(),
-        socialX: form.socialX.trim(),
-        socialYoutube: form.socialYoutube.trim(),
         industry: form.industry.trim(),
         revenueRange: form.revenueRange.trim(),
         challenges: form.challenges,
@@ -312,7 +364,23 @@ export function BlueprintIntakeForm() {
         currentMarketing: form.currentMarketing.trim(),
         toolsUsed: form.toolsUsed,
         monthlyBudget: form.monthlyBudget.trim(),
+        packageIntent: form.packageIntent.trim(),
         successGoals: form.successGoals.trim(),
+        primaryIntent: form.primaryIntent.trim(),
+        enquiryVolume: form.enquiryVolume.trim(),
+        followUpMethod: form.followUpMethod.trim(),
+        missedCallHandling: form.missedCallHandling.trim(),
+        currentWebsiteStatus: form.currentWebsiteStatus.trim(),
+        googleMapsStatus: form.googleMapsStatus.trim(),
+        websiteGoal: form.websiteGoal.trim(),
+        biggestTimeWaste: form.biggestTimeWaste.trim(),
+        existingCrmStatus: form.existingCrmStatus.trim(),
+        preferredContactTime: form.preferredContactTime.trim(),
+        socialInstagram: form.socialInstagram.trim(),
+        socialTiktok: form.socialTiktok.trim(),
+        socialFacebook: form.socialFacebook.trim(),
+        socialX: form.socialX.trim(),
+        socialYoutube: form.socialYoutube.trim(),
       };
 
       const parsed = BlueprintSubmitSchema.safeParse(payload);
@@ -344,6 +412,8 @@ export function BlueprintIntakeForm() {
       }
 
       setSuccess({ clientId: String(json.clientId) });
+    } catch {
+      setSubmitError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -354,9 +424,10 @@ export function BlueprintIntakeForm() {
       <div className="vs-card">
         <div className="space-y-3">
           <p className="vs-section-heading">Blueprint submitted</p>
-          <h1 className="font-heading text-2xl md:text-3xl">You’re in.</h1>
+          <h2 className="font-heading text-2xl md:text-3xl">You're in.</h2>
           <p className="text-sm text-textMuted max-w-2xl">
-            Thanks—your Growth Optimization Blueprint is being prepared now. You’ll receive your report via email within 24 hours.
+            Thanksâ€”your Growth Optimization Blueprint is being prepared now. You'll receive your report via email within
+            24 hours.
           </p>
           <p className="text-xs text-textMuted/80">Reference: {success.clientId}</p>
         </div>
@@ -368,10 +439,13 @@ export function BlueprintIntakeForm() {
     <div className="vs-card">
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
-          <p className="vs-section-heading">Quick 3-minute questionnaire</p>
-          <h1 className="font-heading text-xl md:text-2xl">Tell us about your business.</h1>
+          <p className="vs-section-heading">
+            {mode === "quick" ? "Quick blueprint â€” under 2 minutes" : "Quick 3-minute questionnaire"}
+          </p>
+          <h2 className="font-heading text-xl md:text-2xl">Tell us about your business.</h2>
           <p className="text-sm text-textMuted max-w-2xl">
-            Answer a few questions so we can understand your business, diagnose the biggest revenue leaks, and send a tailored report.
+            Answer a few questions so we can understand your business, diagnose the biggest revenue leaks, and send a
+            tailored report.
           </p>
         </div>
         <div className="text-xs text-textMuted">
@@ -385,32 +459,56 @@ export function BlueprintIntakeForm() {
         <ProgressBar value={progress} label={`Step ${step + 1} of ${steps.length}`} />
       </div>
 
-      {steps[step]!.title === "Social media" && (
-        <p className="mb-4 text-sm text-textMuted bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-          Share any active social media profiles. We'll analyse your audience, content style, and engagement to inform your blueprint and any website or campaign design.
-          <span className="block mt-1 text-xs text-textMuted/60">All fields optional — paste full URLs or just the handle (@username).</span>
-        </p>
-      )}
-
-      <form
-        className="space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
-      >
+      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
         {stepFields.map((key) => {
           const label = fieldLabel(key);
           const hint = fieldHint(key);
           const err = errors[key] ?? null;
-          const optionalKeys: FieldKey[] = ["websiteUrl", "socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube", "monthlyBudget", "successGoals", "competitors", "toolsUsed"];
-          const required = !optionalKeys.includes(key);
+          const required = !OPTIONAL_FIELDS.has(key);
+
+          if (key === "packageIntent") {
+            return (
+              <div key={key} className="space-y-2">
+                <label className="block text-sm text-textPrimary/90">{label}</label>
+                <select
+                  className="vs-input"
+                  value={form.packageIntent}
+                  onChange={(e) => setField("packageIntent", e.target.value)}
+                >
+                  <option value="">Not sure / Recommend one</option>
+                  {packageOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
+
+          if (key === "primaryIntent") {
+            return (
+              <div key={key} className="space-y-2">
+                <label className="block text-sm text-textPrimary/90">{label}</label>
+                <select
+                  className="vs-input"
+                  value={form.primaryIntent}
+                  onChange={(e) => setField("primaryIntent", e.target.value)}
+                >
+                  <option value="">Select an option</option>
+                  {primaryIntentOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
 
           if (isTextarea(key)) {
-            // For competitors: use dynamic industry-based suggestions
             const chips: string[] =
-              key === "competitors"
-                ? getCompetitorSuggestions(form.industry)
-                : (textareaTemplates[key] ?? []);
+              key === "competitors" ? getCompetitorSuggestions(form.industry) : (textareaTemplates[key] ?? []);
 
             return (
               <div key={key} className="space-y-3">
@@ -419,7 +517,7 @@ export function BlueprintIntakeForm() {
                     {key === "competitors" && (
                       <p className="text-xs text-textMuted/60 mb-2">
                         {form.industry
-                          ? `Known competitors in ${form.industry} — click to add:`
+                          ? `Known competitors in ${form.industry} â€” click to add:`
                           : "Select your industry first to see competitor suggestions"}
                       </p>
                     )}
@@ -444,7 +542,7 @@ export function BlueprintIntakeForm() {
                               appendLineValue(key, preset);
                             }}
                           >
-                            {alreadyAdded ? `✓ ${preset}` : `+ ${preset}`}
+                            {alreadyAdded ? `âœ“ ${preset}` : `+ ${preset}`}
                           </button>
                         );
                       })}
@@ -463,7 +561,7 @@ export function BlueprintIntakeForm() {
                   touched={touched[key]}
                   placeholder={
                     key === "challenges"
-                      ? "1) …\n2) …\n3) …"
+                      ? "1) â€¦\n2) â€¦\n3) â€¦"
                       : key === "competitors"
                         ? "Competitor 1\nCompetitor 2\nCompetitor 3"
                         : key === "toolsUsed"
@@ -587,7 +685,7 @@ export function BlueprintIntakeForm() {
             className="vs-button-primary text-sm disabled:opacity-40"
             disabled={submitting}
             onClick={() => {
-              if (!validateStep()) return;
+              if (!validateFields(stepFields)) return;
               setStep((s) => Math.min(steps.length - 1, s + 1));
             }}
           >
@@ -599,27 +697,21 @@ export function BlueprintIntakeForm() {
             className="vs-button-primary text-sm disabled:opacity-40"
             disabled={submitting}
             onClick={async () => {
-              // Touch everything and validate all steps quickly.
-              const allFields = steps.flatMap((s) => s.fields);
-              const nextErrors: Partial<Record<FieldKey, string>> = {};
-              for (const f of allFields) {
-                setTouched((prev) => ({ ...prev, [f]: true }));
-                const err = validateField(f, form[f]);
-                if (err) nextErrors[f] = err;
-              }
-              setErrors((prev) => ({ ...prev, ...nextErrors }));
-              if (Object.keys(nextErrors).length) {
+              const allFields =
+                mode === "quick"
+                  ? [...steps[0]!.fields, ...getStep2Fields(form.primaryIntent), ...steps[2]!.fields]
+                  : steps.flatMap((s) => s.fields);
+              if (!validateFields(allFields)) {
                 setSubmitError("Please fix the highlighted fields.");
                 return;
               }
               await handleSubmit();
             }}
           >
-            {submitting ? "Submitting…" : "Submit blueprint"}
+            {submitting ? "Submittingâ€¦" : "Submit blueprint"}
           </button>
         )}
       </div>
     </div>
   );
 }
-

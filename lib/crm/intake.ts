@@ -26,6 +26,20 @@ function tomorrowIsoDate() {
   return d.toISOString().slice(0, 10);
 }
 
+function buildIntakeChallenges(payload: BlueprintSubmit): string[] {
+  if (payload.challenges && payload.challenges.length > 0) return payload.challenges;
+  const items: string[] = [];
+  if (payload.enquiryVolume) items.push(`Enquiry volume: ${payload.enquiryVolume}`);
+  if (payload.followUpMethod) items.push(`Follow-up method: ${payload.followUpMethod}`);
+  if (payload.missedCallHandling) items.push(`Missed calls: ${payload.missedCallHandling}`);
+  if (payload.currentWebsiteStatus) items.push(`Website status: ${payload.currentWebsiteStatus}`);
+  if (payload.googleMapsStatus) items.push(`Google Maps presence: ${payload.googleMapsStatus}`);
+  if (payload.websiteGoal) items.push(`Website goal: ${payload.websiteGoal}`);
+  if (payload.biggestTimeWaste) items.push(`Biggest time waste: ${payload.biggestTimeWaste}`);
+  if (payload.existingCrmStatus) items.push(`Current CRM/system: ${payload.existingCrmStatus}`);
+  return items;
+}
+
 /**
  * Single pipeline for blueprint + CRM manual intake: upsert client, optional research task, analytics event.
  */
@@ -34,10 +48,12 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
   await ensureAnalyticsTables(db);
 
   const website_url = payload.websiteUrl ? normalizeWebsiteUrl(payload.websiteUrl) : "";
-  const monthly_budget = parseMonthlyBudgetToInt(payload.monthlyBudget);
-  if (!monthly_budget) {
+  const monthly_budget = payload.monthlyBudget ? parseMonthlyBudgetToInt(payload.monthlyBudget) : null;
+  if (payload.monthlyBudget && monthly_budget === null) {
     return { ok: false as const, error: "invalid_budget", message: "Monthly budget must parse to a positive number." };
   }
+
+  const derived_challenges = buildIntakeChallenges(payload);
 
   let status = "blueprint-submitted";
   if (opts.source === "crm_manual") {
@@ -63,6 +79,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       name, email, whatsapp, website_url, industry, revenue_range,
       challenges, competitors, current_marketing, tools_used, monthly_budget,
       success_goals, status, company, created_by, package_intent,
+      primary_intent, preferred_contact_time,
       social_instagram, social_tiktok, social_facebook, social_x, social_youtube
     ) values (
       ${payload.clientName},
@@ -71,16 +88,18 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${website_url || null},
       ${payload.industry},
       ${payload.revenueRange},
-      ${payload.challenges || null}::jsonb,
-      ${payload.competitors || null}::jsonb,
+      ${derived_challenges.length ? derived_challenges : null}::jsonb,
+      ${payload.competitors?.length ? payload.competitors : null}::jsonb,
       ${payload.currentMarketing},
-      ${payload.toolsUsed || null}::jsonb,
-      ${monthly_budget},
+      ${payload.toolsUsed?.length ? payload.toolsUsed : null}::jsonb,
+      ${monthly_budget ?? 0},
       ${payload.successGoals || null},
       ${status},
       ${company},
       ${createdBy || null},
       ${payload.packageIntent || null},
+      ${payload.primaryIntent || null},
+      ${payload.preferredContactTime || null},
       ${social_instagram},
       ${social_tiktok},
       ${social_facebook},
@@ -100,6 +119,8 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       monthly_budget = excluded.monthly_budget,
       success_goals = excluded.success_goals,
       package_intent = excluded.package_intent,
+      primary_intent = excluded.primary_intent,
+      preferred_contact_time = excluded.preferred_contact_time,
       status = excluded.status,
       company = coalesce(excluded.company, public.clients.company),
       created_by = coalesce(public.clients.created_by, excluded.created_by),
@@ -166,10 +187,10 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       industry: payload.industry,
       website_url: website_url || null,
       whatsapp: payload.whatsapp,
-      monthly_budget: monthly_budget,
+      monthly_budget: monthly_budget ?? 0,
       success_goals: payload.successGoals,
       current_marketing: payload.currentMarketing,
-      challenges: payload.challenges,
+      challenges: derived_challenges,
       competitors: payload.competitors,
       tools_used: payload.toolsUsed,
       revenue_range: payload.revenueRange,
@@ -179,14 +200,15 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       social_x: social_x,
       social_youtube: social_youtube,
     });
-    
+
     // Trigger automated WhatsApp follow-up if applicable
     if (payload.whatsapp) {
       await sendIntakeWhatsAppFollowUp({
         to: payload.whatsapp,
         name: payload.clientName,
         intent: payload.packageIntent,
-        challenge: payload.challenges?.[0],
+        primaryIntent: payload.primaryIntent,
+        challenge: derived_challenges?.[0],
       });
     }
   }
@@ -194,26 +216,45 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
   return { ok: true as const, client_id: clientId, status };
 }
 
-async function sendIntakeWhatsAppFollowUp(params: { to: string; name: string; intent?: string; challenge?: string }) {
+async function sendIntakeWhatsAppFollowUp(params: {
+  to: string;
+  name: string;
+  intent?: string;
+  primaryIntent?: string;
+  challenge?: string;
+}) {
   const accountSid = (process.env.TWILIO_ACCOUNT_SID || "").trim();
   const authToken = (process.env.TWILIO_AUTH_TOKEN || "").trim();
   const from = (process.env.TWILIO_WHATSAPP_FROM || "").trim();
-  if (!accountSid || !authToken || !from) return; 
+  if (!accountSid || !authToken || !from) return;
 
   const to = params.to.startsWith("whatsapp:") ? params.to : `whatsapp:${params.to}`;
-  
-  let packageText = "";
-  if (params.intent === "Foundation") packageText = "I see you're looking at The Foundation.";
-  else if (params.intent === "Growth") packageText = "I see you're looking at The Growth System.";
-  else if (params.intent === "Revenue") packageText = "I see you're looking at The Revenue System.";
-  
+
+  const intentLabels: Record<string, string> = {
+    leads: "I see you're looking to fix your lead flow.",
+    followup: "I see you're looking to tighten up your follow-up process.",
+    website: "I see you're working on your online presence.",
+    automate: "I see you're looking to automate and save time.",
+  };
+
+  let contextText = "";
+  if (params.primaryIntent && intentLabels[params.primaryIntent]) {
+    contextText = intentLabels[params.primaryIntent];
+  } else if (params.intent === "Foundation") {
+    contextText = "I see you're looking at The Foundation.";
+  } else if (params.intent === "Growth") {
+    contextText = "I see you're looking at The Growth System.";
+  } else if (params.intent === "Revenue") {
+    contextText = "I see you're looking at The Revenue System.";
+  }
+
   let painText = "";
   if (params.challenge && params.challenge !== "Not specified") {
-     painText = ` You mentioned struggling with ${params.challenge.toLowerCase()}.`;
+    painText = ` You mentioned: ${params.challenge.toLowerCase()}.`;
   }
-  
-  const bodyText = `Hi ${params.name}, this is Jono from VantageStack. ${packageText}${painText} We're preparing your Growth Optimization Blueprint and will send it over shortly. Let me know if you have any immediate questions!`;
-  
+
+  const bodyText = `Hi ${params.name}, this is Jono from VantageStack. ${contextText}${painText} We're preparing your Growth Optimization Blueprint and will send it over shortly. Let me know if you have any immediate questions!`;
+
   const body = new URLSearchParams({ From: from, To: to, Body: bodyText });
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
   try {

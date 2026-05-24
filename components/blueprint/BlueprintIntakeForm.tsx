@@ -11,6 +11,11 @@ type FormState = {
   email: string;
   whatsapp: string;
   websiteUrl: string;
+  socialInstagram: string;
+  socialTiktok: string;
+  socialFacebook: string;
+  socialX: string;
+  socialYoutube: string;
   industry: string;
   revenueRange: string;
   challenges: string;
@@ -26,6 +31,11 @@ const initial: FormState = {
   email: "",
   whatsapp: "",
   websiteUrl: "",
+  socialInstagram: "",
+  socialTiktok: "",
+  socialFacebook: "",
+  socialX: "",
+  socialYoutube: "",
   industry: "",
   revenueRange: "",
   challenges: "",
@@ -40,6 +50,7 @@ type FieldKey = keyof FormState;
 
 const steps: Array<{ title: string; fields: FieldKey[] }> = [
   { title: "Contact", fields: ["clientName", "email", "whatsapp", "websiteUrl"] },
+  { title: "Social media", fields: ["socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube"] },
   { title: "Business", fields: ["industry", "revenueRange", "monthlyBudget"] },
   {
     title: "Growth context",
@@ -119,6 +130,16 @@ function fieldLabel(k: FieldKey): string {
       return "WhatsApp number";
     case "websiteUrl":
       return "Website URL (optional)";
+    case "socialInstagram":
+      return "Instagram (optional)";
+    case "socialTiktok":
+      return "TikTok (optional)";
+    case "socialFacebook":
+      return "Facebook (optional)";
+    case "socialX":
+      return "X / Twitter (optional)";
+    case "socialYoutube":
+      return "YouTube (optional)";
     case "industry":
       return "Industry / niche";
     case "revenueRange":
@@ -144,6 +165,16 @@ function fieldHint(k: FieldKey): string | null {
       return "Include country code if possible (e.g. +27…).";
     case "websiteUrl":
       return "If provided, we’ll validate it (https:// will be assumed).";
+    case "socialInstagram":
+      return "e.g. https://instagram.com/yourbusiness or @yourbusiness";
+    case "socialTiktok":
+      return "e.g. https://tiktok.com/@yourbusiness or @yourbusiness";
+    case "socialFacebook":
+      return "e.g. https://facebook.com/yourbusiness";
+    case "socialX":
+      return "e.g. https://x.com/yourbusiness or @yourbusiness";
+    case "socialYoutube":
+      return "e.g. https://youtube.com/@yourchannel";
     case "revenueRange":
       return "Example: R50k–R150k/month.";
     case "challenges":
@@ -165,9 +196,9 @@ function isTextarea(k: FieldKey) {
 
 function validateField(key: FieldKey, next: string): string | null {
   // Lightweight per-field validation (mirrors server-side rules).
-  if (key === "websiteUrl") {
-    if (!next.trim()) return null;
-    return normalizeWebsiteUrl(next) ? null : "Please enter a valid website URL (or leave blank).";
+  const socialKeys: FieldKey[] = ["socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube"];
+  if (key === "websiteUrl" || socialKeys.includes(key)) {
+    return null; // all optional
   }
 
   if (!next.trim()) return "This field is required.";
@@ -197,6 +228,11 @@ export function BlueprintIntakeForm() {
     email: false,
     whatsapp: false,
     websiteUrl: false,
+    socialInstagram: false,
+    socialTiktok: false,
+    socialFacebook: false,
+    socialX: false,
+    socialYoutube: false,
     industry: false,
     revenueRange: false,
     challenges: false,
@@ -264,6 +300,11 @@ export function BlueprintIntakeForm() {
         email: form.email.trim().toLowerCase(),
         whatsapp: form.whatsapp.trim(),
         websiteUrl: form.websiteUrl.trim(),
+        socialInstagram: form.socialInstagram.trim(),
+        socialTiktok: form.socialTiktok.trim(),
+        socialFacebook: form.socialFacebook.trim(),
+        socialX: form.socialX.trim(),
+        socialYoutube: form.socialYoutube.trim(),
         industry: form.industry.trim(),
         revenueRange: form.revenueRange.trim(),
         challenges: form.challenges,
@@ -344,6 +385,13 @@ export function BlueprintIntakeForm() {
         <ProgressBar value={progress} label={`Step ${step + 1} of ${steps.length}`} />
       </div>
 
+      {steps[step]!.title === "Social media" && (
+        <p className="mb-4 text-sm text-textMuted bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+          Share any active social media profiles. We'll analyse your audience, content style, and engagement to inform your blueprint and any website or campaign design.
+          <span className="block mt-1 text-xs text-textMuted/60">All fields optional — paste full URLs or just the handle (@username).</span>
+        </p>
+      )}
+
       <form
         className="space-y-5"
         onSubmit={(e) => {
@@ -354,7 +402,8 @@ export function BlueprintIntakeForm() {
           const label = fieldLabel(key);
           const hint = fieldHint(key);
           const err = errors[key] ?? null;
-          const required = key !== "websiteUrl";
+          const optionalKeys: FieldKey[] = ["websiteUrl", "socialInstagram", "socialTiktok", "socialFacebook", "socialX", "socialYoutube", "monthlyBudget", "successGoals", "competitors", "toolsUsed"];
+          const required = !optionalKeys.includes(key);
 
           if (isTextarea(key)) {
             // For competitors: use dynamic industry-based suggestions

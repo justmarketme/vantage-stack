@@ -27,6 +27,7 @@ CLIENT PROFILE:
 - Current Marketing: ${p.current_marketing || "Not specified"}
 - Tools Used: ${toStr(p.tools_used) || "None mentioned"}
 - Key Competitors: ${competitors.join(", ") || "None identified"}
+- Social Platforms: ${[p.social_instagram && "Instagram", p.social_tiktok && "TikTok", p.social_facebook && "Facebook", p.social_x && "X/Twitter", p.social_youtube && "YouTube"].filter(Boolean).join(", ") || "None provided"}
 
 Respond with ONLY valid JSON in this exact structure (no markdown, no code blocks):
 {
@@ -77,6 +78,12 @@ export type BlueprintClientData = {
   competitors?: string[] | string | null;
   tools_used?: string[] | string | null;
   revenue_range?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_facebook?: string | null;
+  social_x?: string | null;
+  social_youtube?: string | null;
+  social_insights?: import("./social-scraper").SocialInsight[] | null;
 };
 
 function toStr(v: string[] | string | null | undefined): string {
@@ -162,6 +169,49 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     const list = Array.isArray(p.challenges) ? p.challenges : [p.challenges as string];
     list.forEach((c) => lines.push(`- ${c}`));
     lines.push(``);
+  }
+
+  // ── Social Media Presence ─────────────────────────────────────────────────
+  const socialPlatforms = [
+    { key: "instagram", label: "Instagram", value: p.social_instagram },
+    { key: "tiktok",    label: "TikTok",    value: p.social_tiktok },
+    { key: "facebook",  label: "Facebook",  value: p.social_facebook },
+    { key: "x",         label: "X/Twitter", value: p.social_x },
+    { key: "youtube",   label: "YouTube",   value: p.social_youtube },
+  ].filter((s) => s.value);
+
+  if (socialPlatforms.length > 0 || p.social_insights?.length) {
+    lines.push(`## ${n++}. SOCIAL MEDIA PRESENCE`);
+    lines.push(``);
+    if (socialPlatforms.length) {
+      lines.push(`**Active Platforms:**`);
+      socialPlatforms.forEach((s) => lines.push(`- **${s.label}:** ${s.value}`));
+      lines.push(``);
+    }
+    if (p.social_insights?.length) {
+      const insights = p.social_insights;
+      const totalFollowers = insights.reduce((sum, i) => sum + (i.followers ?? 0), 0);
+      const avgEng = insights.filter((i) => i.engagementRate !== null);
+      const avgEngRate = avgEng.length
+        ? (avgEng.reduce((s, i) => s + i.engagementRate!, 0) / avgEng.length).toFixed(2)
+        : null;
+
+      lines.push(`**Audience Intelligence (scraped):**`);
+      lines.push(`- Combined reach: **${totalFollowers.toLocaleString()} followers** across ${insights.length} platform(s)`);
+      if (avgEngRate) lines.push(`- Average engagement rate: **${avgEngRate}%**`);
+      lines.push(``);
+      for (const ins of insights) {
+        lines.push(`**${ins.platform.charAt(0).toUpperCase() + ins.platform.slice(1)}** — @${ins.handle}`);
+        if (ins.followers !== null) lines.push(`- Followers: ${ins.followers.toLocaleString()}`);
+        if (ins.engagementRate !== null) lines.push(`- Engagement: ${ins.engagementRate}%`);
+        if (ins.postingFrequency) lines.push(`- Frequency: ${ins.postingFrequency}`);
+        if (ins.topHashtags.length) lines.push(`- Top hashtags: ${ins.topHashtags.slice(0, 5).join(", ")}`);
+        if (ins.contentThemes.length) lines.push(`- Content themes: ${ins.contentThemes.slice(0, 3).join(", ")}`);
+        lines.push(``);
+      }
+      lines.push(`> 💡 **Design implication:** The brand's tone, colour palette, and content style observed across social media should be carried through to the website and campaign assets for audience consistency.`);
+      lines.push(``);
+    }
   }
 
   // ── Competitor Landscape ───────────────────────────────────────────────────

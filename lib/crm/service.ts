@@ -151,7 +151,13 @@ export async function getClientDetail(db: Sql, id: string) {
       c.current_marketing::text as current_marketing,
       c.success_goals::text as success_goals,
       c.created_by::text as created_by,
-      c.blueprint_markdown::text as blueprint_markdown
+      c.blueprint_markdown::text as blueprint_markdown,
+      c.social_instagram::text as social_instagram,
+      c.social_tiktok::text as social_tiktok,
+      c.social_facebook::text as social_facebook,
+      c.social_x::text as social_x,
+      c.social_youtube::text as social_youtube,
+      c.social_insights as social_insights
     from public.clients c
     where c.id = ${id}::uuid
     limit 1

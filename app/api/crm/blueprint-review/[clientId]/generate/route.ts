@@ -11,7 +11,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ client
         id::text, name::text, email::text, company::text, industry::text,
         website_url::text, whatsapp::text, monthly_budget::int,
         success_goals::text, current_marketing::text,
-        challenges, competitors, tools_used, revenue_range::text
+        challenges, competitors, tools_used, revenue_range::text,
+        social_instagram::text, social_tiktok::text, social_facebook::text,
+        social_x::text, social_youtube::text, social_insights
       from public.clients
       where id = ${clientId}::uuid
       limit 1

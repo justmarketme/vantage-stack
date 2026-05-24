@@ -110,6 +110,11 @@ export const BlueprintSubmitSchema = z.object({
   monthlyBudget: z.string().trim().optional(),
   packageIntent: z.string().trim().optional(),
   successGoals: z.string().trim().optional(),
+  socialInstagram: z.string().trim().optional().default(""),
+  socialTiktok: z.string().trim().optional().default(""),
+  socialFacebook: z.string().trim().optional().default(""),
+  socialX: z.string().trim().optional().default(""),
+  socialYoutube: z.string().trim().optional().default(""),
 });
 
 export type BlueprintSubmit = z.infer<typeof BlueprintSubmitSchema>;

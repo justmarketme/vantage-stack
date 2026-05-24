@@ -22,6 +22,12 @@ type ClientProfile = {
   status: string;
   created_at: string;
   blueprint_markdown?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_facebook?: string | null;
+  social_x?: string | null;
+  social_youtube?: string | null;
+  social_insights?: unknown;
 };
 
 type Report = {
@@ -424,6 +430,95 @@ function BlueprintRenderer({ markdown, clientName, company }: { markdown: string
   );
 }
 
+// ─── Social Media Card ────────────────────────────────────────────────────────
+
+const SOCIAL_PLATFORMS = [
+  { key: "social_instagram" as const, label: "Instagram", icon: "📸", color: "pink" },
+  { key: "social_tiktok"   as const, label: "TikTok",    icon: "🎵", color: "cyan" },
+  { key: "social_facebook" as const, label: "Facebook",  icon: "👤", color: "blue" },
+  { key: "social_x"        as const, label: "X/Twitter", icon: "✖️",  color: "slate" },
+  { key: "social_youtube"  as const, label: "YouTube",   icon: "▶️",  color: "red" },
+];
+
+function SocialMediaCard({
+  profile,
+  onScraped,
+}: {
+  profile: ClientProfile;
+  onScraped: (updated: Partial<ClientProfile>) => void;
+}) {
+  const [scraping, setScraping] = useState(false);
+  const [scrapeMsg, setScrapeMsg] = useState<string | null>(null);
+
+  const activeSocials = SOCIAL_PLATFORMS.filter((p) => profile[p.key]);
+  const hasInsights = Boolean(profile.social_insights);
+
+  async function handleScrape() {
+    setScraping(true);
+    setScrapeMsg(null);
+    try {
+      const res = await fetch("/api/crm/social-scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: profile.id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setScrapeMsg(`Error: ${json.error || "Scraping failed"}`);
+      } else {
+        setScrapeMsg(`✅ Scraped ${json.insightCount} platform(s). Refresh to see insights in blueprint.`);
+        onScraped({ social_insights: json.insights });
+      }
+    } catch (e) {
+      setScrapeMsg(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-[#16161A] p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-textPrimary">Social Media Profiles</h2>
+        {activeSocials.length > 0 && (
+          <button
+            type="button"
+            onClick={handleScrape}
+            disabled={scraping}
+            className="flex items-center gap-1.5 rounded-lg bg-pink-500/20 border border-pink-500/30 px-3 py-1.5 text-xs font-semibold text-pink-200 hover:bg-pink-500/30 transition disabled:opacity-50"
+          >
+            {scraping ? "Scraping…" : hasInsights ? "🔄 Re-scrape Socials" : "🔍 Scrape Socials"}
+          </button>
+        )}
+      </div>
+
+      {activeSocials.length === 0 ? (
+        <p className="text-sm text-textMuted/60">No social media links provided by this client.</p>
+      ) : (
+        <div className="flex flex-wrap gap-3 mb-3">
+          {activeSocials.map((s) => (
+            <a
+              key={s.key}
+              href={profile[s.key]!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 text-xs text-textPrimary hover:bg-white/10 transition"
+            >
+              <span>{s.icon}</span>
+              <span>{s.label}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {hasInsights && (
+        <p className="text-xs text-green-400 mt-1">✅ Social insights scraped — included in blueprint generation.</p>
+      )}
+      {scrapeMsg && <p className="text-xs mt-2 text-textMuted">{scrapeMsg}</p>}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function BlueprintReviewDetail() {
@@ -694,6 +789,10 @@ export default function BlueprintReviewDetail() {
               </div>
             )}
           </div>
+
+          {/* Social media card */}
+          <SocialMediaCard profile={profile} onScraped={(updated) => setProfile((p) => p ? { ...p, ...updated } : p)} />
+
           <button type="button" onClick={() => setTab("research")} className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent/90 transition">
             Next: Run Research →
           </button>

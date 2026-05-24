@@ -50,13 +50,20 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
   const company = (opts.company ?? "").trim() || null;
   const createdBy = opts.createdBy?.trim() || (opts.source === "crm_manual" ? "crm" : "");
 
+  const social_instagram = (payload.socialInstagram || "").trim() || null;
+  const social_tiktok = (payload.socialTiktok || "").trim() || null;
+  const social_facebook = (payload.socialFacebook || "").trim() || null;
+  const social_x = (payload.socialX || "").trim() || null;
+  const social_youtube = (payload.socialYoutube || "").trim() || null;
+
   const rows = await db<
     Array<{ id: string }>
   >`
     insert into public.clients (
       name, email, whatsapp, website_url, industry, revenue_range,
       challenges, competitors, current_marketing, tools_used, monthly_budget,
-      success_goals, status, company, created_by, package_intent
+      success_goals, status, company, created_by, package_intent,
+      social_instagram, social_tiktok, social_facebook, social_x, social_youtube
     ) values (
       ${payload.clientName},
       ${payload.email},
@@ -73,7 +80,12 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${status},
       ${company},
       ${createdBy || null},
-      ${payload.packageIntent || null}
+      ${payload.packageIntent || null},
+      ${social_instagram},
+      ${social_tiktok},
+      ${social_facebook},
+      ${social_x},
+      ${social_youtube}
     )
     on conflict (email) do update set
       name = excluded.name,
@@ -91,6 +103,11 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       status = excluded.status,
       company = coalesce(excluded.company, public.clients.company),
       created_by = coalesce(public.clients.created_by, excluded.created_by),
+      social_instagram = coalesce(excluded.social_instagram, public.clients.social_instagram),
+      social_tiktok = coalesce(excluded.social_tiktok, public.clients.social_tiktok),
+      social_facebook = coalesce(excluded.social_facebook, public.clients.social_facebook),
+      social_x = coalesce(excluded.social_x, public.clients.social_x),
+      social_youtube = coalesce(excluded.social_youtube, public.clients.social_youtube),
       updated_at = now()
     returning id::text as id
   `;
@@ -156,6 +173,11 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       competitors: payload.competitors,
       tools_used: payload.toolsUsed,
       revenue_range: payload.revenueRange,
+      social_instagram: social_instagram,
+      social_tiktok: social_tiktok,
+      social_facebook: social_facebook,
+      social_x: social_x,
+      social_youtube: social_youtube,
     });
     
     // Trigger automated WhatsApp follow-up if applicable

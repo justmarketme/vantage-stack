@@ -96,8 +96,8 @@ export const BlueprintSubmitSchema = z.object({
   revenueRange: z.string().trim().min(1, "Revenue range is required."),
   challenges: z
     .union([z.array(z.string()), z.string()])
-    .transform((v) => (Array.isArray(v) ? v : splitListish(v)))
-    .refine((v) => v.length >= 1, "Please list at least one challenge (ideally three)."),
+    .optional()
+    .transform((v) => (v === undefined ? [] : Array.isArray(v) ? v : splitListish(v))),
   competitors: z
     .union([z.array(z.string()), z.string()])
     .optional()
@@ -110,6 +110,16 @@ export const BlueprintSubmitSchema = z.object({
   monthlyBudget: z.string().trim().optional(),
   packageIntent: z.string().trim().optional(),
   successGoals: z.string().trim().optional(),
+  primaryIntent: z.string().trim().optional(),
+  enquiryVolume: z.string().trim().optional(),
+  followUpMethod: z.string().trim().optional(),
+  missedCallHandling: z.string().trim().optional(),
+  currentWebsiteStatus: z.string().trim().optional(),
+  googleMapsStatus: z.string().trim().optional(),
+  websiteGoal: z.string().trim().optional(),
+  biggestTimeWaste: z.string().trim().optional(),
+  existingCrmStatus: z.string().trim().optional(),
+  preferredContactTime: z.string().trim().optional(),
 });
 
 export type BlueprintSubmit = z.infer<typeof BlueprintSubmitSchema>;

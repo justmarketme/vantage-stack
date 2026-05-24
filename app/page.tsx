@@ -1030,7 +1030,7 @@ function FaqSection() {
     },
     {
       q: "How much does this cost? Can a small South African business actually afford it?",
-      a: "VantageStack is built for SMBs — not corporates. You pay a predictable monthly fee, no surprise invoices. Most clients recover the cost within 60–90 days from just a handful of extra jobs that would have otherwise slipped through. Think of it as hiring a salesperson for a fraction of the cost.",
+      a: "VantageStack is built for SMBs — not corporates. The monthly fee covers an entire team: we build, maintain, automate, and optimise your system continuously. No setup fees. No surprise invoices. Most clients recover the full monthly cost within 60–90 days from just a handful of extra jobs that would have otherwise slipped through. Think of it as hiring a salesperson, a developer, and a marketer — for a fraction of what one salary would cost.",
     },
     {
       q: "What is an AI call assistant — and will it sound robotic to my customers?",
@@ -1130,7 +1130,7 @@ function PackagesSection() {
       name: "The Foundation",
       price: "R2,500",
       priceDetail: "/month",
-      description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
+      description: "Your digital foundation, actively maintained. We build it, host it, secure it, and keep it generating leads — every month, included.",
       features: [
         "Conversion-ready website (part of your always-on system)",
         "Mobile-first, conversion-optimized design",
@@ -1145,7 +1145,7 @@ function PackagesSection() {
       price: "R4,800",
       priceDetail: "/month",
       popular: true,
-      description: "A complete system designed to not only get leads but capture them, manage them, and follow up fast.",
+      description: "Your always-on sales system. We capture every lead, follow up in minutes, and track every opportunity — so no deal slips through while you&apos;re on the job.",
       features: [
         "Everything in The Foundation",
         "Google My Business Setup",
@@ -1160,7 +1160,7 @@ function PackagesSection() {
       name: "The Revenue System™",
       price: "R8,500",
       priceDetail: "/month",
-      description: "Our flagship AI-driven system. Perfect for established South African businesses looking to scale operations.",
+      description: "Your AI-powered revenue engine, running 24/7. For businesses ready to replace manual follow-up, missed calls, and guesswork with a system that earns its fee every week.",
       features: [
         "Everything in The Growth System",
         "Advanced SEO & Local Search Ranking",
@@ -1186,10 +1186,10 @@ function PackagesSection() {
           <div className="mb-14 text-center">
             <p className="vs-section-heading">The Value Ladder</p>
             <h2 className="vs-section-title mx-auto max-w-2xl text-center">
-              Simple, transparent South African pricing.
+              One monthly fee. A full team working for your business.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm text-textMuted">
-              No hidden fees. No complicated setups. Just pick the system that fits where your business is right now.
+              You&apos;re not paying for a website — you&apos;re retaining a system that builds, manages, and grows your revenue every month. No setup fees. No surprise invoices.
             </p>
           </div>
 

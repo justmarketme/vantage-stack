@@ -1132,11 +1132,11 @@ function PackagesSection() {
       priceDetail: "/month",
       description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
       features: [
-        "Premium South African Website (5 Pages)",
+        "Conversion-ready website (part of your always-on system)",
         "Mobile-first, conversion-optimized design",
         "Lead Capture Forms (Direct to Email/WhatsApp)",
         "Basic SEO Setup",
-        "Lightning Fast Hosting & Daily Backups",
+        "Lightning Fast Hosting, Security & Daily Backups",
       ],
       buttonText: "Get Your Blueprint",
     },

@@ -21,6 +21,7 @@ export default function HomePage() {
         <RevenueSystemSection />
         <PracticeSection />
         <PackagesSection />
+        <QuickStartSection />
         <BlueprintFlow />
         <SouthAfricaSection />
         <FaqSection />
@@ -93,8 +94,8 @@ function HeroSection() {
             </h1>
             <p className="max-w-xl text-sm md:text-base text-textMuted">
               VantageStack combines premium web design, intelligent systems, and
-              AI-powered automation to turn South African businesses into
-              predictable revenue machines. Not just more traffic. Smarter
+              AI-powered automation to help South African businesses build more
+              consistent, scalable revenue. Not just more traffic. Smarter
               systems.
             </p>
             <p className="max-w-xl text-xs md:text-sm text-textMuted/90">
@@ -233,7 +234,7 @@ function HeroSection() {
                     })}
                   </div>
                   <p className="mt-2 text-[10px] text-textMuted/80">
-                    Natural human-like voice. Multilingual. Every call answered — automatically.
+                    Natural human-like voice. Multilingual. Designed so no high-intent call goes unanswered. (Revenue System)
                   </p>
                 </div>
               </div>
@@ -319,9 +320,9 @@ function ProblemSection() {
               </div>
               <div className="hidden md:flex flex-col gap-2 flex-shrink-0">
                 {[
-                  { val: "78%", label: "of visitors leave without doing anything" },
-                  { val: "54%", label: "of leads never get a follow-up" },
-                  { val: "42%", label: "of calls go unanswered" },
+                  { val: "78%", label: "of visitors leave without doing anything*" },
+                  { val: "54%", label: "of leads never get a follow-up*" },
+                  { val: "42%", label: "of calls go unanswered*" },
                 ].map((s) => (
                   <div key={s.label} className="flex items-center gap-3 rounded-xl border border-rose-500/20 bg-black/50 backdrop-blur-sm px-3 py-2">
                     <span className="text-sm font-semibold text-rose-300">{s.val}</span>
@@ -351,6 +352,8 @@ function ProblemSection() {
                   </div>
                 </motion.div>
               ))}
+
+              <p className="text-[10px] text-textMuted/40 mt-1">* Based on industry research across service-based businesses.</p>
 
               <motion.div
                 className="vs-card border border-rose-500/25 bg-rose-500/5 text-xs mt-2"
@@ -542,7 +545,7 @@ function SolutionSection() {
                 {[
                   { title: "A website that actually gets you clients", body: "Not just a pretty page — a machine that turns visitors into leads." },
                   { title: "Every lead gets captured automatically", body: "Calls, forms, chats — all caught and sorted without you doing anything." },
-                  { title: "Follow-up happens without lifting a finger", body: "The system chases leads for you — faster than any human could." },
+                  { title: "Follow-up happens without lifting a finger", body: "The system chases leads for you — faster than any human could, in most cases." },
                 ].map((item, i) => (
                   <motion.div
                     key={item.title}
@@ -612,7 +615,7 @@ function ServicesSection() {
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80 mb-2">The Process</p>
                 <p className="font-heading text-xl md:text-2xl text-white max-w-sm leading-snug">
-                  A predictable path to scaling your revenue.
+                  A clear path to building revenue that compounds.
                 </p>
               </div>
             </div>
@@ -638,8 +641,8 @@ function ServicesSection() {
                 label: "Step 3",
                 icon: <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5 text-sky-400" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>,
                 title: "We keep improving it every month",
-                body: "We watch the numbers, find what's not working, and keep making the system better so your revenue keeps climbing.",
-                outcome: "More sales every month — without more effort from you.",
+                body: "We watch the numbers, find what's not working, and keep refining the system so it performs better over time.",
+                outcome: "Better results over time — without adding to your workload.",
               },
             ].map((card, index) => (
               <motion.div
@@ -773,8 +776,8 @@ function RevenueSystemSection() {
                 <p className="text-[10px] uppercase tracking-[0.18em] text-textMuted/60 mb-4">System impact</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { metric: "0 missed", label: "High-intent calls" },
-                    { metric: "< 60s", label: "Lead response time" },
+                    { metric: "0 missed", label: "Calls (when configured)" },
+                    { metric: "< 60s", label: "Target lead response" },
                     { metric: "100%", label: "Pipeline visibility" },
                     { metric: "24 / 7", label: "AI availability" },
                   ].map((s) => (
@@ -818,8 +821,8 @@ function PracticeSection() {
     },
     {
       label: "Ready to grow bigger",
-      title: "We add AI so you can do 10x more without hiring 10x more people.",
-      body: "We layer automation and AI on top of what's already working — so you can handle way more volume without burning out your team.",
+      title: "We layer in automation so you can handle significantly more — without growing your headcount.",
+      body: "We add automation and AI on top of what's already working — so you can handle more volume without burning out your team.",
       outcome: "Scale up without the growing pains.",
     },
   ];
@@ -1124,6 +1127,87 @@ function FaqSection() {
   );
 }
 
+function QuickStartSection() {
+  const services = [
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-sky-400" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
+      ),
+      name: "Google My Business Optimisation",
+      tag: "From R800 once-off",
+      body: "Most SA businesses are invisible on Google Maps. We set it up, optimise it, and keep it active — so you appear when buyers nearby are searching right now. Available as a standalone service, no retainer required.",
+      cta: "Get Your Blueprint",
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-emerald-400" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+      name: "Business System Automations",
+      tag: "From R1,500 per workflow",
+      body: "Already have a website? We can automate your follow-ups, enquiry routing, and booking flows without rebuilding anything. From WhatsApp auto-replies to quote follow-ups — we connect your tools and automate the repetitive stuff.",
+      cta: "Get Your Blueprint",
+    },
+  ];
+
+  return (
+    <section className="vs-section border-t border-white/5 bg-black/50">
+      <div className="vs-container">
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="mb-10 text-center">
+            <p className="vs-section-heading">Quick-Start Services</p>
+            <h2 className="vs-section-title mx-auto max-w-xl text-center">
+              Not ready for a full system? Start with one thing that works.
+            </h2>
+            <p className="mt-3 mx-auto max-w-lg text-sm text-textMuted">
+              These standalone services are entry points — quick wins that deliver value immediately and can slot into a
+              full system when you're ready.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+            {services.map((svc, i) => (
+              <motion.div
+                key={svc.name}
+                className="vs-card vs-card-hover border border-white/10 flex flex-col"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: i * 0.1 }}
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="mt-0.5 flex-shrink-0">{svc.icon}</div>
+                  <div>
+                    <h3 className="text-base font-medium text-white">{svc.name}</h3>
+                    <span className="text-[10px] text-textMuted/60 uppercase tracking-wider">{svc.tag}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-textMuted/90 leading-relaxed flex-1">{svc.body}</p>
+                <a
+                  href="#blueprint"
+                  className="mt-6 inline-flex w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs text-white hover:bg-white/10 transition"
+                >
+                  {svc.cta} →
+                </a>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 function PackagesSection() {
   const packages = [
     {
@@ -1148,7 +1232,7 @@ function PackagesSection() {
       description: "A complete system designed to not only get leads but capture them, manage them, and follow up fast.",
       features: [
         "Everything in The Foundation",
-        "Google My Business Setup",
+        "Google My Business Setup & Optimisation — so you show up when local buyers search",
         "Automated WhatsApp Follow-Up (Within 5 minutes)",
         "Basic CRM Pipeline (Track every lead)",
         "Calendar Integration (Clients book themselves)",

@@ -28,14 +28,25 @@ function tomorrowIsoDate() {
 
 function buildIntakeChallenges(payload: BlueprintSubmit): string[] {
   if (payload.challenges && payload.challenges.length > 0) return payload.challenges;
+  const p = payload as unknown as Record<string, unknown>;
   const items: string[] = [];
+  // Path A (LEADS)
   if (payload.enquiryVolume) items.push(`Enquiry volume: ${payload.enquiryVolume}`);
   if (payload.followUpMethod) items.push(`Follow-up method: ${payload.followUpMethod}`);
   if (payload.missedCallHandling) items.push(`Missed calls: ${payload.missedCallHandling}`);
+  // Path B (PRESENCE)
   if (payload.currentWebsiteStatus) items.push(`Website status: ${payload.currentWebsiteStatus}`);
   if (payload.googleMapsStatus) items.push(`Google Maps presence: ${payload.googleMapsStatus}`);
-  if (payload.websiteGoal) items.push(`Website goal: ${payload.websiteGoal}`);
-  if (payload.biggestTimeWaste) items.push(`Biggest time waste: ${payload.biggestTimeWaste}`);
+  if (payload.websiteGoal?.length) items.push(`Website goal: ${payload.websiteGoal.join(", ")}`);
+  if (p.serveArea) items.push(`Serve area: ${p.serveArea}`);
+  // Path C (AUTOMATION)
+  if (payload.biggestTimeWaste?.length) items.push(`Biggest time waste: ${payload.biggestTimeWaste.join(", ")}`);
+  if (p.teamSize) items.push(`Team size: ${p.teamSize}`);
+  // Path D (EXPLORE)
+  if (p.biggestFrustration) items.push(`Biggest frustration: ${p.biggestFrustration}`);
+  if (p.packagePreference) items.push(`Package preference: ${p.packagePreference}`);
+  // Shared
+  if (p.clientAcquisition) items.push(`Client acquisition: ${p.clientAcquisition}`);
   if (payload.existingCrmStatus) items.push(`Current CRM/system: ${payload.existingCrmStatus}`);
   return items;
 }

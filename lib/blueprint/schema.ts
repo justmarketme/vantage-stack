@@ -11,7 +11,6 @@ function normalizePhone(input: string) {
 export function isValidWhatsapp(input: string): boolean {
   const norm = normalizePhone(input);
   const digits = norm.replace(/[^\d]/g, "");
-  // E.164 allows up to 15 digits; WhatsApp numbers are typically >= 8 digits.
   return digits.length >= 8 && digits.length <= 15;
 }
 
@@ -79,21 +78,65 @@ export function splitListish(v: string): string[] {
 }
 
 export const BlueprintSubmitSchema = z.object({
-  clientName: z.string().trim().min(1, "Client name is required."),
+  // ── Step 1 ──────────────────────────────────────────────────────
+  clientName: z.string().trim().min(1, "Name is required."),
   email: z.string().trim().toLowerCase().email("Please enter a valid email address."),
   whatsapp: z
     .string()
     .trim()
     .min(1, "WhatsApp number is required.")
     .refine(isValidWhatsapp, "Please enter a valid WhatsApp number (include country code if possible)."),
+  industry: z.string().trim().min(1, "Industry is required."),
+  revenueRange: z.string().trim().min(1, "Revenue range is required."),
+
+  // Branch trigger — LEADS | PRESENCE | AUTOMATION | EXPLORE
+  primaryIntent: z.string().trim().optional(),
+
+  // ── Step 2 Path A (LEADS) ────────────────────────────────────────
+  enquiryVolume: z.string().trim().optional(),
+  followUpMethod: z.string().trim().optional(),
+  missedCallHandling: z.string().trim().optional(),
+
+  // ── Step 2 Path B (PRESENCE) ─────────────────────────────────────
+  currentWebsiteStatus: z.string().trim().optional(),
+  googleMapsStatus: z.string().trim().optional(),
+  // Multi-select: what visitors should do
+  websiteGoal: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
+  serveArea: z.string().trim().optional(),
+
+  // ── Step 2 Path C (AUTOMATION) ───────────────────────────────────
+  // Multi-select (max 2): biggest time drains
+  biggestTimeWaste: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
+  toolsUsed: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
+  teamSize: z.string().trim().optional(),
+
+  // ── Step 2 Path D (EXPLORE) ──────────────────────────────────────
+  biggestFrustration: z.string().trim().optional(),
+  packagePreference: z.string().trim().optional(),
+
+  // ── Shared across paths ──────────────────────────────────────────
+  clientAcquisition: z.string().trim().optional(),
+  monthlyBudget: z.string().trim().optional(),
+
+  // ── Step 3 (Contact) ─────────────────────────────────────────────
   websiteUrl: z
     .string()
     .trim()
     .optional()
     .transform((v) => v ?? "")
     .refine((v) => (v ? Boolean(normalizeWebsiteUrl(v)) : true), "Please enter a valid website URL (or leave blank)."),
-  industry: z.string().trim().min(1, "Industry / niche is required."),
-  revenueRange: z.string().trim().min(1, "Revenue range is required."),
+  preferredContactTime: z.string().trim().optional(),
+
+  // ── Detailed mode / CRM fields (kept for backward compat) ────────
   challenges: z
     .union([z.array(z.string()), z.string()])
     .optional()
@@ -102,24 +145,12 @@ export const BlueprintSubmitSchema = z.object({
     .union([z.array(z.string()), z.string()])
     .optional()
     .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
-  currentMarketing: z.string().trim().min(1, "Please describe how you currently get clients."),
-  toolsUsed: z
-    .union([z.array(z.string()), z.string()])
-    .optional()
-    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
-  monthlyBudget: z.string().trim().optional(),
+  currentMarketing: z.string().trim().optional().default(""),
   packageIntent: z.string().trim().optional(),
   successGoals: z.string().trim().optional(),
-  primaryIntent: z.string().trim().optional(),
-  enquiryVolume: z.string().trim().optional(),
-  followUpMethod: z.string().trim().optional(),
-  missedCallHandling: z.string().trim().optional(),
-  currentWebsiteStatus: z.string().trim().optional(),
-  googleMapsStatus: z.string().trim().optional(),
-  websiteGoal: z.string().trim().optional(),
-  biggestTimeWaste: z.string().trim().optional(),
   existingCrmStatus: z.string().trim().optional(),
-  preferredContactTime: z.string().trim().optional(),
+
+  // Social media
   socialInstagram: z.string().trim().optional().default(""),
   socialTiktok: z.string().trim().optional().default(""),
   socialFacebook: z.string().trim().optional().default(""),
@@ -128,4 +159,3 @@ export const BlueprintSubmitSchema = z.object({
 });
 
 export type BlueprintSubmit = z.infer<typeof BlueprintSubmitSchema>;
-

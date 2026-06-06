@@ -6,7 +6,69 @@ import { Footer } from "../components/layout/Footer";
 import { BlueprintFlow } from "../components/blueprint/BlueprintFlow";
 import { AnimatePresence, motion } from "framer-motion";
 import { ProblemVisual, SolutionVisual, RevenueSystemVisual, SouthAfricaVisual } from "../components/home/SectionVisuals";
-import { Check } from "lucide-react";
+import { Check, Calendar } from "lucide-react";
+
+// ─── Cal.com booking link ─────────────────────────────────────────────────────
+// 1. Sign up free at https://cal.com/signup
+// Cal.com booking link — configured at cal.com/vantagestack/discovery-call
+const CAL_LINK = "vantagestack/discovery-call";
+
+// Loads the Cal.com popup embed script once and initialises the namespace
+function useCalEmbed() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const win = window as any;
+    if (win.Cal?.loaded) return; // already loaded
+    (function (C: any, A: string, L: string) {
+      const p = (a: any, ar: any) => { a.q.push(ar); };
+      const d = C.document;
+      C.Cal = C.Cal || function (...args: any[]) {
+        const cal = C.Cal;
+        if (!cal.loaded) {
+          cal.ns = {};
+          cal.q = cal.q || [];
+          const s = d.createElement("script");
+          s.src = A;
+          d.head.appendChild(s);
+          cal.loaded = true;
+        }
+        if (args[0] === L) {
+          const api: any = (...a: any[]) => { p(api, a); };
+          const ns = args[1];
+          api.q = api.q || [];
+          if (typeof ns === "string") {
+            cal.ns[ns] = cal.ns[ns] || api;
+            p(cal.ns[ns], args);
+            p(cal, ["-queue", ns]);
+          } else { p(cal, args); }
+          return;
+        }
+        p(cal, args);
+      };
+    })(win, "https://app.cal.com/embed/embed.js", "init");
+    win.Cal("init", "discovery", { origin: "https://app.cal.com" });
+  }, []);
+}
+
+interface BookCallButtonProps {
+  className?: string;
+  label?: string;
+}
+
+function BookCallButton({ className = "", label = "Book a Discovery Call" }: BookCallButtonProps) {
+  useCalEmbed();
+  return (
+    <button
+      data-cal-namespace="discovery"
+      data-cal-link={CAL_LINK}
+      data-cal-config='{"layout":"popup"}'
+      className={className}
+    >
+      <Calendar size={14} className="inline-block mr-1.5 -mt-0.5" />
+      {label}
+    </button>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -110,10 +172,20 @@ function HeroSection() {
               >
                 Get Your Growth Optimization Blueprint
               </a>
-              <button className="vs-button-ghost text-sm">
-                Explore the VantageStack system
-              </button>
+              <BookCallButton className="vs-button-ghost text-sm" />
             </div>
+            <p className="text-[10px] text-textMuted/50">
+              Prefer to talk first?{" "}
+              <button
+                data-cal-namespace="discovery"
+                data-cal-link={CAL_LINK}
+                data-cal-config='{"layout":"popup"}'
+                className="underline underline-offset-2 hover:text-textMuted transition-colors"
+              >
+                Book a free 20-min discovery call
+              </button>{" "}
+              — Teams, WhatsApp or phone, your choice.
+            </p>
             <p className="max-w-md text-[11px] text-textMuted">
               Used by growing South African businesses to capture more leads.
             </p>
@@ -1010,9 +1082,19 @@ function FinalCtaSection() {
           <p className="mx-auto mb-6 max-w-sm text-xs text-textMuted/60">
             Takes less than 5 minutes. Free. No obligation.
           </p>
-          <a href="#blueprint" className="vs-button-primary text-sm">
-            Complete Your Free Blueprint Now
-          </a>
+          <div className="flex flex-col items-center gap-3">
+            <a href="#blueprint" className="vs-button-primary text-sm">
+              Complete Your Free Blueprint Now
+            </a>
+            <p className="text-xs text-textMuted/50">
+              or{" "}
+              <BookCallButton
+                className="underline underline-offset-2 text-xs text-textMuted/70 hover:text-textMuted transition-colors"
+                label="book a free discovery call"
+              />{" "}
+              — Teams, WhatsApp or phone
+            </p>
+          </div>
         </motion.div>
       </div>
     </section>
@@ -1334,3 +1416,4 @@ function PackagesSection() {
     </section>
   );
 }
+                                   

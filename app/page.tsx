@@ -1378,60 +1378,6 @@ function PackagesSection() {
     },
   ];
 
-  function PackageCard({
-    pkg,
-    priceLabel,
-  }: {
-    pkg: (typeof systemPackages)[0];
-    priceLabel?: string;
-  }) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ duration: 0.5 }}
-        className={`relative flex flex-col rounded-3xl border ${
-          pkg.popular ? "border-sky-500/50 bg-sky-950/20" : "border-white/10 bg-white/[0.02]"
-        } p-6 sm:p-8`}
-      >
-        {pkg.popular && (
-          <div className="absolute -top-4 left-0 right-0 flex justify-center">
-            <div className="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
-              Most Popular
-            </div>
-          </div>
-        )}
-        <div className="mb-6">
-          <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
-          <div className="mt-4 flex items-baseline text-white gap-1">
-            <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
-            <span className="text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
-          </div>
-          <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
-        </div>
-        <ul className="mb-8 flex-1 space-y-4">
-          {pkg.features.map((feature) => (
-            <li key={feature} className="flex items-start">
-              <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-sky-400" : "text-emerald-400"}`} />
-              <span className="text-sm text-textMuted/90">{feature}</span>
-            </li>
-          ))}
-        </ul>
-        <a
-          href="#blueprint"
-          className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
-            pkg.popular
-              ? "bg-sky-500 text-black hover:bg-sky-400"
-              : "bg-white/10 text-white hover:bg-white/20"
-          }`}
-        >
-          Get Your Free Blueprint
-        </a>
-      </motion.div>
-    );
-  }
-
   return (
     <section id="pricing" className="vs-section border-t border-white/5 bg-black">
       <div className="vs-container">

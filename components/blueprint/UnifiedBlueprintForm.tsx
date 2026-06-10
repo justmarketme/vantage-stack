@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { BlueprintSubmitSchema, normalizeWebsiteUrl, parseMonthlyBudgetToInt } from "../../lib/blueprint/schema";
 import { FormField } from "../ui/FormField";
 import { ProgressBar } from "../ui/ProgressBar";
-import { getCompetitorSuggestions } from "../../lib/crm/industry-data";
+import { getCompetitorSuggestions, getIndustryData } from "../../lib/crm/industry-data";
 
 export type BlueprintMode = "quick" | "detailed";
 
@@ -14,21 +14,29 @@ type QuickFormState = {
   // Step 1
   clientName: string;
   industry: string;
+  subNiche: string;
+  industryCustomDescription: string;
+  websiteExists: string;
   revenueRange: string;
   primaryIntent: string; // LEADS | PRESENCE | AUTOMATION | EXPLORE
+  previousVendorExpArr: string[]; // multi-select
   // Step 2 Path A
   enquiryVolume: string;
   followUpMethod: string;
   missedCallHandling: string;
+  conversionRate: string;
+  speedToContact: string;
   // Step 2 Path B
   currentWebsiteStatus: string;
   googleMapsStatus: string;
   websiteGoalArr: string[]; // multi-select
   serveArea: string;
+  siteConversionStatus: string;
   // Step 2 Path C
   biggestTimeWasteArr: string[]; // multi-select max 2
   toolsUsedArr: string[]; // multi-select
   teamSize: string;
+  hoursLostPerWeek: string;
   // Step 2 Path D
   biggestFrustration: string;
   packagePreference: string;
@@ -40,23 +48,33 @@ type QuickFormState = {
   whatsapp: string;
   websiteUrl: string;
   preferredContactTime: string;
+  urgencyTimeline: string;
+  primarySocialHandle: string;
 };
 
 const quickInitial: QuickFormState = {
   clientName: "",
   industry: "",
+  subNiche: "",
+  industryCustomDescription: "",
+  websiteExists: "",
   revenueRange: "",
   primaryIntent: "",
+  previousVendorExpArr: [],
   enquiryVolume: "",
   followUpMethod: "",
   missedCallHandling: "",
+  conversionRate: "",
+  speedToContact: "",
   currentWebsiteStatus: "",
   googleMapsStatus: "",
   websiteGoalArr: [],
   serveArea: "",
+  siteConversionStatus: "",
   biggestTimeWasteArr: [],
   toolsUsedArr: [],
   teamSize: "",
+  hoursLostPerWeek: "",
   biggestFrustration: "",
   packagePreference: "",
   clientAcquisition: "",
@@ -65,6 +83,8 @@ const quickInitial: QuickFormState = {
   whatsapp: "",
   websiteUrl: "",
   preferredContactTime: "",
+  urgencyTimeline: "",
+  primarySocialHandle: "",
 };
 
 // ─── Detailed-mode form state (CRM manual entry — unchanged structure) ────────
@@ -244,7 +264,7 @@ function QuickForm() {
   }
 
   function toggleMulti(
-    key: "websiteGoalArr" | "biggestTimeWasteArr" | "toolsUsedArr",
+    key: "websiteGoalArr" | "biggestTimeWasteArr" | "toolsUsedArr" | "previousVendorExpArr",
     val: string,
     maxItems?: number,
   ) {
@@ -261,6 +281,9 @@ function QuickForm() {
     const errs: Record<string, string> = {};
     if (!form.clientName.trim()) errs.clientName = "Name is required.";
     if (!form.industry) errs.industry = "Please select your industry.";
+    if (form.industry === "Other" && !form.industryCustomDescription.trim())
+      errs.industryCustomDescription = "Please describe your industry.";
+    if (!form.websiteExists) errs.websiteExists = "Please select an option.";
     if (!form.revenueRange) errs.revenueRange = "Please select your revenue range.";
     if (!form.primaryIntent) errs.primaryIntent = "Please pick an option so we can tailor the next questions.";
     setErrors(errs);
@@ -274,9 +297,8 @@ function QuickForm() {
       if (!form.enquiryVolume) errs.enquiryVolume = "Please select an option.";
       if (!form.followUpMethod) errs.followUpMethod = "Please select an option.";
       if (!form.missedCallHandling) errs.missedCallHandling = "Please select an option.";
-      if (!form.clientAcquisition) errs.clientAcquisition = "Please select an option.";
     } else if (intent === "PRESENCE") {
-      if (!form.currentWebsiteStatus) errs.currentWebsiteStatus = "Please select an option.";
+      // currentWebsiteStatus is derived from websiteExists — no separate validation needed
       if (!form.googleMapsStatus) errs.googleMapsStatus = "Please select an option.";
       if (form.websiteGoalArr.length === 0) errs.websiteGoalArr = "Please select at least one option.";
       if (!form.serveArea) errs.serveArea = "Please select an option.";
@@ -284,9 +306,7 @@ function QuickForm() {
     } else if (intent === "AUTOMATION") {
       if (form.biggestTimeWasteArr.length === 0) errs.biggestTimeWasteArr = "Please select at least one option.";
       if (form.toolsUsedArr.length === 0) errs.toolsUsedArr = "Please select at least one option.";
-      if (!form.currentWebsiteStatus) errs.currentWebsiteStatus = "Please select an option.";
       if (!form.teamSize) errs.teamSize = "Please select an option.";
-      if (!form.clientAcquisition) errs.clientAcquisition = "Please select an option.";
     } else if (intent === "EXPLORE") {
       if (!form.biggestFrustration) errs.biggestFrustration = "Please select an option.";
     }
@@ -323,23 +343,39 @@ function QuickForm() {
         whatsapp: form.whatsapp.trim(),
         websiteUrl: form.websiteUrl.trim(),
         industry: form.industry,
+        subNiche: form.subNiche,
+        industryCustomDescription: form.industryCustomDescription,
+        websiteExists: form.websiteExists,
         revenueRange: form.revenueRange,
         primaryIntent: intent,
+        previousVendorExp: form.previousVendorExpArr,
         enquiryVolume: form.enquiryVolume,
         followUpMethod: form.followUpMethod,
         missedCallHandling: form.missedCallHandling,
-        currentWebsiteStatus: form.currentWebsiteStatus,
+        conversionRate: form.conversionRate,
+        speedToContact: form.speedToContact,
+        currentWebsiteStatus: form.websiteExists === "Yes — it's live"
+          ? form.currentWebsiteStatus
+          : form.websiteExists === "No — I need one built"
+            ? "No — I need one built from scratch"
+            : form.websiteExists === "In progress / being built"
+              ? "In progress / being built"
+              : form.currentWebsiteStatus,
         googleMapsStatus: form.googleMapsStatus,
         websiteGoal: form.websiteGoalArr,
         serveArea: form.serveArea,
+        siteConversionStatus: form.siteConversionStatus,
         biggestTimeWaste: form.biggestTimeWasteArr,
         toolsUsed: form.toolsUsedArr,
         teamSize: form.teamSize,
+        hoursLostPerWeek: form.hoursLostPerWeek,
         biggestFrustration: form.biggestFrustration,
         packagePreference: form.packagePreference,
         clientAcquisition: form.clientAcquisition,
         monthlyBudget: form.monthlyBudget,
         preferredContactTime: form.preferredContactTime,
+        urgencyTimeline: form.urgencyTimeline,
+        primarySocialHandle: form.primarySocialHandle,
         currentMarketing: form.clientAcquisition, // backward compat with CRM
       };
 
@@ -448,7 +484,11 @@ function QuickForm() {
               <select
                 className="vs-input"
                 value={form.industry}
-                onChange={(e) => setField("industry", e.target.value)}
+                onChange={(e) => {
+                  setField("industry", e.target.value);
+                  setField("subNiche", "");
+                  setField("industryCustomDescription", "");
+                }}
               >
                 <option value="">Select an option</option>
                 {[
@@ -459,6 +499,61 @@ function QuickForm() {
               </select>
               {errors.industry && <p className="text-xs text-red-300">{errors.industry}</p>}
             </div>
+
+            {/* Sub-niche (conditional on industry selection) */}
+            {form.industry === "Other" && (
+              <div className="space-y-2">
+                <label className="block text-sm text-textPrimary/90">
+                  Describe your industry or type of business <span className="text-accent">*</span>
+                </label>
+                <input
+                  className="vs-input"
+                  type="text"
+                  maxLength={100}
+                  placeholder="e.g. pet grooming, solar installations, vintage clothing"
+                  value={form.industryCustomDescription}
+                  onChange={(e) => setField("industryCustomDescription", e.target.value)}
+                />
+                {errors.industryCustomDescription && (
+                  <p className="text-xs text-red-300">{errors.industryCustomDescription}</p>
+                )}
+              </div>
+            )}
+            {form.industry && form.industry !== "Other" && (() => {
+              const subNiches = getIndustryData(form.industry).subNiches;
+              return subNiches.length > 0 ? (
+                <div className="space-y-2">
+                  <label className="block text-sm text-textPrimary/90">
+                    Which best describes your area of focus? <span className="text-textMuted/60">(optional)</span>
+                  </label>
+                  <div className="grid gap-2">
+                    {subNiches.map((sn) => (
+                      <TapCard
+                        key={sn}
+                        value={sn}
+                        label={sn}
+                        selected={form.subNiche === sn}
+                        onClick={() => setField("subNiche", form.subNiche === sn ? "" : sn)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Website existence — shared question before intent */}
+            <TapCardGroup
+              label="Do you currently have a website?"
+              required
+              value={form.websiteExists}
+              onChange={(v) => setField("websiteExists", v)}
+              error={errors.websiteExists}
+              options={[
+                "Yes — it's live",
+                "In progress / being built",
+                "No — I need one built",
+              ]}
+            />
 
             {/* Revenue range */}
             <div className="space-y-2">
@@ -508,6 +603,36 @@ function QuickForm() {
               </div>
               {errors.primaryIntent && <p className="text-xs text-red-300">{errors.primaryIntent}</p>}
             </div>
+
+            {/* Previous vendor experience — after intent selection */}
+            {form.primaryIntent && (
+              <div className="space-y-2">
+                <label className="block text-sm text-textPrimary/90">
+                  Have you worked with any of these before to grow your business?{" "}
+                  <span className="text-textMuted/60">(optional)</span>
+                </label>
+                <p className="text-xs text-textMuted/60">Select all that apply.</p>
+                <div className="grid gap-2">
+                  {[
+                    "Digital marketing or SEO agency",
+                    "Web design or development studio",
+                    "Social media manager",
+                    "CRM or automation consultant",
+                    "AI solutions or tech solutions provider",
+                    "Business or growth consultant",
+                    "None yet — first time exploring this",
+                  ].map((opt) => (
+                    <MultiCard
+                      key={opt}
+                      value={opt}
+                      label={opt}
+                      selected={form.previousVendorExpArr.includes(opt)}
+                      onClick={() => toggleMulti("previousVendorExpArr", opt)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -552,14 +677,23 @@ function QuickForm() {
               ]}
             />
             <TapCardGroup
-              label="Where do most of your clients come from?"
-              required
-              value={form.clientAcquisition}
-              onChange={(v) => setField("clientAcquisition", v)}
-              error={errors.clientAcquisition}
+              label="Of every 10 enquiries you get, roughly how many become paying clients?"
+              required={false}
+              value={form.conversionRate}
+              onChange={(v) => setField("conversionRate", v)}
+              options={["1–2", "3–4", "5–6", "7 or more", "I don't track this"]}
+            />
+            <TapCardGroup
+              label="How quickly do you typically respond to a new enquiry?"
+              required={false}
+              value={form.speedToContact}
+              onChange={(v) => setField("speedToContact", v)}
               options={[
-                "Referrals / word of mouth","Google Ads","Meta Ads (Facebook/Instagram)",
-                "Organic social media","SEO / Google search","Outbound / cold outreach","Other",
+                "Within 5 minutes",
+                "Within the hour",
+                "Same day",
+                "It varies",
+                "Next day or later",
               ]}
             />
             {/* Budget optional */}
@@ -582,19 +716,21 @@ function QuickForm() {
         {/* ── STEP 2 PATH B: PRESENCE ── */}
         {step === 1 && form.primaryIntent === "PRESENCE" && (
           <>
-            <TapCardGroup
-              label="Do you currently have a website?"
-              required
-              value={form.currentWebsiteStatus}
-              onChange={(v) => setField("currentWebsiteStatus", v)}
-              error={errors.currentWebsiteStatus}
-              options={[
-                "Yes — but it's outdated or not working well",
-                "Yes — and it works fine",
-                "No — I need one built from scratch",
-                "I have a social media page but no website",
-              ]}
-            />
+            {/* Only ask about website quality if they said they have one in Step 1 */}
+            {form.websiteExists === "Yes — it's live" && (
+              <TapCardGroup
+                label="How is your current website performing?"
+                required
+                value={form.currentWebsiteStatus}
+                onChange={(v) => setField("currentWebsiteStatus", v)}
+                error={errors.currentWebsiteStatus}
+                options={[
+                  "It's outdated or not working well",
+                  "It works fine but could be better",
+                  "It works great — I just want more visibility",
+                ]}
+              />
+            )}
             <TapCardGroup
               label="Are you on Google Maps? (Google Business Profile)"
               required
@@ -653,6 +789,20 @@ function QuickForm() {
                 "Google Ads / Meta Ads","I'm not sure — I don't track it",
               ]}
             />
+            {form.websiteExists === "Yes — it's live" && (
+              <TapCardGroup
+                label="Are you currently getting enquiries through your website?"
+                required={false}
+                value={form.siteConversionStatus}
+                onChange={(v) => setField("siteConversionStatus", v)}
+                options={[
+                  "Yes, regularly",
+                  "Occasionally",
+                  "Rarely or never",
+                  "No idea — I don't track it",
+                ]}
+              />
+            )}
           </>
         )}
 
@@ -715,14 +865,6 @@ function QuickForm() {
               {errors.toolsUsedArr && <p className="text-xs text-red-300">{errors.toolsUsedArr}</p>}
             </div>
             <TapCardGroup
-              label="Do you have an existing website?"
-              required
-              value={form.currentWebsiteStatus}
-              onChange={(v) => setField("currentWebsiteStatus", v)}
-              error={errors.currentWebsiteStatus}
-              options={["Yes","No","In progress"]}
-            />
-            <TapCardGroup
               label="How many people handle client enquiries at your business?"
               required
               value={form.teamSize}
@@ -731,15 +873,11 @@ function QuickForm() {
               options={["Just me","2 – 5 people","6 – 15 people","More than 15"]}
             />
             <TapCardGroup
-              label="Where do most clients come from?"
-              required
-              value={form.clientAcquisition}
-              onChange={(v) => setField("clientAcquisition", v)}
-              error={errors.clientAcquisition}
-              options={[
-                "Referrals / word of mouth","Google Ads","Meta Ads (Facebook/Instagram)",
-                "Organic social media","SEO / Google search","Outbound / cold outreach","Other",
-              ]}
+              label="Roughly how many hours per week does your team lose to these tasks?"
+              required={false}
+              value={form.hoursLostPerWeek}
+              onChange={(v) => setField("hoursLostPerWeek", v)}
+              options={["1–3 hrs", "3–6 hrs", "6–10 hrs", "10+ hours"]}
             />
           </>
         )}
@@ -767,9 +905,9 @@ function QuickForm() {
               value={form.packagePreference}
               onChange={(v) => setField("packagePreference", v)}
               options={[
-                "The Foundation (website + lead capture)",
-                "The Growth System (leads + follow-up automation)",
-                "The Revenue System (full AI-assisted system)",
+                "Starter System (AI call handler + CRM + follow-up)",
+                "Growth System (full website + multi-channel automation)",
+                "Revenue System (full AI build — calls, CRM, 3 buyer flows)",
                 "Not sure — recommend one for me",
               ]}
             />
@@ -824,6 +962,26 @@ function QuickForm() {
               options={[
                 "Morning (8am – 12pm)","Afternoon (12pm – 5pm)","Evening (after 5pm)","Anytime is fine",
               ]}
+            />
+            <TapCardGroup
+              label="When are you looking to get started?"
+              required={false}
+              value={form.urgencyTimeline}
+              onChange={(v) => setField("urgencyTimeline", v)}
+              options={[
+                "ASAP — I need this now",
+                "Within the next month",
+                "Just exploring for now",
+              ]}
+            />
+            <FormField
+              kind="input"
+              label="Social Profile (optional)"
+              required={false}
+              value={form.primarySocialHandle}
+              onChange={(v) => setField("primarySocialHandle", v)}
+              placeholder="@yourbusiness or paste a profile link"
+              hint="Your most active social media profile."
             />
           </>
         )}
@@ -951,9 +1109,9 @@ const detailedSelectPresets: Partial<Record<DetailedFieldKey, string[]>> = {
 };
 
 const packageOptions = [
-  { value: "Foundation", label: "The Foundation" },
-  { value: "Growth", label: "The Growth System" },
-  { value: "Revenue", label: "The Revenue System" },
+  { value: "Starter", label: "Starter System" },
+  { value: "Growth", label: "Growth System" },
+  { value: "Revenue", label: "Revenue System™" },
 ];
 
 const textareaTemplates: Partial<Record<DetailedFieldKey, string[]>> = {

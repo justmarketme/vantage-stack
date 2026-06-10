@@ -114,11 +114,35 @@ VantageStack is built with South African realities in mind: bandwidth, buying cy
 
 ---
 
+## Pricing
+
+VantageStack uses a two-step pricing model: a once-off setup fee to build the system, then a monthly support plan to keep it performing.
+
+### System Setup (once-off)
+- **Starter System — R19,500**: AI call handler, CRM pipeline, 3-touch follow-up automation, lead qualification flow, analytics dashboard. Best for solo operators and single-location businesses.
+- **Growth System — R32,500**: Everything in Starter, plus a full 5-page conversion-optimised website, multi-channel lead capture, advanced 8+ touchpoint automation, and appointment scheduling. Best for established SMBs with 2–10 employees.
+- **Revenue System™ — R49,500**: Everything in Growth, plus up to 3 custom buyer journey flows, full team CRM, multi-channel AI routing, automated weekly reports, and brand enrichment. Best for growing teams and businesses already investing in marketing.
+
+### Monthly Support (ongoing, after setup)
+- **Maintenance — R3,500/month**: System uptime, 4 support tickets/month, monthly automated report, platform updates.
+- **Growth Partner — R7,500/month**: Everything in Maintenance, plus monthly strategy call, A/B testing, 2 automation refinements/month, 1 new landing page/month.
+- **Revenue Partner — R14,500/month**: Everything in Growth Partner, plus weekly check-ins, outbound campaign setup, full funnel analytics, priority same-day support, quarterly roadmap.
+
+### Standalone Add-Ons
+- AI Call Assistant only: R2,500/month
+- Additional automation flow: R2,500 once-off
+- Extra landing page: R1,500 once-off
+- WhatsApp Business API setup: R3,500 once-off
+
+The Growth Blueprint is completely free — no obligation, no charge.
+
+---
+
 ## Next Step
 
-Start with your Growth Optimization Blueprint. We audit your current systems and show you the clearest path to more predictable revenue.
+Start with your free Growth Optimization Blueprint. We audit your current systems and show you the clearest path to more predictable revenue. No cost, no commitment.
 
-**Primary CTA:** Get Your Growth Optimization Blueprint
+**Primary CTA:** Get Your Free Growth Optimization Blueprint
 
 ---
 

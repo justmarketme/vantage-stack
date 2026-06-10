@@ -1115,7 +1115,7 @@ function FaqSection() {
     },
     {
       q: "How much does this cost? Can a small South African business actually afford it?",
-      a: "VantageStack is built for SMBs — not corporates. You pay a predictable monthly fee, no surprise invoices. Most clients recover the cost within 60–90 days from just a handful of extra jobs that would have otherwise slipped through. Think of it as hiring a salesperson for a fraction of the cost.",
+      a: "VantageStack is built for SMBs — not corporates. You pay a once-off setup fee to have your Revenue System built (starting at R19,500), then choose a monthly support plan from R3,500/month to keep it performing and improving. Most clients recover the setup cost within 60–90 days from just a handful of extra jobs that would have otherwise slipped through. Think of it as hiring a salesperson for a fraction of the cost — one that never calls in sick.",
     },
     {
       q: "What is an AI call assistant — and will it sound robotic to my customers?",
@@ -1291,54 +1291,146 @@ function QuickStartSection() {
 }
 
 function PackagesSection() {
-  const packages = [
+  const systemPackages = [
     {
-      name: "The Foundation",
-      price: "R2,500",
-      priceDetail: "/month",
-      description: "Everything a growing local business needs to establish a professional, lead-generating presence online.",
+      name: "Starter System",
+      price: "R19,500",
+      priceDetail: "once-off setup",
+      description: "Everything a solo operator or single-location service business needs to go live and start capturing leads.",
       features: [
-        "Conversion-ready website (part of your always-on system)",
-        "Mobile-first, conversion-optimized design",
-        "Lead Capture Forms (Direct to Email/WhatsApp)",
-        "Basic SEO Setup",
-        "Lightning Fast Hosting, Security & Daily Backups",
+        "Isabel AI call handler — 24/7 inbound answering & call logging",
+        "Lead capture form + CRM pipeline (single funnel)",
+        "3-touch automated follow-up via email + WhatsApp/SMS",
+        "Industry-specific lead qualification flow",
+        "Basic analytics dashboard",
       ],
-      buttonText: "Get Your Blueprint",
     },
     {
-      name: "The Growth System",
-      price: "R4,800",
-      priceDetail: "/month",
+      name: "Growth System",
+      price: "R32,500",
+      priceDetail: "once-off setup",
       popular: true,
-      description: "A complete system designed to not only get leads but capture them, manage them, and follow up fast.",
+      description: "For established SMBs with multiple lead sources who want a complete, connected revenue machine.",
       features: [
-        "Everything in The Foundation",
-        "Google My Business Setup & Optimisation — so you show up when local buyers search",
-        "Automated WhatsApp Follow-Up (Within 5 minutes)",
-        "Basic CRM Pipeline (Track every lead)",
-        "Calendar Integration (Clients book themselves)",
-        "Quarterly Performance Review",
+        "Everything in Starter System",
+        "Full website — 5 pages, conversion-optimised, brand-matched",
+        "Multi-channel capture: calls + forms + chat",
+        "Advanced automation — 8+ touchpoints with branching logic",
+        "Appointment scheduling integration (clients book themselves)",
       ],
-      buttonText: "Get Your Blueprint",
     },
     {
-      name: "The Revenue System™",
-      price: "R8,500",
-      priceDetail: "/month",
-      description: "Our flagship AI-driven system. Perfect for established South African businesses looking to scale operations.",
+      name: "Revenue System™",
+      price: "R49,500",
+      priceDetail: "once-off setup",
+      description: "Our flagship build. For growing teams, agencies, and businesses already spending on marketing.",
       features: [
-        "Everything in The Growth System",
-        "Advanced SEO & Local Search Ranking",
-        "Custom AI Assistant (Website & WhatsApp)",
-        "AI Call Handling (Never miss a call)",
-        "Automated Nurture Sequences (Email/SMS)",
-        "Advanced Analytics & ROI Tracking",
-        "Monthly Strategic Consulting",
+        "Everything in Growth System",
+        "Up to 3 custom buyer journey flows",
+        "Full CRM with team pipeline views and assignment rules",
+        "Multi-channel AI routing — calls + WhatsApp triage",
+        "Automated weekly performance reports",
+        "Social + brand enrichment for design personalisation",
       ],
-      buttonText: "Get Your Blueprint",
     },
   ];
+
+  const supportPackages = [
+    {
+      name: "Maintenance",
+      price: "R3,500",
+      priceDetail: "/month",
+      description: "Keep the system live, monitored, and updated. Best for self-sufficient clients who just need uptime.",
+      features: [
+        "System uptime monitoring and updates",
+        "Up to 4 support tickets per month (48-hr response)",
+        "Monthly automated performance report",
+        "Platform updates as VantageStack evolves",
+      ],
+    },
+    {
+      name: "Growth Partner",
+      price: "R7,500",
+      priceDetail: "/month",
+      popular: true,
+      description: "Active monthly optimization. Best for businesses investing in improving conversion over time.",
+      features: [
+        "Everything in Maintenance",
+        "Monthly 60-min strategy + review call",
+        "A/B testing — 1 active test at a time",
+        "Up to 2 automation flow refinements per month",
+        "1 new lead capture page per month",
+      ],
+    },
+    {
+      name: "Revenue Partner",
+      price: "R14,500",
+      priceDetail: "/month",
+      description: "Full strategic partnership. For businesses serious about systematic, data-driven revenue growth.",
+      features: [
+        "Everything in Growth Partner",
+        "Weekly 30-min check-ins",
+        "1 outbound campaign setup per month",
+        "Full funnel analytics + conversion rate reporting",
+        "Priority support — same-day response",
+        "Quarterly strategy review + 90-day roadmap",
+      ],
+    },
+  ];
+
+  function PackageCard({
+    pkg,
+    priceLabel,
+  }: {
+    pkg: (typeof systemPackages)[0];
+    priceLabel?: string;
+  }) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.5 }}
+        className={`relative flex flex-col rounded-3xl border ${
+          pkg.popular ? "border-sky-500/50 bg-sky-950/20" : "border-white/10 bg-white/[0.02]"
+        } p-6 sm:p-8`}
+      >
+        {pkg.popular && (
+          <div className="absolute -top-4 left-0 right-0 flex justify-center">
+            <div className="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
+              Most Popular
+            </div>
+          </div>
+        )}
+        <div className="mb-6">
+          <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
+          <div className="mt-4 flex items-baseline text-white gap-1">
+            <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
+            <span className="text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
+          </div>
+          <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
+        </div>
+        <ul className="mb-8 flex-1 space-y-4">
+          {pkg.features.map((feature) => (
+            <li key={feature} className="flex items-start">
+              <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-sky-400" : "text-emerald-400"}`} />
+              <span className="text-sm text-textMuted/90">{feature}</span>
+            </li>
+          ))}
+        </ul>
+        <a
+          href="#blueprint"
+          className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
+            pkg.popular
+              ? "bg-sky-500 text-black hover:bg-sky-400"
+              : "bg-white/10 text-white hover:bg-white/20"
+          }`}
+        >
+          Get Your Free Blueprint
+        </a>
+      </motion.div>
+    );
+  }
 
   return (
     <section id="pricing" className="vs-section border-t border-white/5 bg-black">
@@ -1350,70 +1442,145 @@ function PackagesSection() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="mb-14 text-center">
-            <p className="vs-section-heading">The Value Ladder</p>
+            <p className="vs-section-heading">Simple, transparent pricing</p>
             <h2 className="vs-section-title mx-auto max-w-2xl text-center">
-              Simple, transparent South African pricing.
+              One setup. One monthly plan. No surprises.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm text-textMuted">
-              No hidden fees. No complicated setups. Just pick the system that fits where your business is right now.
+              You pay once to have your Revenue System built — then choose a monthly support plan to keep it performing. Start with a free Blueprint and we'll recommend the right fit.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
-            {packages.map((pkg, i) => (
-              <motion.div
-                key={pkg.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1 }}
-                transition={{ duration: 0.5, delay: i * 0.15 }}
-                className={`relative flex flex-col rounded-3xl border ${
-                  pkg.popular ? "border-sky-500/50 bg-sky-950/20" : "border-white/10 bg-white/[0.02]"
-                } p-6 sm:p-8`}
-              >
-                {pkg.popular && (
-                  <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                    <div className="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
-                  <div className="mt-4 flex items-baseline text-white">
-                    <span className="text-sm font-semibold text-textMuted mr-1">From</span>
-                    <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
-                    <span className="ml-1 text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
-                  </div>
-                  <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
-                </div>
-
-                <ul className="mb-8 flex-1 space-y-4">
-                  {pkg.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
-                      <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-sky-400" : "text-emerald-400"}`} />
-                      <span className="text-sm text-textMuted/90">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href="#blueprint"
-                  className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
-                    pkg.popular
-                      ? "bg-sky-500 text-black hover:bg-sky-400"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
+          {/* System setup packages */}
+          <div className="mb-6">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-textMuted/60 mb-6 text-center">Step 1 — Build your system (once-off)</p>
+            <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
+              {systemPackages.map((pkg, i) => (
+                <motion.div
+                  key={pkg.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.5, delay: i * 0.12 }}
+                  className={`relative flex flex-col rounded-3xl border ${
+                    pkg.popular ? "border-sky-500/50 bg-sky-950/20" : "border-white/10 bg-white/[0.02]"
+                  } p-6 sm:p-8`}
                 >
-                  {pkg.buttonText}
-                </a>
-              </motion.div>
-            ))}
+                  {pkg.popular && (
+                    <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                      <div className="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
+                        Most Popular
+                      </div>
+                    </div>
+                  )}
+                  <div className="mb-6">
+                    <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
+                    <div className="mt-4 flex items-baseline text-white gap-1">
+                      <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
+                      <span className="text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
+                    </div>
+                    <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
+                  </div>
+                  <ul className="mb-8 flex-1 space-y-4">
+                    {pkg.features.map((feature) => (
+                      <li key={feature} className="flex items-start">
+                        <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-sky-400" : "text-emerald-400"}`} />
+                        <span className="text-sm text-textMuted/90">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href="#blueprint"
+                    className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
+                      pkg.popular
+                        ? "bg-sky-500 text-black hover:bg-sky-400"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    Get Your Free Blueprint
+                  </a>
+                </motion.div>
+              ))}
+            </div>
           </div>
+
+          {/* Divider */}
+          <div className="my-14 flex items-center gap-4">
+            <div className="flex-1 border-t border-white/8" />
+            <p className="text-[10px] uppercase tracking-[0.22em] text-textMuted/50 text-center">Then choose your monthly support plan</p>
+            <div className="flex-1 border-t border-white/8" />
+          </div>
+
+          {/* Ongoing support packages */}
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-textMuted/60 mb-6 text-center">Step 2 — Keep it performing (monthly)</p>
+            <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
+              {supportPackages.map((pkg, i) => (
+                <motion.div
+                  key={pkg.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.5, delay: i * 0.12 }}
+                  className={`relative flex flex-col rounded-3xl border ${
+                    pkg.popular ? "border-emerald-500/40 bg-emerald-950/15" : "border-white/10 bg-white/[0.02]"
+                  } p-6 sm:p-8`}
+                >
+                  {pkg.popular && (
+                    <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                      <div className="rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
+                        Most Popular
+                      </div>
+                    </div>
+                  )}
+                  <div className="mb-6">
+                    <h3 className="font-heading text-xl text-white">{pkg.name}</h3>
+                    <div className="mt-4 flex items-baseline text-white gap-1">
+                      <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
+                      <span className="text-sm font-medium text-textMuted">{pkg.priceDetail}</span>
+                    </div>
+                    <p className="mt-4 text-sm text-textMuted">{pkg.description}</p>
+                  </div>
+                  <ul className="mb-8 flex-1 space-y-4">
+                    {pkg.features.map((feature) => (
+                      <li key={feature} className="flex items-start">
+                        <Check className={`mr-3 h-5 w-5 shrink-0 ${pkg.popular ? "text-emerald-400" : "text-emerald-400"}`} />
+                        <span className="text-sm text-textMuted/90">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href="#blueprint"
+                    className={`mt-auto block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all ${
+                      pkg.popular
+                        ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                        : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    Get Your Free Blueprint
+                  </a>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Add-ons note */}
+          <div className="mt-14 rounded-2xl border border-white/8 bg-white/[0.02] p-6 text-center">
+            <p className="text-xs text-textMuted/70 mb-3">Also available as standalone add-ons</p>
+            <div className="flex flex-wrap justify-center gap-3 text-xs text-textMuted/90">
+              {[
+                "AI Call Assistant only — R2,500/month",
+                "Extra automation flow — R2,500 once-off",
+                "Additional landing page — R1,500 once-off",
+                "WhatsApp Business API setup — R3,500 once-off",
+              ].map((item) => (
+                <span key={item} className="rounded-full border border-white/10 bg-black/30 px-4 py-1.5">{item}</span>
+              ))}
+            </div>
+          </div>
+
         </motion.div>
       </div>
     </section>
   );
 }
-                                   

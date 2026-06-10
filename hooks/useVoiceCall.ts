@@ -1,12 +1,9 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
-import { UltravoxSession, UltravoxSessionStatus } from 'ultravox-client'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { useConversation } from '@elevenlabs/react'
 
 export type CallState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking' | 'ending'
-
-const ULTRAVOX_API_KEY = process.env.NEXT_PUBLIC_ULTRAVOX_API_KEY as string
-const ELEVENLABS_VOICE_ID = process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'N2lVS1w4EtoT3dr4eOWO'
 
 interface VoiceCallOptions {
   businessName?: string
@@ -16,103 +13,78 @@ interface VoiceCallOptions {
   corpusId?: string
 }
 
-async function createUltravoxCall(systemPrompt: string, corpusId?: string): Promise<string> {
-  const body: Record<string, unknown> = {
-    systemPrompt,
-    model: 'fixie-ai/ultravox',
-    voice: 'Callum',
-    voiceOverrides: {
-      elevenLabs: {
-        voiceId: ELEVENLABS_VOICE_ID,
-        model: 'eleven_turbo_v2_5',
-        stability: 0.55,
-        similarityBoost: 0.75,
-      },
-    },
-    temperature: 0.7,
-    firstSpeaker: 'FIRST_SPEAKER_AGENT',
-  }
-
-  if (corpusId) {
-    body.selectedTools = [
-      {
-        toolName: 'queryCorpus',
-        parameterOverrides: { corpus_id: corpusId, max_results: 5 },
-      },
-    ]
-  }
-
-  const res = await fetch('https://api.ultravox.ai/api/calls', {
-    method: 'POST',
-    headers: { 'X-API-Key': ULTRAVOX_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Ultravox ${res.status}: ${text}`)
-  }
-
-  const data = await res.json()
-  return data.joinUrl as string
-}
-
 export function useVoiceCall(opts: VoiceCallOptions) {
   const [callState, setCallState] = useState<CallState>('idle')
-  const sessionRef = useRef<UltravoxSession | null>(null)
+  const micStreamRef = useRef<MediaStream | null>(null)
+
+  const conversation = useConversation({
+    onError: () => { setCallState('idle') },
+    onDisconnect: () => {
+      setCallState('idle')
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop())
+        micStreamRef.current = null
+      }
+    },
+  })
+
+  // Map ElevenLabs speaking state → callState
+  useEffect(() => {
+    if (conversation.status !== 'connected') return
+    setCallState(conversation.isSpeaking ? 'speaking' : 'listening')
+  }, [conversation.isSpeaking, conversation.status])
 
   const startCall = useCallback(async () => {
-    if (callState !== 'idle' || !ULTRAVOX_API_KEY) return
+    if (callState !== 'idle') return
     setCallState('connecting')
 
-    const name = opts.businessName || 'the business'
+    const name = opts.businessName || 'this business'
     const serviceList = opts.services?.length ? opts.services.join(', ') : 'their services'
     const systemPrompt = [
-      `You are a friendly, professional AI voice sales agent for ${name}${opts.location ? ` in ${opts.location}` : ''}.`,
-      `Services offered: ${serviceList}.`,
+      `You are a friendly, professional AI voice agent for ${name}${opts.location ? ` in ${opts.location}` : ''}.`,
+      `Services: ${serviceList}.`,
       opts.pricing ? `Pricing: ${opts.pricing}.` : '',
-      opts.corpusId ? `You have access to a knowledge base about ${name}. Use the queryCorpus tool to answer specific questions accurately.` : '',
-      `You are doing a live demo call to show the business owner what their AI agent can do.`,
-      `Greet the caller warmly and ask how you can help. Keep responses short and conversational — this is a voice call.`,
-      `Offer to: answer service questions, give pricing estimates, book appointments, and handle FAQs.`,
+      `Keep responses short and conversational — this is a voice call.`,
+      `Greet the caller warmly and ask how you can help.`,
     ].filter(Boolean).join(' ')
 
     try {
-      const joinUrl = await createUltravoxCall(systemPrompt, opts.corpusId)
-      const session = new UltravoxSession()
-      sessionRef.current = session
-
-      session.addEventListener('status', () => {
-        switch (session.status) {
-          case UltravoxSessionStatus.IDLE:
-          case UltravoxSessionStatus.DISCONNECTED:
-            setCallState('idle'); break
-          case UltravoxSessionStatus.CONNECTING:
-            setCallState('connecting'); break
-          case UltravoxSessionStatus.LISTENING:
-            setCallState('listening'); break
-          case UltravoxSessionStatus.THINKING:
-            setCallState('thinking'); break
-          case UltravoxSessionStatus.SPEAKING:
-            setCallState('speaking'); break
-          case UltravoxSessionStatus.DISCONNECTING:
-            setCallState('ending'); break
-        }
+      // Get a signed URL with a business-specific prompt override
+      const res = await fetch('/api/demo-call/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemPrompt,
+          firstMessage: `Hi! I'm the AI assistant for ${name}. How can I help you today?`,
+        }),
       })
+      if (!res.ok) throw new Error(`Could not start call: ${res.status}`)
+      const { signedUrl } = await res.json()
 
-      await session.joinCall(joinUrl)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStreamRef.current = stream
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (conversation as any).startSession({ signedUrl })
     } catch (err) {
-      console.error('[Ultravox]', err)
+      console.error('[VoiceCall]', err)
       setCallState('idle')
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop())
+        micStreamRef.current = null
+      }
     }
-  }, [callState, opts])
+  }, [callState, opts, conversation])
 
   const endCall = useCallback(async () => {
     setCallState('ending')
-    try { await sessionRef.current?.leaveCall() } catch { /* ignore */ }
-    sessionRef.current = null
+    try { await conversation.endSession() } catch { /* ignore */ }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach(t => t.stop())
+      micStreamRef.current = null
+    }
     setCallState('idle')
-  }, [])
+  }, [conversation])
 
   return { callState, startCall, endCall }
 }

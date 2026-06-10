@@ -52,7 +52,18 @@ async function listClientsNeedingResearch(db: Sql, limit = 50): Promise<Research
           'toolsUsed', c.tools_used,
           'monthlyBudget', c.monthly_budget,
           'successGoals', c.success_goals,
-          'status', c.status
+          'status', c.status,
+          'sub_niche', c.sub_niche,
+          'conversion_rate', c.conversion_rate,
+          'speed_to_contact', c.speed_to_contact,
+          'urgency_timeline', c.urgency_timeline,
+          'primary_social_handle', c.primary_social_handle,
+          'previous_vendor_exp', c.previous_vendor_exp,
+          'client_acquisition', c.client_acquisition,
+          'primary_intent', c.primary_intent,
+          'serve_area', c.serve_area,
+          'team_size', c.team_size,
+          'hours_lost_per_week', c.hours_lost_per_week
         ) as metadata
       from clients c
       join reports r on r.client_id = c.id

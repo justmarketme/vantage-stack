@@ -48,7 +48,21 @@ type Props = {
   onSubmit: (values: QuestionnaireValues, meta: ClientFormSubmitMeta) => Promise<void>;
 };
 
-const industries = ["E-commerce", "Professional services", "Healthcare", "Real estate", "Construction", "Education", "Hospitality", "Other"];
+const industries = [
+  "Healthcare",
+  "Professional Services",
+  "E-Commerce",
+  "Real Estate",
+  "Construction",
+  "Education",
+  "Hospitality",
+  "Technology",
+  "Financial Services",
+  "Retail",
+  "Food & Beverage",
+  "Marketing",
+  "Other",
+];
 const revenuePresets = [
   "Under R50k/month",
   "R50k - R150k/month",

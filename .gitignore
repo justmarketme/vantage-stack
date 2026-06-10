@@ -4,5 +4,9 @@ node_modules
 .env.local
 .DS_Store
 debug-*.log
+dev.log
 .vercel
 .env*.local
+tsconfig.tsbuildinfo
+.claude/
+data/monitoring-metrics.json

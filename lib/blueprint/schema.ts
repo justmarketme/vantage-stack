@@ -92,10 +92,26 @@ export const BlueprintSubmitSchema = z.object({
   // Branch trigger — LEADS | PRESENCE | AUTOMATION | EXPLORE
   primaryIntent: z.string().trim().optional(),
 
+  // Two-tier industry
+  subNiche: z.string().trim().optional(),
+  industryCustomDescription: z.string().trim().max(100).optional(),
+  industryClassified: z.string().trim().optional(),
+
+  // Shared Step 1 question
+  websiteExists: z.string().trim().optional(),
+
+  // Vendor experience multi-select
+  previousVendorExp: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
+
   // ── Step 2 Path A (LEADS) ────────────────────────────────────────
   enquiryVolume: z.string().trim().optional(),
   followUpMethod: z.string().trim().optional(),
   missedCallHandling: z.string().trim().optional(),
+  conversionRate: z.string().trim().optional(),
+  speedToContact: z.string().trim().optional(),
 
   // ── Step 2 Path B (PRESENCE) ─────────────────────────────────────
   currentWebsiteStatus: z.string().trim().optional(),
@@ -106,6 +122,7 @@ export const BlueprintSubmitSchema = z.object({
     .optional()
     .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
   serveArea: z.string().trim().optional(),
+  siteConversionStatus: z.string().trim().optional(),
 
   // ── Step 2 Path C (AUTOMATION) ───────────────────────────────────
   // Multi-select (max 2): biggest time drains
@@ -118,6 +135,7 @@ export const BlueprintSubmitSchema = z.object({
     .optional()
     .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
   teamSize: z.string().trim().optional(),
+  hoursLostPerWeek: z.string().trim().optional(),
 
   // ── Step 2 Path D (EXPLORE) ──────────────────────────────────────
   biggestFrustration: z.string().trim().optional(),
@@ -128,6 +146,8 @@ export const BlueprintSubmitSchema = z.object({
   monthlyBudget: z.string().trim().optional(),
 
   // ── Step 3 (Contact) ─────────────────────────────────────────────
+  urgencyTimeline: z.string().trim().optional(),
+  primarySocialHandle: z.string().trim().optional(),
   websiteUrl: z
     .string()
     .trim()
@@ -145,10 +165,11 @@ export const BlueprintSubmitSchema = z.object({
     .union([z.array(z.string()), z.string()])
     .optional()
     .transform((v) => (Array.isArray(v) ? v : splitListish(v || ""))),
-  currentMarketing: z.string().trim().optional().default(""),
+  currentMarketing: z.string().trim().optional(),
   packageIntent: z.string().trim().optional(),
   successGoals: z.string().trim().optional(),
   existingCrmStatus: z.string().trim().optional(),
+  avgTransactionValue: z.string().trim().optional(),
 
   // Social media
   socialInstagram: z.string().trim().optional().default(""),

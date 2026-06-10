@@ -42,4 +42,43 @@ export type AggregatedClientContext = {
   healthScore: number | null;
   discovery: DiscoverySnapshot;
   competitorAnalysisExtra: string;
+  // Enriched fields
+  subNiche?: string | null;
+  brandContext?: {
+    primaryColor: string | null;
+    darkColor: string | null;
+    lightColor: string | null;
+    accentColor: string | null;
+    brandVoice: string | null;
+    logoUrl: string | null;
+  } | null;
+  websiteEnrichment?: {
+    pageSpeedMobile?: number | null;
+    pageSpeedDesktop?: number | null;
+    techStack?: string[] | null;
+    seoSignals?: Record<string, unknown> | null;
+    ogTitle?: string | null;
+    description?: string | null;
+  } | null;
+  socialInsights?: {
+    instagram?: { followers?: number | null; engagementRate?: number | null; contentThemes?: string[] | null } | null;
+    tiktok?: { followers?: number | null } | null;
+    facebook?: { likes?: number | null } | null;
+  } | null;
+  conversionRate?: string | null;
+  speedToContact?: string | null;
+  urgencyTimeline?: string | null;
+  previousVendorExp?: string[] | null;
+  primarySocialHandle?: string | null;
+  websiteExists?: string | null;
+  primaryIntent?: string | null;
+  currentWebsiteStatus?: string | null;
+  googleMapsStatus?: string | null;
+  websiteGoal?: string[] | null;
+  serveArea?: string | null;
+  biggestTimeWaste?: string[] | null;
+  teamSize?: string | null;
+  hoursLostPerWeek?: string | null;
+  packagePreference?: string | null;
+  clientAcquisition?: string | null;
 };

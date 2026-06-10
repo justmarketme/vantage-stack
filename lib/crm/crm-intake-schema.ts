@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BlueprintSubmitSchema } from "../blueprint/schema";
+import { CLIENT_STATUS } from "./constants";
 
 const JumpStatus = z.enum([
   "blueprint-submitted",
@@ -8,7 +9,7 @@ const JumpStatus = z.enum([
   "proposal-sent",
   "active-client",
   "upsell-sent",
-  "churned",
+  CLIENT_STATUS.CHURNED,
 ]);
 
 /** CRM API + manual forms: blueprint fields plus intake options. */

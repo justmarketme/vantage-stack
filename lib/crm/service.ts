@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import { ensureCrmSchema } from "./db";
 import { ensureAnalyticsTables } from "../analytics/db";
+import { CLIENT_STATUS } from "./constants";
 
 export const PIPELINE_STAGES = [
   "blueprint-submitted",
@@ -152,12 +153,32 @@ export async function getClientDetail(db: Sql, id: string) {
       c.success_goals::text as success_goals,
       c.created_by::text as created_by,
       c.blueprint_markdown::text as blueprint_markdown,
+      c.serve_area::text as serve_area,
+      c.sub_niche::text as sub_niche,
+      c.biggest_time_waste as biggest_time_waste,
       c.social_instagram::text as social_instagram,
       c.social_tiktok::text as social_tiktok,
       c.social_facebook::text as social_facebook,
       c.social_x::text as social_x,
       c.social_youtube::text as social_youtube,
-      c.social_insights as social_insights
+      c.social_insights as social_insights,
+      c.conversion_rate::text as conversion_rate,
+      c.speed_to_contact::text as speed_to_contact,
+      c.urgency_timeline::text as urgency_timeline,
+      c.previous_vendor_exp as previous_vendor_exp,
+      c.enquiry_volume::text as enquiry_volume,
+      c.follow_up_method::text as follow_up_method,
+      c.missed_call_handling::text as missed_call_handling,
+      c.google_maps_status::text as google_maps_status,
+      c.current_website_status::text as current_website_status,
+      c.website_goal as website_goal,
+      c.website_exists::text as website_exists,
+      c.primary_intent::text as primary_intent,
+      c.package_preference::text as package_preference,
+      c.hours_lost_per_week::text as hours_lost_per_week,
+      c.team_size::text as team_size,
+      c.primary_social_handle::text as primary_social_handle,
+      c.client_acquisition::text as client_acquisition
     from public.clients c
     where c.id = ${id}::uuid
     limit 1
@@ -815,7 +836,7 @@ export async function listActivity(
 
 export async function updateClientStatus(db: Sql, clientId: string, new_status: string, actor?: string) {
   await ensureCrmSchema(db);
-  if (!isPipelineStage(new_status) && new_status !== "churned") {
+  if (!isPipelineStage(new_status) && new_status !== CLIENT_STATUS.CHURNED) {
     return { ok: false as const, error: "invalid_status" };
   }
   const prev = await db`select status::text as status from public.clients where id = ${clientId}::uuid limit 1`;

@@ -58,7 +58,41 @@ function extractHandle(input: string): string {
   }
 }
 
-async function runApifyActor(actorId: string, input: Record<string, unknown>): Promise<unknown> {
+/**
+ * Try to extract a platform-specific URL from a primary_social_handle fallback.
+ * Handles "@mybusiness", "https://instagram.com/mybusiness", etc.
+ */
+function fallbackUrlFromPrimaryHandle(primaryHandle: string | null | undefined, platform: string): string | null {
+  if (!primaryHandle) return null;
+  const h = primaryHandle.trim();
+  // If it's a URL for this specific platform, use it directly
+  const platformDomains: Record<string, string[]> = {
+    instagram: ["instagram.com"],
+    tiktok: ["tiktok.com"],
+    facebook: ["facebook.com", "fb.com"],
+    x: ["x.com", "twitter.com"],
+    youtube: ["youtube.com", "youtu.be"],
+  };
+  const domains = platformDomains[platform] ?? [];
+  if (h.startsWith("http")) {
+    try {
+      const u = new URL(h);
+      if (domains.some((d) => u.hostname.includes(d))) return h;
+    } catch {
+      // fall through
+    }
+    // It's a URL but for a different platform — skip
+    return null;
+  }
+  // It's a bare handle like "@mybusiness" — construct the platform URL
+  return normaliseHandle(h, platform);
+}
+
+async function runApifyActor(
+  actorId: string,
+  input: Record<string, unknown>,
+  retries = 1,
+): Promise<unknown> {
   const token = apifyToken();
   if (!token) throw new Error("APIFY_TOKEN not configured");
 
@@ -94,6 +128,10 @@ async function runApifyActor(actorId: string, input: Record<string, unknown>): P
       return dsRes.json();
     }
     if (status === "FAILED" || status === "ABORTED" || status === "TIMED-OUT") {
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 5000));
+        return runApifyActor(actorId, input, retries - 1);
+      }
       throw new Error(`Apify run ${status}`);
     }
   }
@@ -126,6 +164,56 @@ function estimateFrequency(posts: Array<{ timestamp?: string; takenAt?: string; 
 function extractHashtags(text: string): string[] {
   const matches = text.match(/#[\wÀ-ɏ]+/g) ?? [];
   return [...new Set(matches)].slice(0, 10);
+}
+
+// ── Content theme + sentiment helpers ───────────────────────────────────────
+
+const SERVICE_KEYWORDS = [
+  "plumbing", "electrical", "cleaning", "landscaping", "roofing", "painting",
+  "renovation", "construction", "hvac", "design", "photography", "marketing",
+  "accounting", "legal", "consulting", "training", "coaching", "therapy",
+  "dental", "medical", "fitness", "catering", "delivery", "repair", "security",
+  "pest", "solar", "insurance", "real estate", "property", "finance",
+];
+
+function extractContentThemes(texts: string[]): string[] {
+  const combined = texts.join(" ").toLowerCase();
+
+  // Top hashtags (already extracted, but include top ones as themes)
+  const hashtagMatches = combined.match(/#[\w]+/g) ?? [];
+  const hashtagCounts: Record<string, number> = {};
+  for (const tag of hashtagMatches) {
+    hashtagCounts[tag] = (hashtagCounts[tag] ?? 0) + 1;
+  }
+  const topHashtagThemes = Object.entries(hashtagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([tag]) => tag.replace("#", ""));
+
+  // Service/product keyword matches
+  const keywordThemes = SERVICE_KEYWORDS.filter((kw) => combined.includes(kw));
+
+  const all = [...new Set([...topHashtagThemes, ...keywordThemes])];
+  return all.slice(0, 8);
+}
+
+const POSITIVE_WORDS = ["great", "love", "amazing", "excellent", "best", "recommend", "fantastic", "helpful", "professional", "quick"];
+const NEGATIVE_WORDS = ["bad", "worst", "terrible", "slow", "rude", "disappointed", "awful", "unprofessional", "scam", "avoid"];
+
+function calcSentiment(texts: string[]): string | null {
+  if (!texts.length) return null;
+  const combined = texts.join(" ").toLowerCase();
+  const words = combined.split(/\W+/);
+  let pos = 0;
+  let neg = 0;
+  for (const w of words) {
+    if (POSITIVE_WORDS.includes(w)) pos++;
+    if (NEGATIVE_WORDS.includes(w)) neg++;
+  }
+  if (pos + neg < 2) return null;
+  if (pos > neg) return "positive";
+  if (neg > pos) return "negative";
+  return "neutral";
 }
 
 // ── Platform scrapers ────────────────────────────────────────────────────────
@@ -167,8 +255,8 @@ async function scrapeInstagram(url: string): Promise<SocialInsight> {
       ? calcEngagement(avgLikes, avgComments, followers)
       : null,
     topHashtags,
-    contentThemes: [],
-    audienceSentiment: null,
+    contentThemes: extractContentThemes(captions),
+    audienceSentiment: calcSentiment(captions),
     postingFrequency: estimateFrequency(raw as never),
     recentCaption,
     scrapedAt: new Date().toISOString(),
@@ -211,8 +299,8 @@ async function scrapeTiktok(url: string): Promise<SocialInsight> {
       ? calcEngagement(avgLikes, avgComments, followers)
       : null,
     topHashtags,
-    contentThemes: [],
-    audienceSentiment: null,
+    contentThemes: extractContentThemes(captions),
+    audienceSentiment: calcSentiment(captions),
     postingFrequency: estimateFrequency(videos as never),
     recentCaption: captions[0]?.slice(0, 200) ?? null,
     scrapedAt: new Date().toISOString(),
@@ -254,8 +342,8 @@ async function scrapeFacebook(url: string): Promise<SocialInsight> {
       ? calcEngagement(avgLikes, avgComments, followers)
       : null,
     topHashtags,
-    contentThemes: [],
-    audienceSentiment: null,
+    contentThemes: extractContentThemes(captions),
+    audienceSentiment: calcSentiment(captions),
     postingFrequency: estimateFrequency(posts as never),
     recentCaption: captions[0]?.slice(0, 200) ?? null,
     scrapedAt: new Date().toISOString(),
@@ -267,21 +355,23 @@ async function scrapeX(url: string): Promise<SocialInsight> {
   const handle = extractHandle(url);
   const profileUrl = normaliseHandle(handle, "x");
 
-  const raw = await runApifyActor("quacker/twitter-scraper", {
-    handle,
-    tweetsDesired: 12,
+  // apidojo/tweet-scraper replaces the deprecated quacker/twitter-scraper
+  const raw = await runApifyActor("apidojo/tweet-scraper", {
+    startUrls: [{ url: `https://twitter.com/${handle}` }],
+    maxTweets: 20,
   }) as Array<Record<string, unknown>>;
 
   const profile = raw?.[0] as Record<string, unknown> | undefined;
-  const followers = (profile?.author as Record<string, unknown>)?.followers as number ?? null;
+  const authorData = (profile?.author as Record<string, unknown>) ?? (profile?.user as Record<string, unknown>) ?? {};
+  const followers = (authorData?.followers as number) ?? (authorData?.followers_count as number) ?? null;
   const tweets = raw;
 
-  const likes = tweets.map((t) => (t.likeCount as number) ?? 0);
-  const comments = tweets.map((t) => (t.replyCount as number) ?? 0);
+  const likes = tweets.map((t) => (t.favorite_count as number) ?? (t.likeCount as number) ?? 0);
+  const comments = tweets.map((t) => (t.replyCount as number) ?? (t.reply_count as number) ?? 0);
   const avgLikes = likes.length ? Math.round(likes.reduce((a, b) => a + b, 0) / likes.length) : null;
   const avgComments = comments.length ? Math.round(comments.reduce((a, b) => a + b, 0) / comments.length) : null;
 
-  const captions = tweets.map((t) => (t.text as string) ?? "").filter(Boolean);
+  const captions = tweets.map((t) => (t.full_text as string) ?? (t.text as string) ?? "").filter(Boolean);
   const topHashtags = extractHashtags(captions.join(" "));
 
   return {
@@ -297,8 +387,8 @@ async function scrapeX(url: string): Promise<SocialInsight> {
       ? calcEngagement(avgLikes, avgComments, followers)
       : null,
     topHashtags,
-    contentThemes: [],
-    audienceSentiment: null,
+    contentThemes: extractContentThemes(captions),
+    audienceSentiment: calcSentiment(captions),
     postingFrequency: estimateFrequency(tweets as never),
     recentCaption: captions[0]?.slice(0, 200) ?? null,
     scrapedAt: new Date().toISOString(),
@@ -309,23 +399,85 @@ async function scrapeX(url: string): Promise<SocialInsight> {
 async function scrapeYoutube(url: string): Promise<SocialInsight> {
   const handle = extractHandle(url);
   const profileUrl = normaliseHandle(handle, "youtube");
+  const apiKey = (process.env.YOUTUBE_DATA_API_KEY ?? "").trim();
 
-  const raw = await runApifyActor("apify/youtube-scraper", {
-    startUrls: [{ url: profileUrl }],
-    maxResults: 10,
-  }) as Array<Record<string, unknown>>;
+  if (!apiKey) {
+    throw new Error("YOUTUBE_DATA_API_KEY not configured");
+  }
 
-  const channel = raw?.[0] as Record<string, unknown> | undefined;
-  const videos = ((channel?.videos as Array<Record<string, unknown>>) ?? raw);
-  const followers = (channel?.numberOfSubscribers as number) ?? null;
+  // Step 1: resolve channel ID from handle/name
+  let channelId: string | null = null;
+  try {
+    const searchRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(handle)}&type=channel&maxResults=1&key=${apiKey}`,
+      { signal: AbortSignal.timeout(15_000) }
+    );
+    if (searchRes.ok) {
+      const searchData = await searchRes.json() as { items?: Array<{ id?: { channelId?: string } }> };
+      channelId = searchData.items?.[0]?.id?.channelId ?? null;
+    }
+  } catch {
+    // channel lookup failed; videos will be empty
+  }
 
-  const likes = videos.map((v) => (v.likes as number) ?? 0);
-  const comments = videos.map((v) => (v.commentsCount as number) ?? 0);
+  // Step 2: fetch recent videos
+  type YTVideoItem = {
+    id?: { videoId?: string };
+    snippet?: {
+      title?: string;
+      description?: string;
+      publishedAt?: string;
+      channelTitle?: string;
+    };
+    statistics?: {
+      likeCount?: string;
+      commentCount?: string;
+      viewCount?: string;
+    };
+  };
+
+  let videos: YTVideoItem[] = [];
+  let followers: number | null = null;
+
+  if (channelId) {
+    try {
+      const vidRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=10&type=video&order=date&key=${apiKey}`,
+        { signal: AbortSignal.timeout(15_000) }
+      );
+      if (vidRes.ok) {
+        const vidData = await vidRes.json() as { items?: YTVideoItem[] };
+        videos = vidData.items ?? [];
+      }
+
+      // Fetch channel stats for subscriber count
+      const chanRes = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`,
+        { signal: AbortSignal.timeout(15_000) }
+      );
+      if (chanRes.ok) {
+        const chanData = await chanRes.json() as {
+          items?: Array<{ statistics?: { subscriberCount?: string } }>;
+        };
+        const subCount = chanData.items?.[0]?.statistics?.subscriberCount;
+        if (subCount) followers = parseInt(subCount, 10);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const titles = videos.map((v) => v.snippet?.title ?? "").filter(Boolean);
+  const descriptions = videos.map((v) => v.snippet?.description ?? "").filter(Boolean);
+  const allText = [...titles, ...descriptions].join(" ");
+
+  const likes = videos.map((v) => parseInt(v.statistics?.likeCount ?? "0", 10));
+  const comments = videos.map((v) => parseInt(v.statistics?.commentCount ?? "0", 10));
   const avgLikes = likes.length ? Math.round(likes.reduce((a, b) => a + b, 0) / likes.length) : null;
   const avgComments = comments.length ? Math.round(comments.reduce((a, b) => a + b, 0) / comments.length) : null;
 
-  const titles = videos.map((v) => (v.title as string) ?? "").filter(Boolean);
-  const topHashtags = extractHashtags(titles.join(" "));
+  const topHashtags = extractHashtags(allText);
+  const postTimestamps = videos.map((v) => ({ timestamp: v.snippet?.publishedAt }));
 
   return {
     platform: "youtube",
@@ -340,12 +492,12 @@ async function scrapeYoutube(url: string): Promise<SocialInsight> {
       ? calcEngagement(avgLikes, avgComments, followers)
       : null,
     topHashtags,
-    contentThemes: titles.slice(0, 5),
-    audienceSentiment: null,
-    postingFrequency: estimateFrequency(videos as never),
+    contentThemes: extractContentThemes([...titles, ...descriptions]),
+    audienceSentiment: calcSentiment([...titles, ...descriptions]),
+    postingFrequency: estimateFrequency(postTimestamps as never),
     recentCaption: titles[0]?.slice(0, 200) ?? null,
     scrapedAt: new Date().toISOString(),
-    raw,
+    raw: videos,
   };
 }
 
@@ -357,16 +509,24 @@ export interface SocialLinks {
   facebook?: string | null;
   x?: string | null;
   youtube?: string | null;
+  primary_social_handle?: string | null;
 }
 
 export async function scrapeSocialProfiles(links: SocialLinks): Promise<SocialScraperResult> {
   const jobs: Array<{ platform: string; fn: () => Promise<SocialInsight> }> = [];
 
-  if (links.instagram) jobs.push({ platform: "instagram", fn: () => scrapeInstagram(links.instagram!) });
-  if (links.tiktok)    jobs.push({ platform: "tiktok",    fn: () => scrapeTiktok(links.tiktok!) });
-  if (links.facebook)  jobs.push({ platform: "facebook",  fn: () => scrapeFacebook(links.facebook!) });
-  if (links.x)         jobs.push({ platform: "x",         fn: () => scrapeX(links.x!) });
-  if (links.youtube)   jobs.push({ platform: "youtube",   fn: () => scrapeYoutube(links.youtube!) });
+  // Resolve URLs, using primary_social_handle as fallback for missing platforms
+  const instagramUrl = links.instagram ?? fallbackUrlFromPrimaryHandle(links.primary_social_handle, "instagram");
+  const tiktokUrl = links.tiktok ?? fallbackUrlFromPrimaryHandle(links.primary_social_handle, "tiktok");
+  const facebookUrl = links.facebook ?? fallbackUrlFromPrimaryHandle(links.primary_social_handle, "facebook");
+  const xUrl = links.x ?? fallbackUrlFromPrimaryHandle(links.primary_social_handle, "x");
+  const youtubeUrl = links.youtube ?? fallbackUrlFromPrimaryHandle(links.primary_social_handle, "youtube");
+
+  if (instagramUrl) jobs.push({ platform: "instagram", fn: () => scrapeInstagram(instagramUrl) });
+  if (tiktokUrl)    jobs.push({ platform: "tiktok",    fn: () => scrapeTiktok(tiktokUrl) });
+  if (facebookUrl)  jobs.push({ platform: "facebook",  fn: () => scrapeFacebook(facebookUrl) });
+  if (xUrl)         jobs.push({ platform: "x",         fn: () => scrapeX(xUrl) });
+  if (youtubeUrl)   jobs.push({ platform: "youtube",   fn: () => scrapeYoutube(youtubeUrl) });
 
   const insights: SocialInsight[] = [];
   const errors: Array<{ platform: string; error: string }> = [];

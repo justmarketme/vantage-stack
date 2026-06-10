@@ -12,6 +12,11 @@ async function generateAiInsights(p: BlueprintClientData, industryLabel: string,
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
+  const previousVendors = (p.previous_vendor_exp || []).join(", ") || "None";
+  const vendorFraming = previousVendors !== "None"
+    ? `\n\nIMPORTANT: This client has previously worked with digital marketing or SEO agencies (${previousVendors}). Frame VantageStack's approach as fundamentally different — we engineer revenue systems, not just run campaigns.`
+    : "";
+
   const prompt = `You are a senior digital marketing strategist for VantageStack, a South African revenue optimization agency.
 
 Write a concise, insightful analysis for this client's blueprint document. Use professional but direct language. Be specific to their industry and situation. Do NOT use generic filler.
@@ -19,6 +24,7 @@ Write a concise, insightful analysis for this client's blueprint document. Use p
 CLIENT PROFILE:
 - Business: ${p.company || p.name}
 - Industry: ${industryLabel}
+- Sub-niche: ${p.sub_niche || "Not specified"}
 - Revenue Range: ${p.revenue_range || "Not specified"}
 - Website: ${p.website_url || "NONE — no web presence"}
 - Monthly Budget: ${p.monthly_budget ? `R${p.monthly_budget.toLocaleString()}` : "Not specified"}
@@ -28,6 +34,11 @@ CLIENT PROFILE:
 - Tools Used: ${toStr(p.tools_used) || "None mentioned"}
 - Key Competitors: ${competitors.join(", ") || "None identified"}
 - Social Platforms: ${[p.social_instagram && "Instagram", p.social_tiktok && "TikTok", p.social_facebook && "Facebook", p.social_x && "X/Twitter", p.social_youtube && "YouTube"].filter(Boolean).join(", ") || "None provided"}
+- Current conversion rate: ${p.conversion_rate || "Not measured"}
+- Speed to first contact: ${p.speed_to_contact || "Not specified"}
+- Timeline to get started: ${p.urgency_timeline || "Not specified"}
+- Previous vendor experience: ${previousVendors}
+- Hours lost per week to manual tasks: ${p.hours_lost_per_week || "Not specified"}${vendorFraming}
 
 Respond with ONLY valid JSON in this exact structure (no markdown, no code blocks):
 {
@@ -84,6 +95,25 @@ export type BlueprintClientData = {
   social_x?: string | null;
   social_youtube?: string | null;
   social_insights?: import("./social-scraper").SocialInsight[] | null;
+  sub_niche?: string | null;
+  conversion_rate?: string | null;
+  speed_to_contact?: string | null;
+  urgency_timeline?: string | null;
+  serve_area?: string | null;
+  hours_lost_per_week?: string | null;
+  biggest_frustration?: string | null;
+  previous_vendor_exp?: string[] | null;
+  primary_intent?: string | null;
+  enquiry_volume?: string | null;
+  follow_up_method?: string | null;
+  missed_call_handling?: string | null;
+  current_website_status?: string | null;
+  google_maps_status?: string | null;
+  website_goal?: string[] | null;
+  biggest_time_waste?: string[] | null;
+  team_size?: string | null;
+  package_preference?: string | null;
+  website_exists?: string | null;
 };
 
 function toStr(v: string[] | string | null | undefined): string {
@@ -123,7 +153,9 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     : industryData.competitors.slice(0, 4);
   const competitorsFromIndustry = !providedCompetitors;
 
-  const hasWebsite = Boolean(p.website_url);
+  const hasWebsiteUrl = Boolean(p.website_url);
+  const hasWebsite = p.website_exists !== "No — I need one built" &&
+    (hasWebsiteUrl || (p.current_website_status !== "No — I need one built from scratch"));
   const businessName = p.company || p.name;
 
   const lines: string[] = [];
@@ -134,12 +166,64 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
   lines.push(`Generated: ${new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}`);
   lines.push(``);
 
-  // ── 1. Business Overview ──────────────────────────────────────────────────
+  // ── Executive Summary FIRST ───────────────────────────────────────────────
+  lines.push(`---`);
+  lines.push(`## ${n++}. EXECUTIVE SUMMARY`);
+  lines.push(``);
+
+  // Derive situation gap from primary_intent
+  const gapLabel: string = (() => {
+    switch (p.primary_intent) {
+      case "LEADS": return "a lead conversion gap";
+      case "PRESENCE": return "limited online visibility";
+      case "AUTOMATION": return "operational inefficiency";
+      case "EXPLORE": return "unclear growth direction";
+      default: return "an identified growth gap";
+    }
+  })();
+
+  const areaStr = p.serve_area ? ` in ${p.serve_area}` : "";
+  const industryOrNiche = p.sub_niche || p.industry || "their sector";
+
+  lines.push(`**The Situation:** ${businessName} is a ${industryOrNiche} business${areaStr} currently facing ${gapLabel}.`);
+  lines.push(``);
+
+  // Biggest gap — derive from actual answers
+  const biggestGapParts: string[] = [];
+  if (p.conversion_rate && p.conversion_rate !== "I don't track this") {
+    biggestGapParts.push(`Converting only ${p.conversion_rate} out of every 10 enquiries into paying clients`);
+  }
+  if (p.speed_to_contact && /next day|later/i.test(p.speed_to_contact)) {
+    biggestGapParts.push(`Responding to enquiries next day or later, when competitors respond within 5 minutes`);
+  }
+  if (biggestGapParts.length > 0) {
+    lines.push(`**The Biggest Gap:** ${biggestGapParts.join("; ")}.`);
+  } else if (p.biggest_frustration) {
+    lines.push(`**The Biggest Gap:** ${p.biggest_frustration}`);
+  }
+  lines.push(``);
+
+  // Opportunity — use sub-niche benchmark if available
+  const subNicheBenchmark = p.sub_niche && industryData.subNicheBenchmarks?.[p.sub_niche];
+  if (subNicheBenchmark) {
+    lines.push(`**The Opportunity:** Businesses in ${p.sub_niche} that fix their lead follow-up see an average 40–60% increase in conversion within 90 days. The average deal size in this niche is ${subNicheBenchmark.avgDealSize}.`);
+  } else {
+    lines.push(`**The Opportunity:** Businesses in ${industryOrNiche} that address these gaps typically see a 40–60% improvement in qualified lead conversion within the first 90 days of implementation.`);
+  }
+  lines.push(``);
+
+  // AI-generated executive summary appended if available
+  if (ai?.executiveSummary) {
+    lines.push(ai.executiveSummary);
+    lines.push(``);
+  }
+
+  // ── 2. Business Overview ──────────────────────────────────────────────────
   lines.push(`---`);
   lines.push(`## ${n++}. BUSINESS OVERVIEW`);
   lines.push(``);
   lines.push(`**Business Name:** ${businessName}`);
-  lines.push(`**Industry:** ${p.industry || "—"}`);
+  lines.push(`**Industry:** ${p.industry || "—"}${p.sub_niche ? ` / ${p.sub_niche}` : ""}`);
   lines.push(`**Revenue Range:** ${p.revenue_range || "—"}`);
   lines.push(`**Website:** ${p.website_url || "❌ No website — significant opportunity gap"}`);
   lines.push(`**Contact:** ${p.email || "—"}${p.whatsapp ? ` | WhatsApp: ${p.whatsapp}` : ""}`);
@@ -147,14 +231,6 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
 
   lines.push(`> 💡 **Industry Opportunity:** Businesses in the ${industryData.label} sector with an optimised digital presence generate an estimated **${bm.missedRevenueEstimate}** in additional revenue annually. This blueprint identifies the gaps standing between ${businessName} and that potential.`);
   lines.push(``);
-
-  // ── AI Executive Summary ──────────────────────────────────────────────────
-  if (ai?.executiveSummary) {
-    lines.push(`## ${n++}. EXECUTIVE SUMMARY`);
-    lines.push(``);
-    lines.push(ai.executiveSummary);
-    lines.push(``);
-  }
 
   if (p.success_goals) {
     lines.push(`## ${n++}. GOALS & OBJECTIVES`);
@@ -231,13 +307,23 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
   lines.push(``);
   lines.push(`How ${businessName} compares to the ${industryData.label} sector average:`);
   lines.push(``);
+
+  const clientConversionRate = p.conversion_rate && p.conversion_rate !== "I don't track this"
+    ? p.conversion_rate + " per 10 enquiries"
+    : "❓ Not measured";
+
+  const enquiryVolume = p.enquiry_volume;
+  const clientLeadsPerMonth = enquiryVolume
+    ? `~${enquiryVolume} (reported)`
+    : "❓ Not tracked";
+
   lines.push(`| Metric | Industry Average | ${businessName} |`);
   lines.push(`|--------|-----------------|${"-".repeat(businessName.length + 2)}|`);
-  lines.push(`| Website Load Time | ${bm.avgWebsiteLoadTime} | ${hasWebsite ? "⏳ To be measured" : "❌ No website"} |`);
-  lines.push(`| Avg. Conversion Rate | ${bm.avgConversionRate} | ❓ Not tracked |`);
+  lines.push(`| Website Load Time | ${bm.avgWebsiteLoadTime} | ${hasWebsiteUrl ? "⏳ To be measured" : "❌ No website"} |`);
+  lines.push(`| Avg. Conversion Rate | ${bm.avgConversionRate} | ${clientConversionRate} |`);
   lines.push(`| Cost Per Lead | ${bm.avgCostPerLead} | ❓ Not measured |`);
   lines.push(`| Monthly Search Volume (industry) | ${bm.monthlySearchVolume} | ❓ Not capturing |`);
-  lines.push(`| Avg. Leads/Month | ${bm.avgLeadsPerMonth} | ❓ Unknown |`);
+  lines.push(`| Avg. Leads/Month | ${bm.avgLeadsPerMonth} | ${clientLeadsPerMonth} |`);
   lines.push(``);
   lines.push(`> 📊 **Top channels competitors use:** ${bm.topChannels.join(", ")}`);
   lines.push(``);
@@ -268,22 +354,163 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     lines.push(``);
   }
 
-  lines.push(`### Content & SEO Gaps`);
-  bm.contentGaps.forEach((g) => lines.push(`- ❌ ${g}`));
+  // Conditional gap flags
+  const gapFlags: string[] = [];
+
+  // GA4/GTM — only if website exists and no analytics detected
+  const enrichmentTechStack: string[] = enrichment?.seoSignals?.techStack ?? [];
+  const hasAnalytics = (p.tools_used as string[] | null || []).some((t) => /ga4|gtm|google tag|analytics/i.test(t))
+    || enrichmentTechStack.some((t) => /ga4|gtm|google tag|analytics/i.test(t));
+  if (hasWebsite && !hasAnalytics) {
+    gapFlags.push("❌ No GA4/GTM analytics — you're flying blind on what's working");
+  }
+
+  // Conversion tracking
+  if (p.conversion_rate === "I don't track this") {
+    gapFlags.push("❌ No conversion tracking — you can't improve what you don't measure");
+  }
+
+  // Retargeting pixel
+  const hasPixel = (p.tools_used as string[] | null || []).some((t) => /pixel|retarget|facebook ads|meta ads/i.test(t))
+    || enrichmentTechStack.some((t) => /pixel|meta|facebook/i.test(t));
+  if (hasWebsite && !hasPixel) {
+    gapFlags.push("❌ No retargeting pixel — visitors leave and you can't bring them back");
+  }
+
+  // Heatmap
+  const hasHeatmap = (p.tools_used as string[] | null || []).some((t) => /hotjar|clarity|heatmap|mouseflow/i.test(t));
+  if (hasWebsite && !hasHeatmap) {
+    gapFlags.push("❌ No heatmap tool — you don't know where visitors are dropping off");
+  }
+
+  // Lead magnet — only for LEADS path
+  if (p.primary_intent === "LEADS" && (!p.follow_up_method || /inconsistent|we don't|manual/i.test(p.follow_up_method || ""))) {
+    gapFlags.push("❌ No lead magnet or automated follow-up sequence");
+  }
+
+  // Email nurture
+  if (/inconsistent|we don't|manual|no system/i.test(p.follow_up_method || "")) {
+    gapFlags.push("❌ No email nurture sequence — leads go cold after the first contact");
+  }
+
+  // WhatsApp Business
+  const hasWhatsAppBusiness = (p.tools_used as string[] | null || []).some((t) => /whatsapp business/i.test(t));
+  if (!hasWhatsAppBusiness && /inconsistent|manual|we don't/i.test(p.follow_up_method || "")) {
+    gapFlags.push("❌ No WhatsApp Business integration — missing the highest-engagement channel in SA");
+  }
+
+  // Content/SEO — only if client has a website
+  if (hasWebsite && p.primary_intent !== "AUTOMATION") {
+    gapFlags.push("📉 Content & SEO gaps identified — see website analysis below");
+  }
+
+  if (gapFlags.length === 0) {
+    gapFlags.push("✅ No critical gaps identified in current toolset — focus is on optimisation and scale");
+  }
+
+  gapFlags.forEach((flag) => {
+    lines.push(`- ${flag}`);
+    // Add loss aversion framing for response speed gap
+    if (flag.includes("No GA4/GTM")) {
+      lines.push(`  *Without analytics, every rand spent on marketing is untracked — you can't double down on what works or cut what doesn't.*`);
+    }
+    if (flag.includes("No conversion tracking")) {
+      lines.push(`  *You can't improve what you don't measure — every untracked enquiry is an invisible leak in your revenue pipeline.*`);
+    }
+    if (flag.includes("No retargeting pixel")) {
+      lines.push(`  *Up to 97% of website visitors leave without converting. Without a pixel, they're gone forever — competitors with retargeting keep showing up until they buy.*`);
+    }
+    if (flag.includes("No email nurture")) {
+      lines.push(`  *Most prospects need 5–7 touchpoints before they buy. Without a nurture sequence, you're leaving the sale to chance.*`);
+    }
+    if (flag.includes("No WhatsApp Business")) {
+      lines.push(`  *WhatsApp has a 98% open rate vs 20% for email. Every day without it is a day competitors use it to close your leads.*`);
+    }
+  });
+
+  // Response time loss aversion (standalone if speed_to_contact indicates slow response)
+  if (p.speed_to_contact && /next day|later/i.test(p.speed_to_contact)) {
+    lines.push(``);
+    lines.push(`> ⏱️ **Response Speed Risk:** At next-day response times, you're statistically losing 8 out of 9 qualified leads to competitors who respond faster. *Studies show businesses that respond within 5 minutes are 21× more likely to qualify a lead than those who respond the next day.*`);
+  }
+
   lines.push(``);
 
-  lines.push(`### Tracking & Measurement`);
-  lines.push(`- ❌ No confirmed analytics setup (GA4 / Google Tag Manager)`);
-  lines.push(`- ❌ No conversion tracking — unable to measure ROI`);
-  lines.push(`- ❌ No retargeting pixel installed`);
-  lines.push(`- ❌ No heatmap or session recording tool`);
-  lines.push(``);
+  // ── Path-specific analysis ─────────────────────────────────────────────────
+  if (p.primary_intent === "LEADS") {
+    lines.push(`## ${n++}. LEAD CONVERSION ANALYSIS`);
+    lines.push(``);
 
-  lines.push(`### Lead Generation`);
-  lines.push(`- ❌ No lead magnet or free resource offering`);
-  lines.push(`- ❌ No email nurture sequence for new leads`);
-  lines.push(`- ❌ No WhatsApp Business integration for instant follow-up`);
-  lines.push(``);
+    const enquiryVolumeVal = p.enquiry_volume;
+    const monthlyEstimate = enquiryVolumeVal ? `~${enquiryVolumeVal} (reported)` : "Not tracked";
+
+    lines.push(`| Metric | Your Numbers |`);
+    lines.push(`|--------|-------------|`);
+    lines.push(`| Enquiries per month | ${monthlyEstimate} |`);
+    lines.push(`| Current conversion rate | ${p.conversion_rate || "Not measured"} |`);
+    lines.push(`| Response speed | ${p.speed_to_contact || "Not specified"} |`);
+    lines.push(`| Follow-up method | ${p.follow_up_method || "Not described"} |`);
+    lines.push(``);
+
+    lines.push(`**Revenue at Risk:**`);
+    if (p.conversion_rate && /1[-–]2|^1$|^2$/i.test(p.conversion_rate)) {
+      lines.push(`At 1–2 conversions per 10 enquiries, you're losing 8 potential clients for every 10 who reach out. If your average deal is R5,000+, that's significant monthly revenue walking out the door.`);
+    }
+    if (p.speed_to_contact && /next day|later/i.test(p.speed_to_contact)) {
+      lines.push(`Studies show businesses that respond within 5 minutes are 21× more likely to qualify a lead than those who respond the next day.`);
+    }
+    lines.push(``);
+  }
+
+  if (p.primary_intent === "PRESENCE") {
+    lines.push(`## ${n++}. ONLINE VISIBILITY ANALYSIS`);
+    lines.push(``);
+    lines.push(`| Signal | Status |`);
+    lines.push(`|--------|--------|`);
+    lines.push(`| Website | ${p.current_website_status || (p.website_url ? p.website_url : "Not specified")} |`);
+    lines.push(`| Google Maps / GMB | ${p.google_maps_status || "Not specified"} |`);
+    lines.push(`| Serve area | ${p.serve_area || "Not specified"} |`);
+    lines.push(``);
+  }
+
+  if (p.primary_intent === "AUTOMATION") {
+    lines.push(`## ${n++}. OPERATIONAL EFFICIENCY ANALYSIS`);
+    lines.push(``);
+    lines.push(`| Factor | Details |`);
+    lines.push(`|--------|---------|`);
+    lines.push(`| Biggest time drains | ${p.biggest_time_waste?.join(", ") || "Not specified"} |`);
+    lines.push(`| Hours lost per week | ${p.hours_lost_per_week || "Not specified"} |`);
+    lines.push(`| Tools currently used | ${toStr(p.tools_used) || "None mentioned"} |`);
+    lines.push(`| Team size | ${p.team_size || "Not specified"} |`);
+    lines.push(``);
+
+    if (p.hours_lost_per_week) {
+      const hoursMatch = p.hours_lost_per_week.match(/\d+/);
+      const weeklyHours = hoursMatch ? parseInt(hoursMatch[0], 10) : null;
+      if (weeklyHours) {
+        const annualHours = weeklyHours * 52;
+        lines.push(`**Cost of Inaction:**`);
+        lines.push(`At ${p.hours_lost_per_week} lost per week, your team is spending approximately ${annualHours} hours per year on tasks that could be automated — time that could go toward revenue-generating activities.`);
+        lines.push(``);
+      }
+    }
+  }
+
+  if (p.primary_intent === "EXPLORE") {
+    lines.push(`## ${n++}. BUSINESS GROWTH OPPORTUNITY`);
+    lines.push(``);
+    const frustration = p.biggest_frustration || "your current growth challenges";
+    let recommendedPackage = "a tailored growth package";
+    if (frustration && /lead|enquir|client|sale/i.test(frustration)) {
+      recommendedPackage = "the LEADS conversion package";
+    } else if (frustration && /website|online|visible|find/i.test(frustration)) {
+      recommendedPackage = "the PRESENCE package";
+    } else if (frustration && /time|admin|manual|slow/i.test(frustration)) {
+      recommendedPackage = "the AUTOMATION package";
+    }
+    lines.push(`Based on your biggest frustration — **${frustration}** — the highest-impact starting point for ${businessName} is ${recommendedPackage}.`);
+    lines.push(``);
+  }
 
   // ── Strategy Recommendations ───────────────────────────────────────────────
   lines.push(`## ${n++}. DIGITAL STRATEGY RECOMMENDATIONS`);
@@ -442,16 +669,26 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
   }
   // ── End enrichment sections ───────────────────────────────────────────
 
-  lines.push(`## ${n++}. NEXT STEPS`);
-  lines.push(``);
-  lines.push(`1. Review this blueprint with your VantageStack account manager`);
-  lines.push(`2. Approve the recommended strategy and budget`);
-  lines.push(`3. Sign the service agreement`);
-  lines.push(`4. Onboarding call scheduled within 48 hours of sign-off`);
-  lines.push(``);
+  // ── Single CTA / Next Step ────────────────────────────────────────────────
   lines.push(`---`);
-  lines.push(`*This blueprint was prepared exclusively for ${p.company || p.name} by VantageStack.*`);
-  lines.push(`*All information is confidential and proprietary.*`);
+  lines.push(``);
+  lines.push(`## Your Next Step`);
+  lines.push(``);
+
+  let ctaLine = "When you're ready to close these gaps, we're here.";
+  if (p.urgency_timeline && /asap|now/i.test(p.urgency_timeline)) {
+    ctaLine = "You're ready to move — let's get started this week.";
+  } else if (p.urgency_timeline && /month/i.test(p.urgency_timeline)) {
+    ctaLine = "You're in the right window to start now and see results within 30 days.";
+  }
+
+  lines.push(`**${ctaLine}**`);
+  lines.push(``);
+
+  const waNumber = (p.whatsapp || "").replace(/[^\d+]/g, "") || "27000000000";
+  lines.push(`📲 **[Reply to this message on WhatsApp](https://wa.me/${waNumber})** or book a 30-minute strategy call to walk through this blueprint together.`);
+  lines.push(``);
+  lines.push(`*Your blueprint was prepared specifically for ${businessName} based on your intake answers. Results shown are based on ${p.sub_niche || p.industry || "your"} industry benchmarks.*`);
 
   return lines.join("\n");
 }

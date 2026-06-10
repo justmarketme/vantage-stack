@@ -3,6 +3,8 @@
  * Used in the intake form (chips) and blueprint generator (auto-fill when no competitors listed).
  */
 
+export type BenchmarkSource = "wordstream_2026" | "hubspot_2025" | "internal_estimate";
+
 export type IndustryBenchmarks = {
   avgConversionRate: string;
   avgCostPerLead: string;
@@ -13,12 +15,24 @@ export type IndustryBenchmarks = {
   avgWebsiteLoadTime: string;
   contentGaps: string[];
   missedRevenueEstimate: string;
+  source: BenchmarkSource;
+};
+
+export type SubNicheBenchmark = {
+  avgCpl: number;
+  conversionRate: string;
+  topChannels: string[];
+  avgDealSize: string;
+  source: BenchmarkSource;
 };
 
 export type IndustryEntry = {
   label: string;
   competitors: string[];
   benchmarks: IndustryBenchmarks;
+  subNiches: string[];
+  subNicheCompetitors: Record<string, string[]>;
+  subNicheBenchmarks?: Record<string, SubNicheBenchmark>;
 };
 
 export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
@@ -35,6 +49,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.1s",
       contentGaps: ["Product schema markup", "Review schema", "Google Shopping feed", "Cart abandonment emails"],
       missedRevenueEstimate: "R130,000–R520,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Fashion & Apparel", "Electronics & Tech", "Beauty & Personal Care", "Home & Garden", "Food & Grocery", "Handmade & Artisan", "Digital Products"],
+    subNicheCompetitors: {
+      "Fashion & Apparel": ["Superbalist", "Zando", "Spree", "Bash", "Shein SA"],
+      "Electronics & Tech": ["Takealot Electronics", "HiFi Corp Online", "Incredible Connection Online", "Wootware", "Evetech"],
+      "Beauty & Personal Care": ["Faithful to Nature", "Clicks Online", "Dischem Online", "LookFantastic SA", "Skin Accumax"],
     },
   },
   "Professional services": {
@@ -50,6 +71,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.8s",
       contentGaps: ["Thought leadership blog", "Case studies", "LinkedIn content", "Lead magnets"],
       missedRevenueEstimate: "R555,000–R1,665,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Legal", "Accounting & Tax", "Business Consulting", "IT Services & Support", "HR & Recruitment", "Engineering & Architecture", "Financial Advisory"],
+    subNicheCompetitors: {
+      "Legal": ["Webber Wentzel", "ENSafrica", "Cliffe Dekker Hofmeyr", "Bowmans", "LawAdvisor listings"],
+      "Accounting & Tax": ["SNG Grant Thornton", "BDO South Africa", "Nexia SAB&T", "TaxTim", "Outsourced CFO"],
+      "IT Services & Support": ["BCX", "Dimension Data", "Liquid Intelligent Technologies", "DataGroup", "Obsidian Systems"],
     },
   },
   Healthcare: {
@@ -65,6 +93,15 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.3s",
       contentGaps: ["Google Business Profile optimisation", "Patient reviews strategy", "Health content SEO", "Online booking integration"],
       missedRevenueEstimate: "R252,000–R840,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["General Practice / GP", "Dental", "Physiotherapy & Allied Health", "Mental Health", "Medical Aesthetics & Wellness", "Veterinary", "Specialist Medical", "Supplements & Health Products"],
+    subNicheCompetitors: {
+      "Medical Aesthetics & Wellness": ["Skin Renewal", "Laser Clinics SA", "Aesthetics SA", "The Aesthetics Studio", "Skin Bar"],
+      "Supplements & Health Products": ["Faithful to Nature", "Wellness Warehouse", "Herbex", "Dischem Online", "Clicks Online"],
+      "General Practice / GP": ["My Meds", "Medipost", "MedBrief", "Hello Doctor", "Mediclinic Occupational Health"],
+      "Dental": ["Tooth Fairy Dental", "Smilezone", "Dental Expressions", "Abilident", "SADA members"],
+      "Mental Health": ["Akeso Clinics", "SADAG", "Lifeline SA", "Headspace SA", "BetterHelp SA"],
     },
   },
   "Real estate": {
@@ -80,6 +117,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.6s",
       contentGaps: ["Virtual tour integration", "Area landing pages", "Valuation lead magnet", "Video property tours"],
       missedRevenueEstimate: "R1,750,000–R6,300,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Residential Sales", "Commercial Property", "Property Management", "Short-Term Rentals", "Property Development", "Valuation & Appraisal"],
+    subNicheCompetitors: {
+      "Residential Sales": ["Pam Golding Properties", "Seeff", "Engel & Völkers", "RE/MAX South Africa", "Rawson Properties"],
+      "Short-Term Rentals": ["Lekkeslaap", "SafariNow", "Airbnb SA hosts", "BKSA", "Urban Oasis"],
+      "Property Management": ["JHI Properties", "Mafadi Property Management", "Aida", "API Property Group", "Chas Everitt"],
     },
   },
   Construction: {
@@ -95,6 +139,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "3.1s",
       contentGaps: ["Project portfolio / case studies", "Accreditation badges", "Google Business Profile", "LinkedIn company page"],
       missedRevenueEstimate: "R1,275,000–R5,100,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Residential Building & Renovation", "Commercial Construction", "Specialty Trades (Electrical/Plumbing/HVAC)", "Interior Design & Fit-Out", "Landscaping", "Civil & Infrastructure"],
+    subNicheCompetitors: {
+      "Residential Building & Renovation": ["WBHO", "Tiber Construction", "Trencon", "Group Five", "NHBRC registered builders"],
+      "Specialty Trades (Electrical/Plumbing/HVAC)": ["Master Electricians SA members", "Bidvest Facilities Management", "Servest", "G4S Facilities", "National Plumbers Guild members"],
+      "Interior Design & Fit-Out": ["Okha", "Inhouse Brand Architects", "Aupiais House", "Cory Contaxis", "SAIDI members"],
     },
   },
   Education: {
@@ -110,6 +161,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.2s",
       contentGaps: ["Course schema markup", "Alumni success stories", "Free resource lead magnets", "YouTube channel strategy"],
       missedRevenueEstimate: "R760,000–R3,325,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["K-12 Tutoring & Private Schools", "Online Courses & EdTech", "Corporate Training", "Test Prep", "Skills Bootcamps", "Higher Education"],
+    subNicheCompetitors: {
+      "K-12 Tutoring & Private Schools": ["Educate Online", "Optimi", "Teach Me 2", "Extra Lessons", "Curro Holdings"],
+      "Skills Bootcamps": ["HyperionDev", "CodeSpace", "WeThinkCode_", "CapaCiTi", "Umuzi"],
+      "Corporate Training": ["Enterprises UP", "Litha Learning", "Talent Architects", "Nashua Learning", "Terblanche & Associates"],
     },
   },
   Hospitality: {
@@ -125,6 +183,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.0s",
       contentGaps: ["Online booking integration", "Review management", "Google Business photos", "Instagram content strategy"],
       missedRevenueEstimate: "R336,000–R1,400,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Hotel & Accommodation", "Restaurant & Café", "Catering & Events", "Bar & Nightlife", "Tours & Travel", "Wellness & Spa"],
+    subNicheCompetitors: {
+      "Hotel & Accommodation": ["Tsogo Sun", "City Lodge Hotels", "African Pride Hotels", "The Vineyard Hotel", "Protea Hotels by Marriott"],
+      "Restaurant & Café": ["Nando's SA", "Ocean Basket", "Mugg & Bean", "Vida e Caffè", "Fournos"],
+      "Wellness & Spa": ["Mangwanani African Spa", "The Silo Spa", "Camelot Spa", "Bodhi Khaya", "La Colombe Spa"],
     },
   },
   Technology: {
@@ -140,6 +205,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.4s",
       contentGaps: ["Technical blog / thought leadership", "Case studies with ROI", "LinkedIn ads", "Gated whitepapers"],
       missedRevenueEstimate: "R880,000–R3,080,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["SaaS & Software", "App Development", "IT Support & Managed Services", "Cybersecurity", "FinTech", "MarTech"],
+    subNicheCompetitors: {
+      "SaaS & Software": ["Sage South Africa", "Syspro", "Kerridge Commercial Systems", "MicroStrategy SA", "Acumatica"],
+      "Cybersecurity": ["Liquid Cyber Security", "Datacentrix", "Performanta", "Check Point SA", "Dark Fibre Africa"],
+      "FinTech": ["Yoco", "Peach Payments", "PayFast", "Ozow", "SnapScan"],
     },
   },
   "Financial services": {
@@ -155,6 +227,13 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.5s",
       contentGaps: ["Trust signals / compliance badges", "Calculator lead magnets", "Educational content SEO", "WhatsApp Business API"],
       missedRevenueEstimate: "R1,400,000–R5,600,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Insurance (General)", "Life & Health Insurance", "Investment Advisory", "Accounting & Bookkeeping", "Lending & Credit", "Crypto & Digital Assets"],
+    subNicheCompetitors: {
+      "Insurance (General)": ["Outsurance", "Discovery Insure", "Momentum Short-Term Insurance", "Santam", "Hollard"],
+      "Investment Advisory": ["Allan Gray", "Coronation Fund Managers", "Ninety One", "PSG Wealth", "Sanlam Investments"],
+      "Lending & Credit": ["African Bank", "Capitec Business", "WeCapital", "Retail Capital", "Lulalend"],
     },
   },
   Retail: {
@@ -170,6 +249,12 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "1.9s",
       contentGaps: ["Loyalty programme integration", "Product review schema", "Abandoned cart recovery", "WhatsApp catalogue"],
       missedRevenueEstimate: "R144,000–R576,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Fashion & Apparel", "Electronics", "Specialty Retail", "Furniture & Home", "Grocery", "Beauty & Cosmetics"],
+    subNicheCompetitors: {
+      "Fashion & Apparel": ["Zara SA", "H&M South Africa", "Woolworths Fashion", "Truworths", "Mr Price"],
+      "Beauty & Cosmetics": ["Sorbet", "Clicks Beauty", "Dis-Chem Beauty", "Edgars Beauty", "Foschini Beauty"],
     },
   },
   "Food & Beverage": {
@@ -185,6 +270,12 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.0s",
       contentGaps: ["Online ordering integration", "Google Business photos", "Instagram reels strategy", "Loyalty app / WhatsApp"],
       missedRevenueEstimate: "R48,000–R192,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Restaurant (Eat-In)", "Takeaway & Delivery", "Bakery & Confectionery", "Catering & Food Service", "Beverage Production", "Food Distribution"],
+    subNicheCompetitors: {
+      "Takeaway & Delivery": ["Uber Eats SA", "Bolt Food", "Checkers Sixty60", "Pick n Pay ASAP!", "Mr Delivery"],
+      "Bakery & Confectionery": ["Woolworths Food", "Checkers Bakery", "Fournos", "Bread & Butter Patisserie", "Sasfin Bakery"],
     },
   },
   Marketing: {
@@ -200,6 +291,12 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.3s",
       contentGaps: ["Case study portfolio", "Awards & credentials page", "LinkedIn thought leadership", "Free audit lead magnet"],
       missedRevenueEstimate: "R900,000–R3,150,000/year",
+      source: "internal_estimate",
+    },
+    subNiches: ["Digital Marketing Agency", "Creative & Design", "Social Media Management", "PR & Communications", "Influencer & Affiliate"],
+    subNicheCompetitors: {
+      "Digital Marketing Agency": ["Ogilvy South Africa", "Joe Public United", "TBWA Hunt Lascaris", "Rogerwilco", "Acceleration"],
+      "Social Media Management": ["Retroviral", "Stretch Digital", "Limelight", "Ornico", "Carma"],
     },
   },
   Other: {
@@ -215,7 +312,10 @@ export const INDUSTRY_DATA: Record<string, IndustryEntry> = {
       avgWebsiteLoadTime: "2.5s",
       contentGaps: ["Clear value proposition on homepage", "Lead capture form", "Google Analytics setup", "Google Business Profile"],
       missedRevenueEstimate: "R240,000–R800,000/year",
+      source: "internal_estimate",
     },
+    subNiches: [],
+    subNicheCompetitors: {},
   },
 };
 

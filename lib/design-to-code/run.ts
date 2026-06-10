@@ -25,7 +25,7 @@ export async function runGenerateDesignBrief(
 
   const profile = detail.profile as Record<string, unknown>;
   const notes = (detail.notes ?? []) as { body?: string }[];
-  const ctx = aggregateFromClientDetail(
+  const ctx = await aggregateFromClientDetail(
     clientId,
     profile,
     notes,

@@ -230,20 +230,16 @@ async function scrapeHomepage(url: string): Promise<WebsiteEnrichmentData["seoSi
       .filter(({ pattern }) => pattern.test(html))
       .map(({ name }) => name);
 
-    // robots.txt
+    // robots.txt + sitemap.xml in parallel
     const baseUrl = new URL(url).origin;
-    const hasRobotsTxt = await fetch(`${baseUrl}/robots.txt`, {
-      signal: AbortSignal.timeout(5_000),
-    })
-      .then((r) => r.ok)
-      .catch(() => false);
-
-    // sitemap.xml
-    const hasSitemap = await fetch(`${baseUrl}/sitemap.xml`, {
-      signal: AbortSignal.timeout(5_000),
-    })
-      .then((r) => r.ok)
-      .catch(() => false);
+    const [hasRobotsTxt, hasSitemap] = await Promise.all([
+      fetch(`${baseUrl}/robots.txt`, { signal: AbortSignal.timeout(5_000) })
+        .then((r) => r.ok)
+        .catch(() => false),
+      fetch(`${baseUrl}/sitemap.xml`, { signal: AbortSignal.timeout(5_000) })
+        .then((r) => r.ok)
+        .catch(() => false),
+    ]);
 
     return {
       hasTitle: Boolean(titleText),

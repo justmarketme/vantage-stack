@@ -3,6 +3,7 @@ import { normalizeWebsiteUrl } from "../blueprint/schema";
 import { ensureCrmSchema } from "./db";
 import { logCrmActivity } from "./activity";
 import { triggerResearchAgent } from "../weekly-scheduler/pipeline";
+import { CLIENT_STATUS } from "./constants";
 
 export type ClientPatch = {
   name?: string;
@@ -21,6 +22,14 @@ export type ClientPatch = {
   status?: string;
   next_action?: string | null;
   assigned_to?: string | null;
+  sub_niche?: string | null;
+  conversion_rate?: string | null;
+  speed_to_contact?: string | null;
+  urgency_timeline?: string | null;
+  previous_vendor_exp?: string[] | null;
+  primary_social_handle?: string | null;
+  social_insights?: Record<string, unknown> | null;
+  website_enrichment?: Record<string, unknown> | null;
 };
 
 function pickChanges(before: Record<string, unknown>, after: Record<string, unknown>, keys: string[]) {
@@ -90,6 +99,14 @@ export async function updateClientRecord(
   if (patch.status !== undefined) next.status = patch.status;
   if (patch.next_action !== undefined) next.next_action = patch.next_action;
   if (patch.assigned_to !== undefined) next.assigned_to = patch.assigned_to;
+  if (patch.sub_niche !== undefined) next.sub_niche = patch.sub_niche;
+  if (patch.conversion_rate !== undefined) next.conversion_rate = patch.conversion_rate;
+  if (patch.speed_to_contact !== undefined) next.speed_to_contact = patch.speed_to_contact;
+  if (patch.urgency_timeline !== undefined) next.urgency_timeline = patch.urgency_timeline;
+  if (patch.previous_vendor_exp !== undefined) next.previous_vendor_exp = patch.previous_vendor_exp;
+  if (patch.primary_social_handle !== undefined) next.primary_social_handle = patch.primary_social_handle;
+  if (patch.social_insights !== undefined) next.social_insights = patch.social_insights;
+  if (patch.website_enrichment !== undefined) next.website_enrichment = patch.website_enrichment;
 
   const keys = [
     "name",
@@ -108,6 +125,14 @@ export async function updateClientRecord(
     "status",
     "next_action",
     "assigned_to",
+    "sub_niche",
+    "conversion_rate",
+    "speed_to_contact",
+    "urgency_timeline",
+    "previous_vendor_exp",
+    "primary_social_handle",
+    "social_insights",
+    "website_enrichment",
   ];
   const changes = pickChanges(row, next, keys);
   if (Object.keys(changes).length === 0) {
@@ -134,6 +159,14 @@ export async function updateClientRecord(
       status = ${String(next.status)},
       next_action = ${next.next_action ? String(next.next_action) : null},
       assigned_to = ${next.assigned_to ? String(next.assigned_to) : null},
+      sub_niche = ${next.sub_niche ? String(next.sub_niche) : null},
+      conversion_rate = ${next.conversion_rate ? String(next.conversion_rate) : null},
+      speed_to_contact = ${next.speed_to_contact ? String(next.speed_to_contact) : null},
+      urgency_timeline = ${next.urgency_timeline ? String(next.urgency_timeline) : null},
+      previous_vendor_exp = ${Array.isArray(next.previous_vendor_exp) ? next.previous_vendor_exp : null}::text[],
+      primary_social_handle = ${next.primary_social_handle ? String(next.primary_social_handle) : null},
+      social_insights = ${next.social_insights != null ? next.social_insights as any : null}::jsonb,
+      website_enrichment = ${next.website_enrichment != null ? next.website_enrichment as any : null}::jsonb,
       updated_at = now()
     where id = ${clientId}::uuid
   `;
@@ -186,7 +219,7 @@ export async function updateClientRecord(
     });
   }
 
-  if (patch.status !== undefined && newStatus === "churned" && prevStatus !== "churned") {
+  if (patch.status !== undefined && newStatus === CLIENT_STATUS.CHURNED && prevStatus !== CLIENT_STATUS.CHURNED) {
     await logCrmActivity(db, {
       action_type: "client_churned",
       client_id: clientId,

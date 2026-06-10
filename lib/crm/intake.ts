@@ -28,7 +28,6 @@ function tomorrowIsoDate() {
 
 function buildIntakeChallenges(payload: BlueprintSubmit): string[] {
   if (payload.challenges && payload.challenges.length > 0) return payload.challenges;
-  const p = payload as unknown as Record<string, unknown>;
   const items: string[] = [];
   // Path A (LEADS)
   if (payload.enquiryVolume) items.push(`Enquiry volume: ${payload.enquiryVolume}`);
@@ -38,15 +37,15 @@ function buildIntakeChallenges(payload: BlueprintSubmit): string[] {
   if (payload.currentWebsiteStatus) items.push(`Website status: ${payload.currentWebsiteStatus}`);
   if (payload.googleMapsStatus) items.push(`Google Maps presence: ${payload.googleMapsStatus}`);
   if (payload.websiteGoal?.length) items.push(`Website goal: ${payload.websiteGoal.join(", ")}`);
-  if (p.serveArea) items.push(`Serve area: ${p.serveArea}`);
+  if (payload.serveArea) items.push(`Serve area: ${payload.serveArea}`);
   // Path C (AUTOMATION)
   if (payload.biggestTimeWaste?.length) items.push(`Biggest time waste: ${payload.biggestTimeWaste.join(", ")}`);
-  if (p.teamSize) items.push(`Team size: ${p.teamSize}`);
+  if (payload.teamSize) items.push(`Team size: ${payload.teamSize}`);
   // Path D (EXPLORE)
-  if (p.biggestFrustration) items.push(`Biggest frustration: ${p.biggestFrustration}`);
-  if (p.packagePreference) items.push(`Package preference: ${p.packagePreference}`);
+  if (payload.biggestFrustration) items.push(`Biggest frustration: ${payload.biggestFrustration}`);
+  if (payload.packagePreference) items.push(`Package preference: ${payload.packagePreference}`);
   // Shared
-  if (p.clientAcquisition) items.push(`Client acquisition: ${p.clientAcquisition}`);
+  if (payload.clientAcquisition) items.push(`Client acquisition: ${payload.clientAcquisition}`);
   if (payload.existingCrmStatus) items.push(`Current CRM/system: ${payload.existingCrmStatus}`);
   return items;
 }
@@ -91,7 +90,13 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       challenges, competitors, current_marketing, tools_used, monthly_budget,
       success_goals, status, company, created_by, package_intent,
       primary_intent, preferred_contact_time,
-      social_instagram, social_tiktok, social_facebook, social_x, social_youtube
+      social_instagram, social_tiktok, social_facebook, social_x, social_youtube,
+      serve_area, team_size, biggest_frustration, package_preference, client_acquisition,
+      sub_niche, industry_custom_description, industry_classified, previous_vendor_exp,
+      website_exists, conversion_rate, speed_to_contact, site_conversion_status,
+      hours_lost_per_week, urgency_timeline, primary_social_handle, avg_transaction_value,
+      enquiry_volume, follow_up_method, missed_call_handling, google_maps_status, biggest_time_waste,
+      website_goal, current_website_status
     ) values (
       ${payload.clientName},
       ${payload.email},
@@ -101,9 +106,9 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${payload.revenueRange},
       ${derived_challenges.length ? derived_challenges : null}::jsonb,
       ${payload.competitors?.length ? payload.competitors : null}::jsonb,
-      ${payload.currentMarketing},
+      ${payload.currentMarketing || null},
       ${payload.toolsUsed?.length ? payload.toolsUsed : null}::jsonb,
-      ${monthly_budget ?? 0},
+      ${monthly_budget ?? null},
       ${payload.successGoals || null},
       ${status},
       ${company},
@@ -115,7 +120,31 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${social_tiktok},
       ${social_facebook},
       ${social_x},
-      ${social_youtube}
+      ${social_youtube},
+      ${payload.serveArea || null},
+      ${payload.teamSize || null},
+      ${payload.biggestFrustration || null},
+      ${payload.packagePreference || null},
+      ${payload.clientAcquisition || null},
+      ${payload.subNiche || null},
+      ${payload.industryCustomDescription || null},
+      ${payload.industryClassified || null},
+      ${payload.previousVendorExp?.length ? payload.previousVendorExp : null}::text[],
+      ${payload.websiteExists || null},
+      ${payload.conversionRate || null},
+      ${payload.speedToContact || null},
+      ${payload.siteConversionStatus || null},
+      ${payload.hoursLostPerWeek || null},
+      ${payload.urgencyTimeline || null},
+      ${payload.primarySocialHandle || null},
+      ${payload.avgTransactionValue || null},
+      ${payload.enquiryVolume ?? null},
+      ${payload.followUpMethod ?? null},
+      ${payload.missedCallHandling ?? null},
+      ${payload.googleMapsStatus ?? null},
+      ${payload.biggestTimeWaste?.length ? payload.biggestTimeWaste : null}::text[],
+      ${payload.websiteGoal?.length ? payload.websiteGoal : null}::text[],
+      ${payload.currentWebsiteStatus ?? null}
     )
     on conflict (email) do update set
       name = excluded.name,
@@ -140,6 +169,30 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       social_facebook = coalesce(excluded.social_facebook, public.clients.social_facebook),
       social_x = coalesce(excluded.social_x, public.clients.social_x),
       social_youtube = coalesce(excluded.social_youtube, public.clients.social_youtube),
+      serve_area = coalesce(excluded.serve_area, public.clients.serve_area),
+      team_size = coalesce(excluded.team_size, public.clients.team_size),
+      biggest_frustration = coalesce(excluded.biggest_frustration, public.clients.biggest_frustration),
+      package_preference = coalesce(excluded.package_preference, public.clients.package_preference),
+      client_acquisition = coalesce(excluded.client_acquisition, public.clients.client_acquisition),
+      sub_niche = coalesce(excluded.sub_niche, public.clients.sub_niche),
+      industry_custom_description = coalesce(excluded.industry_custom_description, public.clients.industry_custom_description),
+      industry_classified = coalesce(excluded.industry_classified, public.clients.industry_classified),
+      previous_vendor_exp = coalesce(excluded.previous_vendor_exp, public.clients.previous_vendor_exp),
+      website_exists = coalesce(excluded.website_exists, public.clients.website_exists),
+      conversion_rate = coalesce(excluded.conversion_rate, public.clients.conversion_rate),
+      speed_to_contact = coalesce(excluded.speed_to_contact, public.clients.speed_to_contact),
+      site_conversion_status = coalesce(excluded.site_conversion_status, public.clients.site_conversion_status),
+      hours_lost_per_week = coalesce(excluded.hours_lost_per_week, public.clients.hours_lost_per_week),
+      urgency_timeline = coalesce(excluded.urgency_timeline, public.clients.urgency_timeline),
+      primary_social_handle = coalesce(excluded.primary_social_handle, public.clients.primary_social_handle),
+      avg_transaction_value = coalesce(excluded.avg_transaction_value, public.clients.avg_transaction_value),
+      enquiry_volume = coalesce(excluded.enquiry_volume, public.clients.enquiry_volume),
+      follow_up_method = coalesce(excluded.follow_up_method, public.clients.follow_up_method),
+      missed_call_handling = coalesce(excluded.missed_call_handling, public.clients.missed_call_handling),
+      google_maps_status = coalesce(excluded.google_maps_status, public.clients.google_maps_status),
+      biggest_time_waste = coalesce(excluded.biggest_time_waste, public.clients.biggest_time_waste),
+      website_goal = coalesce(excluded.website_goal, public.clients.website_goal),
+      current_website_status = coalesce(excluded.current_website_status, public.clients.current_website_status),
       updated_at = now()
     returning id::text as id
   `;
@@ -210,7 +263,28 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       social_facebook: social_facebook,
       social_x: social_x,
       social_youtube: social_youtube,
+      sub_niche: payload.subNiche || null,
+      conversion_rate: payload.conversionRate || null,
+      speed_to_contact: payload.speedToContact || null,
+      urgency_timeline: payload.urgencyTimeline || null,
+      serve_area: payload.serveArea || null,
+      hours_lost_per_week: payload.hoursLostPerWeek || null,
+      biggest_frustration: payload.biggestFrustration || null,
+      previous_vendor_exp: payload.previousVendorExp || null,
+      primary_intent: payload.primaryIntent || null,
     });
+
+    // Auto-generate design brief when client has no website (fire-and-forget)
+    if (!payload.websiteUrl) {
+      void (async () => {
+        try {
+          const { runGenerateDesignBrief } = await import("../design-to-code/run");
+          await runGenerateDesignBrief(db, clientId, {});
+        } catch {
+          // silent — never block intake
+        }
+      })();
+    }
 
     // Trigger automated WhatsApp follow-up if applicable
     if (payload.whatsapp) {

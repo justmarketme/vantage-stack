@@ -1,38 +1,31 @@
-import type { PreviewData, TwilioCallResult } from '@/types/demo-call'
+import type { PreviewData } from '@/types/demo-call'
 
+export interface TwilioCallResult {
+  success: boolean
+  callSid?: string
+  status?: string
+  message?: string
+}
+
+// Client-side helper: delegates to the server-side outbound route which calls
+// Twilio directly. Business context is passed for logging purposes.
 export async function triggerTwilioCall(
   phoneNumber: string,
   previewData: PreviewData
 ): Promise<TwilioCallResult> {
-  const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
-
-  if (!webhookUrl) {
-    console.warn('[Twilio] NEXT_PUBLIC_N8N_WEBHOOK_URL not set')
-    return { success: false, message: 'n8n webhook not configured' }
-  }
-
-  const twilioWebhookUrl = webhookUrl.replace(
-    '/webhook/vs-call-agent-demo',
-    '/webhook/vs-call-agent-outbound'
-  )
-
-  const response = await fetch(twilioWebhookUrl, {
+  const res = await fetch('/api/demo-call/outbound', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       phoneNumber,
       businessName: previewData.businessName ?? previewData.scrapedTitle ?? 'the business',
-      location: previewData.location ?? '',
-      services: previewData.services ?? [],
-      pricing: previewData.pricing ?? '',
-      corpusId: previewData.corpusId ?? '',
-      url: previewData.url ?? '',
     }),
   })
 
-  if (!response.ok) {
-    throw new Error(`n8n returned ${response.status}: ${response.statusText}`)
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error ?? `Call failed (${res.status})`)
   }
 
-  return await response.json() as TwilioCallResult
+  return res.json()
 }

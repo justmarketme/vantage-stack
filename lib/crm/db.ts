@@ -155,6 +155,25 @@ export async function ensureCrmSchema(db: Sql) {
       alter table public.clients add column if not exists biggest_frustration text;
       alter table public.clients add column if not exists package_preference text;
       alter table public.clients add column if not exists client_acquisition text;
+      alter table public.clients add column if not exists sub_niche text;
+      alter table public.clients add column if not exists industry_custom_description text;
+      alter table public.clients add column if not exists industry_classified text;
+      alter table public.clients add column if not exists previous_vendor_exp text[];
+      alter table public.clients add column if not exists website_exists text;
+      alter table public.clients add column if not exists conversion_rate text;
+      alter table public.clients add column if not exists speed_to_contact text;
+      alter table public.clients add column if not exists hours_lost_per_week text;
+      alter table public.clients add column if not exists site_conversion_status text;
+      alter table public.clients add column if not exists urgency_timeline text;
+      alter table public.clients add column if not exists primary_social_handle text;
+      alter table public.clients add column if not exists avg_transaction_value text;
+      alter table public.clients add column if not exists google_business_data jsonb;
+      alter table public.clients add column if not exists enquiry_volume text;
+      alter table public.clients add column if not exists follow_up_method text;
+      alter table public.clients add column if not exists missed_call_handling text;
+      alter table public.clients add column if not exists google_maps_status text;
+      alter table public.clients add column if not exists biggest_time_waste text[];
+      alter table public.clients add column if not exists website_goal text[];
       create index if not exists clients_status_idx on public.clients (status);
       create index if not exists clients_created_idx on public.clients (created_at desc);
     `),

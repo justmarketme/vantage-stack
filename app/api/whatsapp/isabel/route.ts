@@ -7,6 +7,9 @@ import { validateTwilioSignatureAny, formatForWhatsApp, twimlMessage, twimlEmpty
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// ConvAI's text round-trip (greeting + reply over WebSocket) can take ~5-10s;
+// give the function headroom so a real reply isn't cut to the fallback.
+export const maxDuration = 30;
 
 const FALLBACK_REPLY =
   "Thanks for your message! I'm having a brief technical hiccup — please try again in a moment, or visit our website and I'll be right there to help.";

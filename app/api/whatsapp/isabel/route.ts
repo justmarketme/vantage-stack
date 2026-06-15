@@ -18,6 +18,27 @@ function xml(body: string, status = 200) {
   return new NextResponse(body, { status, headers: { "Content-Type": "text/xml" } });
 }
 
+/**
+ * Protected diagnostic: GET ?key=<NOTIFY_WEBHOOK_SECRET>&msg=... runs askIsabel
+ * directly and returns the raw result + env presence, so production failures can
+ * be inspected without guessing. Returns 404 without the correct key.
+ */
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const secret = (process.env.NOTIFY_WEBHOOK_SECRET || "").trim();
+  if (!secret || url.searchParams.get("key") !== secret) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+  const env = {
+    hasApiKey: Boolean((process.env.ELEVEN_LABS_API_KEY || process.env.ELEVENLABS_API_KEY || "").trim()),
+    hasPublicApiKey: Boolean((process.env.NEXT_PUBLIC_ELEVEN_LABS_API_KEY || "").trim()),
+    hasAgentId: Boolean((process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim()),
+  };
+  const started = Date.now();
+  const result = await askIsabel({ message: url.searchParams.get("msg") || "Hello, what does VantageStack do?" });
+  return NextResponse.json({ env, elapsedMs: Date.now() - started, result });
+}
+
 const WEBHOOK_PATH = "/api/whatsapp/isabel";
 
 /** Swap apex <-> www so either host variant validates. */

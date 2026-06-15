@@ -27,7 +27,7 @@ const SIGNED_URL_ENDPOINT = "https://api.elevenlabs.io/v1/convai/conversation/ge
 /** How many prior turns to replay for continuity. */
 const HISTORY_LIMIT = 12;
 /** Hard ceiling so a hung socket can't stall the Twilio webhook. */
-const REPLY_TIMEOUT_MS = 13_000;
+const REPLY_TIMEOUT_MS = 22_000;
 
 function getConfig() {
   const agentId = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
@@ -102,7 +102,13 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
     const timer = setTimeout(() => finish({ ok: false, error: "timeout" }), REPLY_TIMEOUT_MS);
 
     try {
-      ws = new WebSocket(url, signed ? undefined : { headers: { "xi-api-key": apiKey } });
+      // perMessageDeflate:false — in Vercel's serverless runtime, compressed
+      // data frames were being dropped after the handshake (init arrived, then
+      // silence). Disabling compression forces plain frames so replies arrive.
+      ws = new WebSocket(url, {
+        perMessageDeflate: false,
+        ...(signed ? {} : { headers: { "xi-api-key": apiKey } }),
+      });
     } catch (e) {
       tr("construct_error:" + (e instanceof Error ? e.message : String(e)));
       finish({ ok: false, error: "ws_construct_failed" });

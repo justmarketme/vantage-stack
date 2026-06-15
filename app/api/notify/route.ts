@@ -67,6 +67,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
+  // Require real content before fanning out to the team over SMS. A raw
+  // `message`, or at minimum a caller name or number, must be present —
+  // otherwise an empty `{}` body would spam the team with a contentless alert.
+  const hasRawMessage = typeof payload.message === 'string' && payload.message.trim().length > 0
+  const hasCallerDetail = Boolean(payload.callerName?.trim() || payload.callerNumber?.trim())
+  if (!hasRawMessage && !hasCallerDetail) {
+    return NextResponse.json(
+      { error: 'Missing message content: provide `message`, or `callerName`/`callerNumber`.' },
+      { status: 400 }
+    )
+  }
+
   // Build a readable message from the structured fields, or use a raw message.
   const body =
     payload.message ??

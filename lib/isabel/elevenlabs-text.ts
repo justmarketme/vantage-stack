@@ -59,7 +59,9 @@ function buildHistoryContext(history: IsabelTurn[]): string | null {
   ].join("\n");
 }
 
-export type AskIsabelResult = { ok: true; reply: string } | { ok: false; error: string };
+export type AskIsabelResult =
+  | { ok: true; reply: string; trace?: string[] }
+  | { ok: false; error: string; trace?: string[] };
 
 /**
  * Send one user turn to Isabel and return her reply text.
@@ -80,6 +82,9 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
   return new Promise<AskIsabelResult>((resolve) => {
     let settled = false;
     let ws: WebSocket | null = null;
+    const t0 = Date.now();
+    const trace: string[] = [`signed=${signed ? "yes" : "no"}`];
+    const tr = (m: string) => trace.push(`${Date.now() - t0}ms:${m}`);
 
     const finish = (result: AskIsabelResult) => {
       if (settled) return;
@@ -91,19 +96,21 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
       } catch {
         /* noop */
       }
-      resolve(result);
+      resolve({ ...result, trace });
     };
 
     const timer = setTimeout(() => finish({ ok: false, error: "timeout" }), REPLY_TIMEOUT_MS);
 
     try {
       ws = new WebSocket(url, signed ? undefined : { headers: { "xi-api-key": apiKey } });
-    } catch {
+    } catch (e) {
+      tr("construct_error:" + (e instanceof Error ? e.message : String(e)));
       finish({ ok: false, error: "ws_construct_failed" });
       return;
     }
 
     ws.on("open", () => {
+      tr("open");
       // Minimal override → keep the dashboard prompt + KB exactly as the widget uses them.
       ws!.send(
         JSON.stringify({
@@ -135,6 +142,7 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
       } catch {
         return;
       }
+      tr("evt:" + (evt.type || "unknown"));
 
       switch (evt.type) {
         case "conversation_initiation_metadata": {
@@ -169,7 +177,13 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
       }
     });
 
-    ws.on("error", () => finish({ ok: false, error: "ws_error" }));
-    ws.on("close", () => finishWithBest());
+    ws.on("error", (e: Error) => {
+      tr("error:" + (e?.message || "unknown"));
+      finish({ ok: false, error: "ws_error" });
+    });
+    ws.on("close", (code: number) => {
+      tr("close:" + code);
+      finishWithBest();
+    });
   });
 }

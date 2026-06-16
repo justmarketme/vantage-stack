@@ -18,43 +18,6 @@ function xml(body: string, status = 200) {
   return new NextResponse(body, { status, headers: { "Content-Type": "text/xml" } });
 }
 
-/**
- * Temporary protected diagnostic: GET ?key=<NOTIFY_WEBHOOK_SECRET> isolates
- * whether failures come from the brain (askIsabel) or the DB layer.
- */
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const secret = (process.env.NOTIFY_WEBHOOK_SECRET || "").trim();
-  if (!secret || url.searchParams.get("key") !== secret) return new NextResponse("Not found", { status: 404 });
-
-  const out: Record<string, unknown> = {};
-  // Brain check
-  try {
-    const t = Date.now();
-    out.askIsabel = await askIsabel({ message: url.searchParams.get("msg") || "What does VantageStack do?" });
-    out.askMs = Date.now() - t;
-  } catch (e) {
-    out.askThrew = e instanceof Error ? e.message : String(e);
-  }
-  // Full POST-sequence check — find the exact thrower.
-  const db = await connectCrmDb().catch((e) => { out.connectThrew = String(e); return null; });
-  if (db) {
-    const phone = "whatsapp:+27000000111";
-    try { await ensureWhatsAppSchema(db); out.ensure = "ok"; } catch (e) { out.ensureThrew = e instanceof Error ? e.message : String(e); }
-    try { out.getThread = Boolean(await getThread(db, phone)); } catch (e) { out.getThreadThrew = e instanceof Error ? e.message : String(e); }
-    try {
-      await appendTurns(db, { phone, profileName: "Diag", userMessage: "diag", assistantReply: "diag reply", prior: [] });
-      out.appendTurns = "ok";
-    } catch (e) { out.appendTurnsThrew = e instanceof Error ? e.message : String(e); }
-    try {
-      const cid = await captureWhatsAppLead(db, { phone, transcript: [{ role: "user", content: "diag" }] });
-      out.captureLead = { clientId: cid };
-    } catch (e) { out.captureLeadThrew = e instanceof Error ? e.message : String(e); }
-    // Do NOT end the shared singleton pool — it is reused across warm invocations.
-  }
-  return NextResponse.json(out);
-}
-
 const WEBHOOK_PATH = "/api/whatsapp/isabel";
 
 /** Swap apex <-> www so either host variant validates. */

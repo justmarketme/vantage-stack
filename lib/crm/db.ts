@@ -58,6 +58,7 @@ function supabaseLikeUrl(url: string): boolean {
  */
 let _singletonPool: Sql | null = null;
 let _singletonUrl: string | null = null;
+let _ended = false;
 
 /** Call this when a CONNECTION_ENDED error is detected so the next request gets a fresh pool. */
 export async function resetSingletonPool(): Promise<void> {
@@ -65,12 +66,23 @@ export async function resetSingletonPool(): Promise<void> {
     try { await _singletonPool.end({ timeout: 2 }); } catch { /* ignore */ }
     _singletonPool = null;
     _singletonUrl = null;
+    _ended = false;
   }
 }
 
 export async function connectCrmDb(): Promise<Sql | null> {
   const url = await memoizedResolvedConnectionString();
   if (!url) return null;
+
+  // Self-heal: if the cached pool was ended (e.g. a request handler called
+  // db.end() on the shared singleton), drop it so we recreate a live pool.
+  // Without this, every later invocation in the same warm Lambda would get
+  // the dead pool back and throw `write CONNECTION_ENDED` on every query.
+  if (_singletonPool && _ended) {
+    _singletonPool = null;
+    _singletonUrl = null;
+    _ended = false;
+  }
 
   // Return existing singleton if URL hasn’t changed (covers hot-reload in dev)
   if (_singletonPool && _singletonUrl === url) return _singletonPool;
@@ -101,7 +113,7 @@ export async function connectCrmDb(): Promise<Sql | null> {
     );
   }
 
-  _singletonPool = postgres(url, {
+  const pool = postgres(url, {
     max: 3,          // 3 is plenty — Supabase session pooler default pool_size is 15, shared across all serverless invocations
     prepare: false,
     connect_timeout: 15,
@@ -109,7 +121,19 @@ export async function connectCrmDb(): Promise<Sql | null> {
     max_lifetime: 60 * 10,
     ...(supabaseLikeUrl(url) ? { ssl: "require" as const } : {}),
   });
+
+  // Intercept end() on the shared singleton: a per-request handler calling
+  // db.end() must not leave a dead pool cached for the next invocation. We
+  // flag it so connectCrmDb() transparently rebuilds on the next call.
+  const realEnd = pool.end.bind(pool);
+  (pool as unknown as { end: (...a: unknown[]) => Promise<void> }).end = async (...args: unknown[]) => {
+    _ended = true;
+    return (realEnd as (...a: unknown[]) => Promise<void>)(...args);
+  };
+
+  _singletonPool = pool;
   _singletonUrl = url;
+  _ended = false;
 
   return _singletonPool;
 }

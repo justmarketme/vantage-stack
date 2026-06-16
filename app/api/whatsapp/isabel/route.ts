@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       const cid = await captureWhatsAppLead(db, { phone, transcript: [{ role: "user", content: "diag" }] });
       out.captureLead = { clientId: cid };
     } catch (e) { out.captureLeadThrew = e instanceof Error ? e.message : String(e); }
-    await db.end({ timeout: 5 }).catch(() => {});
+    // Do NOT end the shared singleton pool — it is reused across warm invocations.
   }
   return NextResponse.json(out);
 }
@@ -147,24 +147,32 @@ export async function POST(req: Request) {
 
     const reply = result.reply;
 
-    // Persist the exchange, then capture/refresh the CRM lead from the full thread.
-    await appendTurns(db, { phone, profileName, userMessage: message, assistantReply: reply, prior });
+    // Persistence + CRM lead capture are best-effort: a DB write failure must
+    // NEVER block Isabel's real reply. Each step is isolated so one failure
+    // can't abort the others, and none can fall through to the fallback reply.
+    try {
+      await appendTurns(db, { phone, profileName, userMessage: message, assistantReply: reply, prior });
+    } catch (e) {
+      console.error("[isabel-whatsapp] appendTurns failed (non-fatal)", e);
+    }
 
-    const updatedTranscript = [
-      ...prior,
-      { role: "user" as const, content: message },
-      { role: "assistant" as const, content: reply },
-    ];
-    const clientId = await captureWhatsAppLead(db, { phone, transcript: updatedTranscript });
-    if (clientId && clientId !== thread?.lead_client_id) {
-      await linkLeadClient(db, phone, clientId);
+    try {
+      const updatedTranscript = [
+        ...prior,
+        { role: "user" as const, content: message },
+        { role: "assistant" as const, content: reply },
+      ];
+      const clientId = await captureWhatsAppLead(db, { phone, transcript: updatedTranscript });
+      if (clientId && clientId !== thread?.lead_client_id) {
+        await linkLeadClient(db, phone, clientId);
+      }
+    } catch (e) {
+      console.error("[isabel-whatsapp] lead capture failed (non-fatal)", e);
     }
 
     return xml(twimlMessage(formatForWhatsApp(reply)));
   } catch (e) {
     console.error("[isabel-whatsapp] handler error", e);
     return xml(twimlMessage(FALLBACK_REPLY));
-  } finally {
-    await db.end({ timeout: 5 });
   }
 }

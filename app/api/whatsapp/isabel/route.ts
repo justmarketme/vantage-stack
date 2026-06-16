@@ -36,22 +36,21 @@ export async function GET(req: Request) {
   } catch (e) {
     out.askThrew = e instanceof Error ? e.message : String(e);
   }
-  // DB check
-  try {
-    const t = Date.now();
-    const db = await connectCrmDb();
-    if (!db) { out.db = "no_database_url"; }
-    else {
-      try {
-        await ensureWhatsAppSchema(db);
-        const thread = await getThread(db, "whatsapp:+27000000000");
-        out.db = { ok: true, ms: Date.now() - t, threadFound: Boolean(thread) };
-      } finally {
-        await db.end({ timeout: 5 });
-      }
-    }
-  } catch (e) {
-    out.dbThrew = e instanceof Error ? e.message : String(e);
+  // Full POST-sequence check — find the exact thrower.
+  const db = await connectCrmDb().catch((e) => { out.connectThrew = String(e); return null; });
+  if (db) {
+    const phone = "whatsapp:+27000000111";
+    try { await ensureWhatsAppSchema(db); out.ensure = "ok"; } catch (e) { out.ensureThrew = e instanceof Error ? e.message : String(e); }
+    try { out.getThread = Boolean(await getThread(db, phone)); } catch (e) { out.getThreadThrew = e instanceof Error ? e.message : String(e); }
+    try {
+      await appendTurns(db, { phone, profileName: "Diag", userMessage: "diag", assistantReply: "diag reply", prior: [] });
+      out.appendTurns = "ok";
+    } catch (e) { out.appendTurnsThrew = e instanceof Error ? e.message : String(e); }
+    try {
+      const cid = await captureWhatsAppLead(db, { phone, transcript: [{ role: "user", content: "diag" }] });
+      out.captureLead = { clientId: cid };
+    } catch (e) { out.captureLeadThrew = e instanceof Error ? e.message : String(e); }
+    await db.end({ timeout: 5 }).catch(() => {});
   }
   return NextResponse.json(out);
 }

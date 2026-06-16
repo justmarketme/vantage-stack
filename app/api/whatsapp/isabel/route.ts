@@ -18,6 +18,44 @@ function xml(body: string, status = 200) {
   return new NextResponse(body, { status, headers: { "Content-Type": "text/xml" } });
 }
 
+/**
+ * Temporary protected diagnostic: GET ?key=<NOTIFY_WEBHOOK_SECRET> isolates
+ * whether failures come from the brain (askIsabel) or the DB layer.
+ */
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const secret = (process.env.NOTIFY_WEBHOOK_SECRET || "").trim();
+  if (!secret || url.searchParams.get("key") !== secret) return new NextResponse("Not found", { status: 404 });
+
+  const out: Record<string, unknown> = {};
+  // Brain check
+  try {
+    const t = Date.now();
+    out.askIsabel = await askIsabel({ message: url.searchParams.get("msg") || "What does VantageStack do?" });
+    out.askMs = Date.now() - t;
+  } catch (e) {
+    out.askThrew = e instanceof Error ? e.message : String(e);
+  }
+  // DB check
+  try {
+    const t = Date.now();
+    const db = await connectCrmDb();
+    if (!db) { out.db = "no_database_url"; }
+    else {
+      try {
+        await ensureWhatsAppSchema(db);
+        const thread = await getThread(db, "whatsapp:+27000000000");
+        out.db = { ok: true, ms: Date.now() - t, threadFound: Boolean(thread) };
+      } finally {
+        await db.end({ timeout: 5 });
+      }
+    }
+  } catch (e) {
+    out.dbThrew = e instanceof Error ? e.message : String(e);
+  }
+  return NextResponse.json(out);
+}
+
 const WEBHOOK_PATH = "/api/whatsapp/isabel";
 
 /** Swap apex <-> www so either host variant validates. */

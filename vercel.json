@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/research-batch",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/isabel-booking-followup",
+      "schedule": "23 * * * *"
     }
   ]
 }

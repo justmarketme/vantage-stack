@@ -1,9 +1,29 @@
 import { NextResponse } from "next/server";
 import { connectCrmDb } from "../../../../lib/crm/db";
 import { askIsabel } from "../../../../lib/isabel/elevenlabs-text";
-import { ensureWhatsAppSchema, getThread, appendTurns, linkLeadClient } from "../../../../lib/isabel/whatsapp-store";
+import {
+  ensureWhatsAppSchema,
+  getThread,
+  appendTurns,
+  linkLeadClient,
+  touchInbound,
+  setOptedOut,
+  setBookingState,
+  type WhatsAppThread,
+} from "../../../../lib/isabel/whatsapp-store";
 import { captureWhatsAppLead } from "../../../../lib/isabel/lead-capture";
 import { validateTwilioSignatureAny, formatForWhatsApp, twimlMessage, twimlEmpty } from "../../../../lib/isabel/twilio";
+import { getUpcomingSlots, createBooking, bookingLink } from "../../../../lib/calcom/booking";
+import {
+  parseBookDirective,
+  stripDirectives,
+  isOptOut,
+  parseSlotChoice,
+  composeOffer,
+  composeConfirmation,
+} from "../../../../lib/isabel/booking-flow";
+
+const MAX_OFFER = 3;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,36 +119,60 @@ export async function POST(req: Request) {
 
   try {
     await ensureWhatsAppSchema(db);
+
+    // ── Opt-out (STOP) ─────────────────────────────────────────────────
+    if (isOptOut(message)) {
+      await touchInbound(db, phone, profileName);
+      await setOptedOut(db, phone, true);
+      return xml(twimlMessage("You're unsubscribed and won't receive further messages. Reply here anytime to start chatting again."));
+    }
+
+    await touchInbound(db, phone, profileName);
     const thread = await getThread(db, phone);
+    // A fresh inbound (not STOP) means they re-engaged → clear any prior opt-out.
+    if (thread?.opted_out) {
+      try { await setOptedOut(db, phone, false); } catch { /* non-fatal */ }
+    }
     const prior = thread?.transcript ?? [];
 
+    // ── Booking: handle a slot choice while we're offering times ───────
+    if (thread && thread.booking_status === "offering" && thread.booking_offered.length) {
+      const handled = await handleSlotChoice(db, thread, phone, profileName, message, prior);
+      if (handled) return xml(twimlMessage(handled));
+      // not a parseable choice → fall through so Isabel can answer their question
+    }
+
+    // ── Normal turn: ask Isabel ────────────────────────────────────────
     const result = await askIsabel({ message, history: prior });
     if (!result.ok) {
       console.error("[isabel-whatsapp] askIsabel failed:", result.error);
       return xml(twimlMessage(FALLBACK_REPLY));
     }
 
-    const reply = result.reply;
+    const display = stripDirectives(result.reply) || "Sure — how can I help?";
+    const dir = parseBookDirective(result.reply);
 
-    // Persistence + CRM lead capture are best-effort: a DB write failure must
-    // NEVER block Isabel's real reply. Each step is isolated so one failure
-    // can't abort the others, and none can fall through to the fallback reply.
-    try {
-      await appendTurns(db, { phone, profileName, userMessage: message, assistantReply: reply, prior });
-    } catch (e) {
-      console.error("[isabel-whatsapp] appendTurns failed (non-fatal)", e);
+    let reply = display;
+    // Isabel signalled a booking and we have name + email → start the slot offer.
+    if (dir.has && dir.name && dir.email && thread?.booking_status !== "booked") {
+      const slots = await getUpcomingSlots();
+      const offered = slots.slice(0, MAX_OFFER).map((s) => s.start);
+      if (offered.length) {
+        await setBookingState(db, phone, { status: "offering", offered, name: dir.name, email: dir.email, markIntent: true });
+        const offer = composeOffer(dir.name, offered);
+        reply = display ? `${display}\n\n${offer}` : offer;
+      } else {
+        reply = `${display}\n\nYou can grab a time here: ${bookingLink()}`;
+      }
     }
 
+    await safeAppend(db, phone, profileName, message, reply, prior);
+
+    // Lead capture (best-effort — never blocks the reply).
     try {
-      const updatedTranscript = [
-        ...prior,
-        { role: "user" as const, content: message },
-        { role: "assistant" as const, content: reply },
-      ];
-      const clientId = await captureWhatsAppLead(db, { phone, transcript: updatedTranscript });
-      if (clientId && clientId !== thread?.lead_client_id) {
-        await linkLeadClient(db, phone, clientId);
-      }
+      const updated = [...prior, { role: "user" as const, content: message }, { role: "assistant" as const, content: reply }];
+      const clientId = await captureWhatsAppLead(db, { phone, transcript: updated });
+      if (clientId && clientId !== thread?.lead_client_id) await linkLeadClient(db, phone, clientId);
     } catch (e) {
       console.error("[isabel-whatsapp] lead capture failed (non-fatal)", e);
     }
@@ -138,4 +182,75 @@ export async function POST(req: Request) {
     console.error("[isabel-whatsapp] handler error", e);
     return xml(twimlMessage(FALLBACK_REPLY));
   }
+}
+
+/** Persist a turn; storage failure must never block the reply. */
+async function safeAppend(
+  db: Awaited<ReturnType<typeof connectCrmDb>>,
+  phone: string,
+  profileName: string | null,
+  userMessage: string,
+  assistantReply: string,
+  prior: { role: "user" | "assistant"; content: string }[],
+): Promise<void> {
+  if (!db) return;
+  try {
+    await appendTurns(db, { phone, profileName, userMessage, assistantReply, prior });
+  } catch (e) {
+    console.error("[isabel-whatsapp] appendTurns failed (non-fatal)", e);
+  }
+}
+
+/**
+ * While offering slots, interpret the reply. Returns the message to send, or
+ * null when the reply isn't a slot choice (so Isabel handles it normally).
+ */
+async function handleSlotChoice(
+  db: NonNullable<Awaited<ReturnType<typeof connectCrmDb>>>,
+  thread: WhatsAppThread,
+  phone: string,
+  profileName: string | null,
+  message: string,
+  prior: { role: "user" | "assistant"; content: string }[],
+): Promise<string | null> {
+  const choice = parseSlotChoice(message, thread.booking_offered.length);
+  if (choice === null) return null;
+
+  if (choice === "more") {
+    const slots = await getUpcomingSlots();
+    const next = slots.slice(MAX_OFFER, MAX_OFFER * 2).map((s) => s.start);
+    const offered = next.length ? next : slots.slice(0, MAX_OFFER).map((s) => s.start);
+    await setBookingState(db, phone, { status: "offering", offered, name: thread.booking_name, email: thread.booking_email });
+    const reply = offered.length ? composeOffer(thread.booking_name, offered) : `You can grab a time here: ${bookingLink()}`;
+    await safeAppend(db, phone, profileName, message, reply, prior);
+    return reply;
+  }
+
+  const iso = thread.booking_offered[choice];
+  const email = thread.booking_email || "";
+  if (!iso || !email) return null; // missing email → let Isabel collect it
+
+  const r = await createBooking({
+    startISO: iso,
+    name: thread.booking_name || "WhatsApp lead",
+    email,
+    notes: "Booked via Isabel on WhatsApp",
+  });
+  if (r.ok) {
+    await setBookingState(db, phone, { status: "booked", offered: [], uid: r.uid });
+    const reply = composeConfirmation(thread.booking_name, r.start, email);
+    await safeAppend(db, phone, profileName, message, reply, prior);
+    return reply;
+  }
+
+  // Slot just taken / booking failed → re-offer fresh times.
+  console.error("[isabel-whatsapp] booking failed:", r.error);
+  const slots = await getUpcomingSlots();
+  const offered = slots.slice(0, MAX_OFFER).map((s) => s.start);
+  await setBookingState(db, phone, { status: offered.length ? "offering" : "none", offered, name: thread.booking_name, email });
+  const reply = offered.length
+    ? `Ah — that time was just taken. ${composeOffer(thread.booking_name, offered)}`
+    : `That time was just taken and I couldn't pull more right now — you can pick one here: ${bookingLink()}`;
+  await safeAppend(db, phone, profileName, message, reply, prior);
+  return reply;
 }

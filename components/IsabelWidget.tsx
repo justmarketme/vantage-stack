@@ -95,6 +95,36 @@ function extractFromMessages(messages: Message[]): Partial<BlueprintData> {
   return data;
 }
 
+/** Isabel emits %%BOOK name="..." email="..."%% when ready to book. On the
+ *  website we open the existing Cal.com embed (prefilled) and never show it. */
+function parseBookDirective(text: string): { name: string; email: string } | null {
+  const m = text.match(/%%\s*BOOK\b([^%]*)%%/i);
+  if (!m) return null;
+  const inner = m[1] || "";
+  return {
+    name: inner.match(/name\s*=\s*"([^"]*)"/i)?.[1]?.trim() || "",
+    email: inner.match(/email\s*=\s*"([^"]*)"/i)?.[1]?.trim() || "",
+  };
+}
+
+function stripBookDirective(text: string): string {
+  return text.replace(/%%[^%]*%%/g, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** Open the Cal.com Discovery Call booking, prefilled. Falls back to a new tab. */
+function openCalBooking(name: string, email: string) {
+  const w = window as unknown as { Cal?: (...a: unknown[]) => void };
+  try {
+    if (typeof w.Cal === "function") {
+      w.Cal("modal", { calLink: "vantagestack/discovery-call", config: { name, email, layout: "month_view" } });
+      return;
+    }
+  } catch {
+    /* fall through */
+  }
+  window.open("https://cal.com/vantagestack/discovery-call", "_blank");
+}
+
 /** Parse markdown links [text](url) and render as clickable anchors */
 function MessageContent({ content }: { content: string }) {
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -208,9 +238,16 @@ export function IsabelWidget() {
         setFeedbackSent(null);
       },
       onMessage: (msg) => {
-        if (msg.message) {
-          setMessages((prev) => [...prev, { role: msg.source === "user" ? "user" : "assistant", content: msg.message }]);
+        if (!msg.message) return;
+        if (msg.source === "user") {
+          setMessages((prev) => [...prev, { role: "user", content: msg.message }]);
+          return;
         }
+        // Assistant: strip the booking directive from display; if present, open Cal.com.
+        const dir = parseBookDirective(msg.message);
+        const clean = stripBookDirective(msg.message);
+        if (clean) setMessages((prev) => [...prev, { role: "assistant", content: clean }]);
+        if (dir) openCalBooking(dir.name, dir.email);
       },
       onError: (err) => {
         console.error("❌ Isabel error:", err);

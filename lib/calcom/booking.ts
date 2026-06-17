@@ -98,6 +98,9 @@ export async function createBooking(params: {
     start: params.startISO,
     eventTypeId: evt,
     attendee: { name: params.name, email: params.email, timeZone: TZ, language: "en" },
+    // The Discovery Call event type requires a "Preferred-contact-method" select
+    // field. Isabel books over WhatsApp, so that's the contact method.
+    bookingFieldsResponses: { "Preferred-contact-method": "WhatsApp" },
     ...(params.notes ? { metadata: { notes: params.notes.slice(0, 480) } } : {}),
   };
 

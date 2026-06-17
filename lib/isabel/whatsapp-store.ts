@@ -71,16 +71,30 @@ type Row = {
   nudge_sent_at: string | null;
 };
 
+/** jsonb columns may come back as an array OR a (double-encoded) JSON string. */
+function asArray<T>(v: unknown): T[] {
+  if (Array.isArray(v)) return v as T[];
+  if (typeof v === "string") {
+    try {
+      const p = JSON.parse(v);
+      return Array.isArray(p) ? (p as T[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function toThread(row: Row): WhatsAppThread {
   return {
     phone: row.phone,
     profile_name: row.profile_name,
-    transcript: Array.isArray(row.transcript) ? row.transcript : [],
+    transcript: asArray<IsabelTurn>(row.transcript),
     lead_client_id: row.lead_client_id,
     opted_out: Boolean(row.opted_out),
     last_inbound_at: row.last_inbound_at,
     booking_status: (["none", "offering", "booked"].includes(row.booking_status) ? row.booking_status : "none") as BookingStatus,
-    booking_offered: Array.isArray(row.booking_offered) ? row.booking_offered : [],
+    booking_offered: asArray<string>(row.booking_offered),
     booking_uid: row.booking_uid,
     booking_name: row.booking_name,
     booking_email: row.booking_email,

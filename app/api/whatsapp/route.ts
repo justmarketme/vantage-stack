@@ -26,6 +26,38 @@ function toWhatsApp(num: string): string {
   return trimmed.startsWith('whatsapp:') ? trimmed : `whatsapp:${trimmed}`
 }
 
+/** Normalise to E.164. Handles ZA local (0XXXXXXXXX -> +27...), 00 prefix, spacing. */
+function normalizeE164(input: string): string | null {
+  let s = input.trim().replace(/^whatsapp:/i, '').replace(/[\s\-().]/g, '')
+  if (s.startsWith('00')) s = '+' + s.slice(2)
+  if (/^0\d{9}$/.test(s)) s = '+27' + s.slice(1) // ZA local mobile
+  if (!s.startsWith('+')) {
+    if (/^\d{10,15}$/.test(s)) s = '+' + s
+    else return null
+  }
+  return /^\+\d{8,15}$/.test(s) ? s : null
+}
+
+/**
+ * Validate the number via Twilio Lookup v2. Returns true (valid), false
+ * (definitively invalid/unreachable — e.g. an extra digit), or null when the
+ * lookup itself is inconclusive (don't hard-block on a Lookup outage).
+ */
+async function lookupValid(e164: string): Promise<boolean | null> {
+  try {
+    const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64')
+    const res = await fetch(`https://lookups.twilio.com/v2/PhoneNumbers/${encodeURIComponent(e164)}`, {
+      headers: { Authorization: `Basic ${auth}` },
+    })
+    if (res.status === 404) return false // not a real number
+    if (!res.ok) return null
+    const j = (await res.json()) as { valid?: boolean }
+    return typeof j.valid === 'boolean' ? j.valid : null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   const header = req.headers.get('authorization') || ''
   if (!NOTIFY_WEBHOOK_SECRET || header !== `Bearer ${NOTIFY_WEBHOOK_SECRET}`) {
@@ -46,10 +78,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const to = payload.whatsappNumber?.trim()
+  const rawTo = payload.whatsappNumber?.trim()
   const name = (payload.name?.trim() || 'there').split(' ')[0]
-  if (!to) {
+  if (!rawTo) {
     return NextResponse.json({ error: 'whatsappNumber is required' }, { status: 400 })
+  }
+
+  const to = normalizeE164(rawTo)
+  if (!to) {
+    console.error(`[whatsapp] invalid number format: "${rawTo}"`)
+    return NextResponse.json({ success: false, error: 'invalid_number_format', detail: `"${rawTo}" is not a valid phone number` }, { status: 400 })
+  }
+  const valid = await lookupValid(to)
+  if (valid === false) {
+    console.error(`[whatsapp] number not reachable (Lookup invalid): ${to} (raw "${rawTo}")`)
+    return NextResponse.json(
+      { success: false, error: 'invalid_whatsapp_number', detail: `${to} is not a valid/reachable number — please re-check the digits` },
+      { status: 400 },
+    )
   }
 
   try {

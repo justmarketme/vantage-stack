@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { connectCrmDb } from "../../../../lib/crm/db";
+import { processDueNudges } from "../../../../lib/isabel/nudge";
 import { askIsabel } from "../../../../lib/isabel/elevenlabs-text";
 import {
   ensureWhatsAppSchema,
@@ -134,6 +135,12 @@ export async function POST(req: Request) {
       try { await setOptedOut(db, phone, false); } catch { /* non-fatal */ }
     }
     const prior = thread?.transcript ?? [];
+
+    // After replying, opportunistically send any due 2h booking nudges for other
+    // threads — gives ~2h timeliness without a frequent cron (Hobby = daily only).
+    after(async () => {
+      try { await processDueNudges(db); } catch { /* best-effort */ }
+    });
 
     // ── Booking: handle a slot choice while we're offering times ───────
     if (thread && thread.booking_status === "offering" && thread.booking_offered.length) {

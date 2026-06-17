@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/isabel-booking-followup",
-      "schedule": "23 * * * *"
+      "schedule": "23 9 * * *"
     }
   ]
 }

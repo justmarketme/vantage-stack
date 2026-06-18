@@ -20,8 +20,26 @@ export type IsabelTurn = { role: "user" | "assistant"; content: string };
 const API_BASE = "https://api.elevenlabs.io/v1";
 /** How many prior turns to replay for continuity. */
 const HISTORY_LIMIT = 12;
-/** Abort the HTTP call if the agent turn takes too long (well under route maxDuration). */
-const REQUEST_TIMEOUT_MS = 25_000;
+/** Abort a single HTTP attempt if the agent turn takes too long. Two attempts
+ * (with backoff) must still fit comfortably under the route's 60s maxDuration. */
+const REQUEST_TIMEOUT_MS = 18_000;
+/** Total attempts (1 retry) — turns a transient ElevenLabs blip into a success
+ * instead of a user-visible "technical hiccup" fallback. */
+const MAX_ATTEMPTS = 2;
+const RETRY_BACKOFF_MS = 400;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Transient errors worth retrying; deterministic ones (config/empty/4xx) are not. */
+function isTransient(error: string): boolean {
+  return (
+    error === "timeout" ||
+    error === "request_failed" ||
+    error === "no_response" ||
+    error === "http_429" ||
+    /^http_5\d\d$/.test(error)
+  );
+}
 
 function getConfig() {
   const agentId = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
@@ -58,6 +76,25 @@ export async function askIsabel(params: { message: string; history?: IsabelTurn[
 
   const history = buildHistory(params.history || [], message);
 
+  let last: AskIsabelResult = { ok: false, error: "request_failed" };
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    last = await askOnce(agentId, apiKey, message, history);
+    if (last.ok || !isTransient(last.error)) return last;
+    if (attempt < MAX_ATTEMPTS) {
+      console.warn(`[isabel] transient '${last.error}' on attempt ${attempt}/${MAX_ATTEMPTS}; retrying`);
+      await sleep(RETRY_BACKOFF_MS);
+    }
+  }
+  return last;
+}
+
+/** One simulate-conversation HTTP call. */
+async function askOnce(
+  agentId: string,
+  apiKey: string,
+  message: string,
+  history: SimTurn[],
+): Promise<AskIsabelResult> {
   const body = {
     new_turns_limit: 1,
     simulation_specification: {

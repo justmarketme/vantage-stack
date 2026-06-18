@@ -14,6 +14,7 @@ import {
 } from "../../../../lib/isabel/whatsapp-store";
 import { captureWhatsAppLead } from "../../../../lib/isabel/lead-capture";
 import { validateTwilioSignatureAny, formatForWhatsApp, twimlMessage, twimlEmpty } from "../../../../lib/isabel/twilio";
+import { asyncSendConfigured, sendTypingIndicator, sendBurst } from "../../../../lib/isabel/whatsapp-send";
 import { getUpcomingSlots, createBooking, bookingLink } from "../../../../lib/calcom/booking";
 import {
   parseBookDirective,
@@ -28,9 +29,9 @@ const MAX_OFFER = 3;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// ConvAI's text round-trip (greeting + reply over WebSocket) can take ~5-10s;
-// give the function headroom so a real reply isn't cut to the fallback.
-export const maxDuration = 30;
+// ConvAI's text round-trip can take ~5-25s, then the human-paced burst adds a
+// few seconds of typing delays in after() — give the function full headroom.
+export const maxDuration = 60;
 
 const FALLBACK_REPLY =
   "Thanks for your message! I'm having a brief technical hiccup — please try again in a moment, or visit our website and I'll be right there to help.";
@@ -108,14 +109,32 @@ export async function POST(req: Request) {
   const from = (params.From || "").trim(); // e.g. "whatsapp:+27..."
   const message = (params.Body || "").trim();
   const profileName = (params.ProfileName || "").trim() || null;
+  const messageSid = (params.MessageSid || params.SmsMessageSid || "").trim();
   if (!from || !message) return xml(twimlEmpty());
 
   const phone = from; // keep the whatsapp: prefix as the thread key
 
+  // Human-feel delivery: when REST sending is configured we reply asynchronously
+  // (empty 200 now, typing dots + paced bursts via after()). Otherwise (e.g. local
+  // dev without Twilio creds) fall back to the original synchronous TwiML reply.
+  const useAsync = asyncSendConfigured() && !!messageSid;
+  const replyWith = (text: string) => {
+    if (useAsync) {
+      after(() => sendBurst({ to: from, messageSid, text }));
+      return xml(twimlEmpty());
+    }
+    return xml(twimlMessage(formatForWhatsApp(text)));
+  };
+
+  // Fire the typing indicator inline (NOT in after(), which only runs once the
+  // response is sent — too late) so the three dots show while Isabel thinks; the
+  // ConvAI round-trip can take several seconds. Also marks the inbound as read.
+  if (useAsync) await sendTypingIndicator(messageSid);
+
   const db = await connectCrmDb();
   if (!db) {
     console.error("[isabel-whatsapp] no DATABASE_URL");
-    return xml(twimlMessage(FALLBACK_REPLY));
+    return replyWith(FALLBACK_REPLY);
   }
 
   try {
@@ -125,7 +144,7 @@ export async function POST(req: Request) {
     if (isOptOut(message)) {
       await touchInbound(db, phone, profileName);
       await setOptedOut(db, phone, true);
-      return xml(twimlMessage("You're unsubscribed and won't receive further messages. Reply here anytime to start chatting again."));
+      return replyWith("You're unsubscribed and won't receive further messages. Reply here anytime to start chatting again.");
     }
 
     await touchInbound(db, phone, profileName);
@@ -145,7 +164,7 @@ export async function POST(req: Request) {
     // ── Booking: handle a slot choice while we're offering times ───────
     if (thread && thread.booking_status === "offering" && thread.booking_offered.length) {
       const handled = await handleSlotChoice(db, thread, phone, profileName, message, prior);
-      if (handled) return xml(twimlMessage(handled));
+      if (handled) return replyWith(handled);
       // not a parseable choice → fall through so Isabel can answer their question
     }
 
@@ -153,7 +172,7 @@ export async function POST(req: Request) {
     const result = await askIsabel({ message, history: prior });
     if (!result.ok) {
       console.error("[isabel-whatsapp] askIsabel failed:", result.error);
-      return xml(twimlMessage(FALLBACK_REPLY));
+      return replyWith(FALLBACK_REPLY);
     }
 
     const display = stripDirectives(result.reply) || "Sure — how can I help?";
@@ -184,10 +203,10 @@ export async function POST(req: Request) {
       console.error("[isabel-whatsapp] lead capture failed (non-fatal)", e);
     }
 
-    return xml(twimlMessage(formatForWhatsApp(reply)));
+    return replyWith(reply);
   } catch (e) {
     console.error("[isabel-whatsapp] handler error", e);
-    return xml(twimlMessage(FALLBACK_REPLY));
+    return replyWith(FALLBACK_REPLY);
   }
 }
 

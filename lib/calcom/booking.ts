@@ -9,6 +9,19 @@
 const CAL_BASE = "https://api.cal.com/v2";
 const TZ = "Africa/Johannesburg";
 
+/**
+ * Team members to add as guests on every Isabel-booked Discovery Call, so the
+ * calendar invite includes them. Override with BOOKING_INVITE_GUESTS (comma-
+ * separated emails); defaults to Jono + KG.
+ */
+function inviteGuests(): string[] {
+  const raw = (process.env.BOOKING_INVITE_GUESTS || "jono@vantagestack.co.za,motso@vantagestack.co.za").trim();
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
+}
+
 function apiKey(): string {
   // Value may carry an inline comment in .env; take the first token.
   return (process.env.CALCOM_API_KEY || "").trim().split(/\s+/)[0];
@@ -94,10 +107,13 @@ export async function createBooking(params: {
   const evt = eventTypeId();
   if (!key || !evt) return { ok: false, error: "calcom_not_configured" };
 
+  const guests = inviteGuests();
   const body = {
     start: params.startISO,
     eventTypeId: evt,
     attendee: { name: params.name, email: params.email, timeZone: TZ, language: "en" },
+    // Add the VantageStack team to the calendar invite.
+    ...(guests.length ? { guests } : {}),
     // The Discovery Call event type requires a "Preferred-contact-method" select
     // field. Isabel books over WhatsApp, so that's the contact method.
     bookingFieldsResponses: { "Preferred-contact-method": "WhatsApp" },

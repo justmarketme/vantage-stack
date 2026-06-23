@@ -192,12 +192,14 @@ export async function ensureCrmSchema(db: Sql) {
       alter table public.clients add column if not exists primary_social_handle text;
       alter table public.clients add column if not exists avg_transaction_value text;
       alter table public.clients add column if not exists google_business_data jsonb;
+      alter table public.clients add column if not exists website_enrichment jsonb;
       alter table public.clients add column if not exists enquiry_volume text;
       alter table public.clients add column if not exists follow_up_method text;
       alter table public.clients add column if not exists missed_call_handling text;
       alter table public.clients add column if not exists google_maps_status text;
       alter table public.clients add column if not exists biggest_time_waste text[];
       alter table public.clients add column if not exists website_goal text[];
+      alter table public.clients add column if not exists current_website_status text;
       create index if not exists clients_status_idx on public.clients (status);
       create index if not exists clients_created_idx on public.clients (created_at desc);
     `),

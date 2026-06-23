@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 const INDUSTRIES: Array<{ label: string; icon: string }> = [
   { label: "Plumbing & Trades",   icon: "🔧" },
@@ -770,7 +771,7 @@ export default function LeadScraperPage() {
           {moveSuccess !== null && (
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-300">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><strong>{moveSuccess} leads</strong> imported as <strong>{industry}</strong> contacts. <a href="/crm/clients" className="underline hover:text-green-200 transition">View in Contacts →</a></span>
+              <span><strong>{moveSuccess} leads</strong> imported as <strong>{industry}</strong> contacts. <Link href="/crm/clients" className="underline hover:text-green-200 transition">View in Contacts →</Link></span>
             </div>
           )}
           {moveError && <div className="mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-300">{moveError}</div>}

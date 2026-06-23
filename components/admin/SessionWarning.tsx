@@ -6,7 +6,6 @@ export function SessionWarning() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    let t: ReturnType<typeof setInterval> | undefined;
     async function tick() {
       try {
         const r = await fetch("/api/admin/session");
@@ -18,7 +17,7 @@ export function SessionWarning() {
       }
     }
     tick();
-    t = setInterval(tick, 60_000);
+    const t = setInterval(tick, 60_000);
     return () => {
       if (t) clearInterval(t);
     };

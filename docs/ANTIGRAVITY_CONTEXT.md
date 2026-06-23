@@ -10,7 +10,7 @@ Paste this at the start of any antigravity session working on **VantageStack**.
 You are working on the VantageStack project.
 
 Project details:
-- GitHub repo: Motsopule/vantage-stack
+- GitHub repo: justmarketme/vantage-stack
 - Vercel project: vantage-stack (team: jonos-projects-8697404e, projectId: prj_y1JnywARKccCSRxR86LBBBSsT8zO)
 - Supabase project URL: https://tinkmipmxunwvyemhalu.supabase.co
 
@@ -37,7 +37,7 @@ Project isolation — DO NOT touch:
 
 | Project | GitHub Repo | AI Service | Key Names |
 |---|---|---|---|
-| VantageStack | Motsopule/vantage-stack | ElevenLabs Conversational AI (Isabel) | NEXT_PUBLIC_ELEVENLABS_AGENT_ID |
+| VantageStack | justmarketme/vantage-stack | ElevenLabs Conversational AI (Isabel) | NEXT_PUBLIC_ELEVENLABS_AGENT_ID |
 | Lead Velocity | justmarketme/lead-velocity | Ultravox + ElevenLabs TTS (Ayanda) | ULTRAVOX_API_KEY, ELEVENLABS_EINSTEIN_VOICE_ID |
 | Capital Legacy | justmarketme/Capital_Legacy_cc_leader_board | None | — |
 

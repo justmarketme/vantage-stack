@@ -1,94 +1,17 @@
 import { config as loadDotenv } from "dotenv";
-import { existsSync } from "fs";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 // Allows running without `--env-file` (Node) by loading `.env.local` if present.
 // This is a dev helper only; production should use the platform's secret injection.
-const _beforeCwd = process.cwd();
 const _envPath = (() => {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url)); // .../scripts
   return path.join(scriptDir, "..", ".env.local");
 })();
-const _beforeEnvExists = existsSync(_envPath);
-const _beforeDatabaseUrl = process.env.DATABASE_URL;
-const _beforeSupabaseKey = process.env.SUPABASE_KEY;
-
-// #region agent log H3 envfile+cdir
-fetch("http://127.0.0.1:7940/ingest/6c677ec0-0cba-4762-aa2d-dc2b04124703", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "97aca1" },
-  body: JSON.stringify({
-    sessionId: "97aca1",
-    location: "scripts/check-env.ts:pre-dotenv",
-    message: "Check cwd and whether .env.local exists",
-    hypothesisId: "H3",
-    data: { cwd: _beforeCwd, envLocalExists: _beforeEnvExists },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-// #endregion
 
 // Override even if variables exist but are empty. Some shells/launchers may inject empty env vars,
 // which would otherwise prevent dotenv from setting the correct values.
 loadDotenv({ path: _envPath, override: true });
-
-function formatEnvSig(v: string | undefined) {
-  const s = (v ?? "").trim();
-  if (!s) return "empty";
-  if (/^postgres(ql)?:\/\//i.test(s)) return "postgres-url";
-  if (/^https?:\/\//i.test(s)) return "http-url";
-  if (s.startsWith("sb_")) return "sb-public-key";
-  return "other";
-}
-
-function appendLocalDebug(line: Record<string, unknown>) {
-  try {
-    const logPath = path.join(process.cwd(), "debug-97aca1.log");
-    fs.appendFileSync(logPath, JSON.stringify(line) + "\n", "utf8");
-  } catch {
-    // ignore logging failures; env-check should still work.
-  }
-}
-
-function envKeyState(key: string) {
-  const has = Object.prototype.hasOwnProperty.call(process.env, key);
-  const v = (process.env[key] ?? "").trim();
-  return { has, valueSig: formatEnvSig(process.env[key]), trimmedLen: v.length };
-}
-
-// #region agent log H1 before DATABASE_URL signature
-fetch("http://127.0.0.1:7940/ingest/6c677ec0-0cba-4762-aa2d-dc2b04124703", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "97aca1" },
-  body: JSON.stringify({
-    sessionId: "97aca1",
-    location: "scripts/check-env.ts:before-env",
-    message: "DATABASE_URL/SUPABASE_KEY signature before dotenv load",
-    hypothesisId: "H1",
-    data: { DATABASE_URL: formatEnvSig(_beforeDatabaseUrl), SUPABASE_KEY: formatEnvSig(_beforeSupabaseKey) },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-// #endregion
-
-// #region agent log H1 local append
-appendLocalDebug({
-  sessionId: "97aca1",
-  location: "scripts/check-env.ts:before-env-sig",
-  hypothesisId: "H1",
-  message: "Env signature before dotenv load",
-  data: {
-    DATABASE_URL: formatEnvSig(_beforeDatabaseUrl),
-    SUPABASE_KEY: formatEnvSig(_beforeSupabaseKey),
-    DATABASE_URL_keyState: envKeyState("DATABASE_URL"),
-    SUPABASE_KEY_keyState: envKeyState("SUPABASE_KEY"),
-  },
-  timestamp: Date.now(),
-  // no secrets
-});
-// #endregion
 
 // Only block on what the app needs to boot CRM + DB-backed routes. Integration keys are warned only.
 const REQUIRED = ["DATABASE_URL", "SUPABASE_KEY"] as const;
@@ -113,42 +36,6 @@ const missing = REQUIRED.filter((k) => !isSet(k));
 
 const legacyEleven = isSet("ELEVENLABS_API_KEY");
 const missingRecommended = RECOMMENDED.filter((k) => (k === "ELEVEN_LABS_API_KEY" ? !isSet(k) && !legacyEleven : !isSet(k)));
-
-// #region agent log H2 after dotenv load check
-fetch("http://127.0.0.1:7940/ingest/6c677ec0-0cba-4762-aa2d-dc2b04124703", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "97aca1" },
-  body: JSON.stringify({
-    sessionId: "97aca1",
-    location: "scripts/check-env.ts:after-env",
-    message: "DATABASE_URL/SUPABASE_KEY signature after dotenv load (override:false)",
-    hypothesisId: "H2",
-    data: {
-      DATABASE_URL: formatEnvSig(process.env.DATABASE_URL),
-      SUPABASE_KEY: formatEnvSig(process.env.SUPABASE_KEY),
-      changedFromBefore: (process.env.DATABASE_URL ?? "") !== (_beforeDatabaseUrl ?? ""),
-    },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-// #endregion
-
-// #region agent log H2 local append
-appendLocalDebug({
-  sessionId: "97aca1",
-  location: "scripts/check-env.ts:after-env-sig",
-  hypothesisId: "H2",
-  message: "Env signature after dotenv load (override:false)",
-  data: {
-    DATABASE_URL: formatEnvSig(process.env.DATABASE_URL),
-    SUPABASE_KEY: formatEnvSig(process.env.SUPABASE_KEY),
-    DATABASE_URL_keyState: envKeyState("DATABASE_URL"),
-    SUPABASE_KEY_keyState: envKeyState("SUPABASE_KEY"),
-  },
-  changedFromBefore: (process.env.DATABASE_URL ?? "") !== (_beforeDatabaseUrl ?? ""),
-  timestamp: Date.now(),
-});
-// #endregion
 
 if (missing.length) {
   // eslint-disable-next-line no-console

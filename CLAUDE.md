@@ -160,6 +160,7 @@ npx tsc --noEmit
 - **Capital Legacy (`Capital_Legacy_cc_leader_board`) must never cross-contaminate with VantageStack.** These two repos are completely isolated. Capital Legacy pushes must never trigger deployments into the VantageStack Vercel project. If Capital Legacy deployments appear in VantageStack's Vercel deployment list, investigate immediately — the wrong repo may be connected under Vercel → Settings → Git.
 - Twilio TwiML webhook: `{NEXT_PUBLIC_APP_URL}/api/demo-call/twiml` — must be publicly reachable.
 - ElevenLabs agent ID is in `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`.
+- **The app DB is Supabase project `tinkmipmxunwvyemhalu`** (from `.env.local`). The connected **Supabase MCP points at a DIFFERENT project** (`cmsylaupctrbsvzrgzwy`, "lead-velocity-staging"). NEVER run migrations / `execute_sql` / schema checks for VantageStack through the MCP — it hits the wrong database. For app DB work use the `postgres` driver against `DATABASE_URL`, or `npx supabase` linked to `tinkmipmxunwvyemhalu`.
 
 ---
 
@@ -183,7 +184,7 @@ Full audit completed 2026-06-09. Everything below is planned but NOT yet impleme
 - `lib/crm/intake.ts` — intake pipeline: validate → INSERT → task → events → generate → WhatsApp
 - `lib/crm/blueprint-generator.ts` — blueprint markdown + Gemini AI generation
 - `lib/crm/industry-data.ts` — 13 industry entries with competitors + benchmarks
-- `supabase/migrations/` — 001–009 exist; `ensureCrmSchema` in `db.ts` has runtime DDL not in migrations (drift)
+- Migrations actually live at `mcp/database-architect/migrations/` (NOT `supabase/migrations/`, which doesn't exist). They are stale — `007` is the last to touch `clients` columns. The de-facto schema manager is `ensureCrmSchema()` in `lib/crm/db.ts` (idempotent runtime DDL). **Invariant:** every column an INSERT/UPDATE writes must be a base column OR added by `ensureCrmSchema` — enforced by `tests/unit/clients-schema-drift.test.ts`. Base columns are listed in `lib/crm/schema-columns.ts`.
 - All downstream consumers: `client-update.ts`, `service.ts`, `research-batch.ts`, CRM API routes, `ClientQuestionnaireForm.tsx`, `blueprint-review` page, pipeline page
 
 ---

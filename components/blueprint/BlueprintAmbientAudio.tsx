@@ -98,6 +98,27 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
     return () => window.removeEventListener("isabel:speaking", onSpeaking as EventListener);
   }, [fadeTo]);
 
+  // Start the music when Isabel's voice session connects (the user's click to
+  // talk is the gesture that allows playback).
+  useEffect(() => {
+    function onStart() {
+      const audio = audioRef.current;
+      if (!audio || playingRef.current) return;
+      audio.muted = false;
+      audio.volume = 0;
+      audio
+        .play()
+        .then(() => {
+          playingRef.current = true;
+          setPlaying(true);
+          fadeTo(speakingRef.current ? DUCK_VOLUME : BASE_VOLUME);
+        })
+        .catch(() => {});
+    }
+    window.addEventListener("blueprint:start-music", onStart);
+    return () => window.removeEventListener("blueprint:start-music", onStart);
+  }, [fadeTo]);
+
   useEffect(() => () => clearFade(), []);
 
   return (

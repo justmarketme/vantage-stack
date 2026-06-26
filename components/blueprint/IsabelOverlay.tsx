@@ -32,9 +32,14 @@ uniform sampler2D u_tex;
 varying vec2 v_uv;
 void main() {
   vec4 c = texture2D(u_tex, v_uv);
+  // "Greenness" — how much green exceeds the stronger of red/blue. The screen is
+  // a muted green (~rgb 67,135,85) so key ~0.1-0.2; Isabel (skin/navy/hair) is
+  // always < 0, giving a clean separation.
   float key = c.g - max(c.r, c.b);
-  float alpha = 1.0 - smoothstep(0.04, 0.22, key);
-  c.g -= max(0.0, key) * (1.0 - alpha);
+  // Remove the green fully (incl. shaded areas) with a soft edge.
+  float alpha = 1.0 - smoothstep(0.015, 0.10, key);
+  // De-spill: never let green exceed the other channels → kills the green fringe.
+  c.g = min(c.g, max(c.r, c.b));
   gl_FragColor = vec4(c.rgb, alpha);
 }`;
 

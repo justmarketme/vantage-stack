@@ -21,7 +21,7 @@ export default async function BlueprintPage({
       <main className="pt-28">
         <section className="vs-section">
           <div className="vs-container">
-            <div className="mx-auto max-w-2xl xl:mr-8">
+            <div className="mx-auto max-w-2xl xl:ml-8">
               <GuidedBlueprint schemaId={schemaId} />
             </div>
           </div>
@@ -29,7 +29,7 @@ export default async function BlueprintPage({
       </main>
       <Footer />
       <BlueprintAmbientAudio />
-      <IsabelOverlay className="pointer-events-none fixed bottom-0 left-0 z-30 hidden h-[82vh] w-[360px] xl:block" />
+      <IsabelOverlay className="pointer-events-none fixed bottom-0 right-0 z-30 hidden h-[88vh] w-[420px] xl:block" />
     </div>
   );
 }

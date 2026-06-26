@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createBlueprintClientTools } from "../lib/blueprint/voice-tools";
+import { ISABEL_BLUEPRINT_FIRST_MESSAGE } from "../lib/isabel/persona";
 
 const AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
@@ -235,11 +236,15 @@ export function IsabelWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const onBlueprint = !!pathname?.startsWith("/blueprint");
 
   const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
       onConnect: () => {
         console.log("✅ Isabel connected!");
+        // On the blueprint, gently bring in the ambient music as she greets.
+        if (onBlueprint) window.dispatchEvent(new CustomEvent("blueprint:start-music"));
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
       onDisconnect: () => {
@@ -289,6 +294,12 @@ export function IsabelWidget() {
     window.dispatchEvent(new CustomEvent("isabel:speaking", { detail: { speaking: isSpeaking } }));
   }, [isSpeaking]);
 
+  // On the blueprint, keep Isabel's invite visible (un-dismissed) so the single
+  // "Talk to Isabel" voice CTA is always there — without covering her on screen.
+  useEffect(() => {
+    if (onBlueprint) setDismissed(false);
+  }, [onBlueprint]);
+
   // Auto-extract data from conversation into blueprint form
   useEffect(() => {
     if (messages.length === 0) return;
@@ -307,30 +318,40 @@ export function IsabelWidget() {
     return stream;
   }, []);
 
+  // On /blueprint, give Isabel the walkthrough-specific spoken intro (requires
+  // the first_message override enabled on the agent).
+  const blueprintOverrides = useCallback(
+    (textOnly: boolean) => ({
+      conversation: { textOnly },
+      ...(onBlueprint ? { agent: { firstMessage: ISABEL_BLUEPRINT_FIRST_MESSAGE } } : {}),
+    }),
+    [onBlueprint],
+  );
+
   const startVoice = useCallback(async () => {
     try {
       console.log("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
       await getMicStream();
       console.log("🎤 Mic stream acquired, initiating session...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } }, clientTools: createBlueprintClientTools() });
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false), clientTools: createBlueprintClientTools() });
       console.log("✅ Voice session started:", sessionId);
     } catch (err) {
       console.error("❌ Failed to start voice:", err);
       console.error("Error type:", typeof err);
       console.error("Error details:", err);
     }
-  }, [getMicStream, startSession]);
+  }, [getMicStream, startSession, blueprintOverrides]);
 
   const startText = useCallback(async () => {
     try {
       console.log("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } }, clientTools: createBlueprintClientTools() });
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: blueprintOverrides(true), clientTools: createBlueprintClientTools() });
       console.log("✅ Text session started:", sessionId);
     } catch (err) {
       console.error("❌ Failed to start text:", err);
       console.error("Error details:", err);
     }
-  }, [startSession]);
+  }, [startSession, blueprintOverrides]);
 
   const endVoice = useCallback(async () => {
     await endSession();
@@ -392,7 +413,7 @@ export function IsabelWidget() {
               className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] cursor-pointer max-w-[360px]"
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleTextQuickStart}
+              onClick={onBlueprint ? handleVoiceQuickStart : handleTextQuickStart}
             >
               {/* Subtle shimmer line */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent rounded-t-2xl" />
@@ -410,33 +431,48 @@ export function IsabelWidget() {
               {/* Text content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-textPrimary leading-snug">Want to chat?</p>
+                  <p className="text-sm font-semibold text-textPrimary leading-snug">
+                    {onBlueprint ? "Talk to Isabel" : "Want to chat?"}
+                  </p>
                 </div>
                 <p className="text-[11px] text-textMuted mt-0.5 leading-snug">
-                  Isabel · AI assistant — text or voice
+                  {onBlueprint ? "Tap to start — I'll walk you through it 👋" : "Isabel · AI assistant — text or voice"}
                 </p>
 
-                {/* Mode chips */}
-                <div className="flex items-center gap-1.5 mt-2.5">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleTextQuickStart(); }}
-                    className="flex items-center gap-1.5 rounded-lg bg-accent/12 border border-accent/25 px-2.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent/20 transition-all"
-                  >
-                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    Text chat
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
-                    className="flex items-center gap-1.5 rounded-lg bg-white/[0.05] border border-white/[0.09] px-2.5 py-1 text-[10px] font-semibold text-textMuted hover:bg-white/[0.1] hover:text-textPrimary transition-all"
-                  >
-                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    Voice call
-                  </button>
-                </div>
+                {onBlueprint ? (
+                  <div className="mt-2.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[11px] font-semibold text-white shadow shadow-accent/25 hover:opacity-90 transition-all"
+                    >
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      Talk to Isabel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-2.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleTextQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-accent/12 border border-accent/25 px-2.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent/20 transition-all"
+                    >
+                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                      Text chat
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-white/[0.05] border border-white/[0.09] px-2.5 py-1 text-[10px] font-semibold text-textMuted hover:bg-white/[0.1] hover:text-textPrimary transition-all"
+                    >
+                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      Voice call
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Chevron */}
@@ -561,29 +597,52 @@ export function IsabelWidget() {
                   <div className="space-y-1.5 px-2">
                     <p className="text-sm font-semibold text-textPrimary">Hi, I'm Isabel 👋</p>
                     <p className="text-xs leading-relaxed text-textMuted">
-                      I'm VantageStack's AI assistant. Ask me anything, or let's have a voice conversation — I'm here to help.
+                      {onBlueprint
+                        ? "I'll walk you through your blueprint — just tap below and we'll talk it through together."
+                        : "I'm VantageStack's AI assistant. Ask me anything, or let's have a voice conversation — I'm here to help."}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleTextQuickStart}
-                      className="flex items-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-all"
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                      </svg>
-                      Type a message
-                    </button>
-                    <button
-                      onClick={handleVoiceQuickStart}
-                      className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-textMuted hover:bg-white/[0.09] hover:text-textPrimary transition-all"
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                      </svg>
-                      Start voice call
-                    </button>
-                  </div>
+                  {onBlueprint ? (
+                    <div className="w-full space-y-2.5 px-2">
+                      <button
+                        onClick={handleVoiceQuickStart}
+                        disabled={isTransitioning}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:opacity-90 disabled:opacity-50"
+                      >
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        {isTransitioning ? "Connecting…" : "Talk to Isabel"}
+                      </button>
+                      <button
+                        onClick={handleTextQuickStart}
+                        className="text-[11px] text-textMuted/70 underline-offset-2 transition hover:text-textMuted hover:underline"
+                      >
+                        or type instead
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleTextQuickStart}
+                        className="flex items-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-all"
+                      >
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        Type a message
+                      </button>
+                      <button
+                        onClick={handleVoiceQuickStart}
+                        className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-textMuted hover:bg-white/[0.09] hover:text-textPrimary transition-all"
+                      >
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        Start voice call
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col h-full">

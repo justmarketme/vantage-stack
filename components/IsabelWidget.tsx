@@ -227,6 +227,7 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
 export function IsabelWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [introCued, setIntroCued] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [textInput, setTextInput] = useState("");
   const [feedbackSent, setFeedbackSent] = useState<boolean | null>(null);
@@ -299,6 +300,17 @@ export function IsabelWidget() {
   useEffect(() => {
     if (onBlueprint) setDismissed(false);
   }, [onBlueprint]);
+
+  // When the intro video finishes (Isabel fades back), draw the eye to the chat CTA.
+  useEffect(() => {
+    function onIntroDone() {
+      setIntroCued(true);
+      setDismissed(false);
+      setIsOpen(false);
+    }
+    window.addEventListener("blueprint:intro-done", onIntroDone);
+    return () => window.removeEventListener("blueprint:intro-done", onIntroDone);
+  }, []);
 
   // Auto-extract data from conversation into blueprint form
   useEffect(() => {
@@ -410,7 +422,7 @@ export function IsabelWidget() {
 
             {/* Main card */}
             <motion.div
-              className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] cursor-pointer max-w-[360px]"
+              className={`relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border px-5 py-4 cursor-pointer max-w-[360px] transition-all ${introCued ? "border-accent/70 shadow-[0_0_55px_rgba(56,189,248,0.55)]" : "border-white/[0.09] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)]"}`}
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
               onClick={onBlueprint ? handleVoiceQuickStart : handleTextQuickStart}

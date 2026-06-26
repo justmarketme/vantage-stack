@@ -2,7 +2,7 @@ import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
 import { GuidedBlueprint } from "../../components/blueprint/GuidedBlueprint";
 import { BlueprintAmbientAudio } from "../../components/blueprint/BlueprintAmbientAudio";
-import { IsabelOverlay } from "../../components/blueprint/IsabelOverlay";
+import { IsabelIntro } from "../../components/blueprint/IsabelIntro";
 
 // The /blueprint page IS the guided, Isabel-led experience. Defaults to the
 // public quick form; ?form=detailed renders the longer detailed schema (the
@@ -29,7 +29,7 @@ export default async function BlueprintPage({
       </main>
       <Footer />
       <BlueprintAmbientAudio />
-      <IsabelOverlay className="pointer-events-none fixed bottom-0 right-0 z-30 hidden h-[88vh] w-[420px] xl:block" />
+      <IsabelIntro className="pointer-events-none fixed bottom-0 right-0 z-30 hidden h-[88vh] w-[420px] xl:block" />
     </div>
   );
 }

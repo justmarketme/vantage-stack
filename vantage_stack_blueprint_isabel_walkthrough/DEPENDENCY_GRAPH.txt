@@ -1,0 +1,61 @@
+VANTAGE STACK — BLUEPRINT + ISABEL WALKTHROUGH
+DEPENDENCY GRAPH (Phase 1, revised against Phase 0 audit)
+Legend:  [DONE]  [NEW build]  [EXTEND existing]  [BLOCKED]
+
+SystemAuditor [DONE]
+   |
+ArchitectPlanner [DONE]
+   |
+   +-- TRACK A (video) ........ BLOCKED on Veo access
+   |       VideoBuilder [NEW][BLOCKED: Gemini/Veo key + access]
+   |          |
+   |          v
+   |       CanvasCompositor -> components/IsabelOverlay.tsx [NEW]
+   |          |
+   +-- TRACK B (form state) ... independent, can start now
+   |       FormStateEngineer -> formMachine.ts + form-schema.json + tests [NEW]
+   |          |
+   +-- TRACK C (conversation) . mostly extend
+   |       KnowledgeCurator -> per-vertical case studies [NEW content -> EXTEND KB]
+   |          |
+   |          v
+   |       ElevenLabsEngineer -> add client tools to LIVE agent [EXTEND]
+   |          |                  (+ consolidate persona drift)
+   +-- TRACK D (booking) ...... mostly extend
+   |       BookingIntegrator -> completion->Cal.com [EXTEND]
+   |                            + POPIA consent record [NEW]
+   |                            + bridge to LIVE WhatsApp bot [EXTEND]
+   |          |
+   +-- TRACK E (audio) ........ independent
+   |       AudioIntegrator -> ~70bpm loop + mute control [NEW]
+   |          |
+   |          v
+   +--------> FormOrchestrator -> blueprint-integration.ts [NEW]
+                 (needs: CanvasCompositor + FormStateEngineer + ElevenLabsEngineer)
+                 |
+                 v
+              WebsiteDeployer -> assemble /blueprint, e2e test, deploy, docs [NEW]
+                 (needs: all tracks)
+
+HARD BLOCKS
+  - CanvasCompositor waits for VideoBuilder (needs the green-screen clip).
+  - VideoBuilder waits for Jonathan: Veo access + GEMINI_API_KEY  (CRITICAL PATH).
+  - FormOrchestrator waits for CanvasCompositor + FormStateEngineer + ElevenLabsEngineer.
+  - WebsiteDeployer waits for everyone.
+
+CRITICAL PATH:  Veo access -> VideoBuilder -> CanvasCompositor -> FormOrchestrator -> Deploy
+  Mitigation: Tracks B, C, D, E proceed in parallel while video is gated/rendering.
+  If D2 = "video is v2", critical path becomes:
+     FormStateEngineer + ElevenLabsEngineer -> FormOrchestrator -> Deploy  (no video block)
+
+REUSE (do NOT rebuild)
+  - ElevenLabs ConvAI widget (IsabelWidget.tsx) + RAG KB (attached, usage_mode:auto)
+  - Cal.com v2 booking client (lib/calcom/booking.ts)
+  - WhatsApp Twilio bot (app/api/whatsapp/isabel/route.ts + lib/isabel/*)
+  - Watermark removal script (Vantage stack general/.../tools/remove_watermark_free.py)
+  - NEPQ persona (scripts/set-isabel-prompt.ts)
+
+NEW DEPENDENCIES TO ADD
+  - xstate, @xstate/react   (form state machine)
+  - (video) Veo access path + GEMINI_API_KEY
+  - (audio) one royalty-free / Suno loop asset

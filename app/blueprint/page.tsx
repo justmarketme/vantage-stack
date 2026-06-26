@@ -1,22 +1,35 @@
 import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
-import { UnifiedBlueprintForm } from "../../components/blueprint/UnifiedBlueprintForm";
+import { GuidedBlueprint } from "../../components/blueprint/GuidedBlueprint";
+import { BlueprintAmbientAudio } from "../../components/blueprint/BlueprintAmbientAudio";
+import { IsabelOverlay } from "../../components/blueprint/IsabelOverlay";
 
-export default function BlueprintPage() {
+// The /blueprint page IS the guided, Isabel-led experience. Defaults to the
+// public quick form; ?form=detailed renders the longer detailed schema (the
+// same engine drives both).
+export default async function BlueprintPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ form?: string }>;
+}) {
+  const sp = await searchParams;
+  const schemaId = sp?.form === "detailed" ? "detailed" : "quick";
+
   return (
     <div className="relative">
       <Navbar />
       <main className="pt-28">
         <section className="vs-section">
           <div className="vs-container">
-            <div className="max-w-3xl">
-              <UnifiedBlueprintForm mode="detailed" />
+            <div className="mx-auto max-w-2xl xl:mr-8">
+              <GuidedBlueprint schemaId={schemaId} />
             </div>
           </div>
         </section>
       </main>
       <Footer />
+      <BlueprintAmbientAudio />
+      <IsabelOverlay className="pointer-events-none fixed bottom-0 left-0 z-30 hidden h-[82vh] w-[360px] xl:block" />
     </div>
   );
 }
-

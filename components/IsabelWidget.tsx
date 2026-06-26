@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createBlueprintClientTools } from "../lib/blueprint/voice-tools";
 
 const AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
@@ -109,6 +111,12 @@ function parseBookDirective(text: string): { name: string; email: string } | nul
 
 function stripBookDirective(text: string): string {
   return text.replace(/%%[^%]*%%/g, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** Isabel emits %%GOTO_BLUEPRINT%% to take a website visitor to the guided
+ *  /blueprint page. (On WhatsApp the directive is stripped and never sent.) */
+function hasGotoBlueprint(text: string): boolean {
+  return /%%\s*GOTO_BLUEPRINT\b[^%]*%%/i.test(text);
 }
 
 /** Open the Cal.com Discovery Call booking, prefilled. Falls back to a new tab. */
@@ -226,6 +234,7 @@ export function IsabelWidget() {
   const [showForm, setShowForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const router = useRouter();
 
   const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
@@ -243,11 +252,13 @@ export function IsabelWidget() {
           setMessages((prev) => [...prev, { role: "user", content: msg.message }]);
           return;
         }
-        // Assistant: strip the booking directive from display; if present, open Cal.com.
+        // Assistant: strip directives from display; act on any present.
         const dir = parseBookDirective(msg.message);
+        const goto = hasGotoBlueprint(msg.message);
         const clean = stripBookDirective(msg.message);
         if (clean) setMessages((prev) => [...prev, { role: "assistant", content: clean }]);
         if (dir) openCalBooking(dir.name, dir.email);
+        if (goto) router.push("/blueprint");
       },
       onError: (err) => {
         console.error("❌ Isabel error:", err);
@@ -270,6 +281,13 @@ export function IsabelWidget() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Broadcast Isabel's speaking state so the blueprint ambient audio can duck
+  // the music while she talks (BlueprintAmbientAudio listens for this event).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("isabel:speaking", { detail: { speaking: isSpeaking } }));
+  }, [isSpeaking]);
 
   // Auto-extract data from conversation into blueprint form
   useEffect(() => {
@@ -294,7 +312,7 @@ export function IsabelWidget() {
       console.log("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
       await getMicStream();
       console.log("🎤 Mic stream acquired, initiating session...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } } });
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } }, clientTools: createBlueprintClientTools() });
       console.log("✅ Voice session started:", sessionId);
     } catch (err) {
       console.error("❌ Failed to start voice:", err);
@@ -306,7 +324,7 @@ export function IsabelWidget() {
   const startText = useCallback(async () => {
     try {
       console.log("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } } });
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } }, clientTools: createBlueprintClientTools() });
       console.log("✅ Text session started:", sessionId);
     } catch (err) {
       console.error("❌ Failed to start text:", err);

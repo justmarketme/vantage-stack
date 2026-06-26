@@ -156,6 +156,12 @@ export const BlueprintSubmitSchema = z.object({
     .refine((v) => (v ? Boolean(normalizeWebsiteUrl(v)) : true), "Please enter a valid website URL (or leave blank)."),
   preferredContactTime: z.string().trim().optional(),
 
+  // POPIA WhatsApp-contact consent (explicit, captured at submit time).
+  whatsappConsent: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((v) => v === true || v === "true"),
+
   // ── Detailed mode / CRM fields (kept for backward compat) ────────
   challenges: z
     .union([z.array(z.string()), z.string()])

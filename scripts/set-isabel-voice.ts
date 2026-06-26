@@ -42,9 +42,12 @@ async function main() {
     ...currentTts,
     voice_id: VOICE_ID,
     model_id: "eleven_multilingual_v2", // expressive + multilingual (SA English, Afrikaans, etc.)
-    stability: 0.35, // lower = more dynamic, expressive delivery
+    // 0.45 keeps her lively but steadier than 0.35 — tames the rising "high pitch
+    // at the end of every sentence". Her warmth/energy now comes from the persona
+    // (happy, eager word choice) rather than from very low stability alone.
+    stability: 0.45,
     similarity_boost: 0.85,
-    speed: 1.0, // natural, leading pace (was 0.9)
+    speed: 1.0, // natural, leading pace
     expressive_mode: true, // turn her expression up (enables natural laughter/emotion)
   };
 

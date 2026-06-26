@@ -389,9 +389,12 @@ export function IsabelWidget() {
   }, [canSendFeedback, sendFeedback]);
 
   const handleVoiceQuickStart = useCallback(async () => {
-    setIsOpen(true);
+    // On /blueprint the on-screen form (left) is the star — Isabel highlights and
+    // fills it as she talks, so we DON'T open the big chat panel over her. A slim
+    // live bar handles status + End instead. Elsewhere, open the panel as normal.
+    if (!onBlueprint) setIsOpen(true);
     await startVoice();
-  }, [startVoice]);
+  }, [startVoice, onBlueprint]);
 
   const handleTextQuickStart = useCallback(() => {
     setIsOpen(true);
@@ -402,8 +405,10 @@ export function IsabelWidget() {
   return (
     <>
       {/* ── Collapsed invite widget ───────────────────────────────────────── */}
+      {/* Hidden during an active /blueprint voice session — the slim live bar
+          (below) takes over so nothing covers the on-screen form. */}
       <AnimatePresence>
-        {!isOpen && !dismissed && (
+        {!isOpen && !dismissed && !(onBlueprint && (isConnected || isTransitioning)) && (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -518,6 +523,49 @@ export function IsabelWidget() {
               <IsabelAvatar className="h-10 w-10" isActive={isConnected} />
             )}
           </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* ── /blueprint live bar — slim, never covers the on-screen form ───── */}
+      <AnimatePresence>
+        {onBlueprint && (isConnected || isTransitioning) && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_50px_rgba(56,189,248,0.1)]"
+          >
+            <IsabelAvatar className="h-11 w-11" isActive={isConnected} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-snug text-textPrimary">Isabel</p>
+              <p className="text-[11px] leading-snug text-accent/80">
+                {isTransitioning ? "Connecting…" : isSpeaking ? "Speaking — talk to interrupt" : "Listening — go ahead 👋"}
+              </p>
+            </div>
+            {isConnected && (
+              <span className="flex items-end gap-[3px] px-0.5">
+                <span className="h-2.5 w-[3px] animate-pulse rounded-full bg-accent" />
+                <span className="h-4 w-[3px] animate-pulse rounded-full bg-accent [animation-delay:140ms]" />
+                <span className="h-2 w-[3px] animate-pulse rounded-full bg-accent [animation-delay:280ms]" />
+              </span>
+            )}
+            <button
+              onClick={endVoice}
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-[11px] font-semibold text-rose-400 transition-all hover:bg-rose-500/20"
+            >
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 7l-7.59 7.59L5.41 7 4 8.41l8 8 8-8z" /></svg>
+              End
+            </button>
+            <button
+              onClick={() => setIsOpen(true)}
+              title="Show transcript"
+              aria-label="Show transcript"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-textMuted transition hover:bg-white/[0.07] hover:text-textPrimary"
+            >
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

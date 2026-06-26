@@ -115,8 +115,12 @@ export function IsabelOverlay({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // NO blending: the full-screen quad writes straight (un-premultiplied) RGBA
+    // directly, fully overwriting every pixel each frame. Blending against the
+    // un-cleared previous frame is what produced the "ghost trail" that followed
+    // Isabel's arm as she moved. We also clear each frame as belt-and-braces.
+    gl.disable(gl.BLEND);
+    gl.clearColor(0, 0, 0, 0);
 
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const useRVFC = typeof video.requestVideoFrameCallback === "function";
@@ -134,6 +138,7 @@ export function IsabelOverlay({
         canvas.height = video.videoHeight || 720;
         gl.viewport(0, 0, canvas.width, canvas.height);
       }
+      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       if (!drewOnce) {

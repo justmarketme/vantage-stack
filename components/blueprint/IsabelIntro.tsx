@@ -54,18 +54,24 @@ export function IsabelIntro({ className = "" }: { className?: string }) {
         <IsabelOverlay className="pointer-events-none h-full w-full" />
 
         {phase === "idle" && (
-          <button
-            type="button"
-            onClick={start}
-            className="pointer-events-auto group absolute bottom-[10%] left-1/2 flex -translate-x-1/2 items-center gap-2.5 rounded-full border border-accent/40 bg-[#0B0B0C]/70 px-5 py-2.5 text-sm font-semibold text-textPrimary shadow-[0_0_30px_rgba(56,189,248,0.25)] backdrop-blur transition-all hover:border-accent/70 hover:shadow-[0_0_44px_rgba(56,189,248,0.45)]"
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-accent/30">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </span>
-            Meet Isabel
-          </button>
+          <div className="absolute bottom-[10%] left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+            {/* Witty nudge — she's pointing right here */}
+            <div className="pointer-events-none animate-bounce rounded-full border border-accent/30 bg-[#0B0B0C]/80 px-3 py-1 text-[11px] font-medium text-accent/90 backdrop-blur">
+              Psst — tap to meet me 👇
+            </div>
+            <button
+              type="button"
+              onClick={start}
+              className="pointer-events-auto group flex items-center gap-2.5 rounded-full border border-accent/40 bg-[#0B0B0C]/70 px-5 py-2.5 text-sm font-semibold text-textPrimary shadow-[0_0_30px_rgba(56,189,248,0.25)] backdrop-blur transition-all hover:border-accent/70 hover:shadow-[0_0_44px_rgba(56,189,248,0.45)]"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-accent/30">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+              Meet Isabel
+            </button>
+          </div>
         )}
 
         {phase === "playing" && (

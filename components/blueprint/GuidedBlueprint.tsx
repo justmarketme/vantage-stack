@@ -199,7 +199,12 @@ function FieldRenderer({
 }) {
   const options = fieldOptions(field, data);
   const value = data[field.key];
-  const ring = highlighted ? "rounded-lg ring-2 ring-accent/70" : "";
+  // Prominent, premium "Isabel is pointing here" highlight — a bright accent
+  // ring + outward glow + faint tint, drawn with box-shadow so it never shifts
+  // layout. This is the on-screen cue she refers to ("see this lighting up?").
+  const ring = highlighted
+    ? "rounded-xl bg-accent/[0.06] shadow-[0_0_0_2px_rgba(56,189,248,0.9),0_0_34px_8px_rgba(56,189,248,0.32)] transition-all duration-300"
+    : "rounded-xl transition-all duration-300";
   const labelEl = (
     <label className="block text-sm text-textPrimary/90" id={`label-${field.key}`}>
       {field.label}

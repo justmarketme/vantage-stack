@@ -40,10 +40,17 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
   const machine = useMemo(() => createFormMachine(schema), [schema]);
   const [snapshot, send] = useActor(machine, { input: {} });
 
+  const successRef = useRef<HTMLHeadingElement>(null);
+
   // Begin the flow once mounted.
   useEffect(() => {
     send({ type: "START" });
   }, [send]);
+
+  // On completion, move focus to the success heading (a11y) so AT users land there.
+  useEffect(() => {
+    if (snapshot.matches("submitted")) requestAnimationFrame(() => successRef.current?.focus());
+  }, [snapshot]);
 
   const { stepIndex, data, errors, submitError, result } = snapshot.context;
   const step = schema.steps[stepIndex];
@@ -116,16 +123,36 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
   }, [send, fieldByKey]);
 
   if (snapshot.matches("submitted")) {
+    const fullName = asString(data.personName) || asString(data.clientName);
+    const who = fullName.split(" ")[0];
+    const calUrl = `${CAL_LINK}?name=${encodeURIComponent(fullName)}&email=${encodeURIComponent(asString(data.email))}`;
     return (
-      <div className="vs-card">
-        <div className="space-y-3">
-          <p className="vs-section-heading">Blueprint submitted</p>
-          <h2 className="font-heading text-2xl md:text-3xl">You&apos;re in.</h2>
-          <p className="max-w-2xl text-sm text-textMuted">
-            We&apos;ll review your answers and send a tailored breakdown within 1 business day — based on your specific
-            situation, not a generic template.
+      <div className="vs-card text-center">
+        <div className="mx-auto max-w-md space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 ref={successRef} tabIndex={-1} className="font-heading text-2xl outline-none md:text-3xl">
+            {who ? `You're in, ${who}.` : "You're in."}
+          </h2>
+          <p className="text-sm text-textMuted">
+            Your tailored blueprint is being built — it lands on your WhatsApp within 1 business day, personally reviewed
+            by Jono &amp; KG.
           </p>
-          {result?.clientId && <p className="text-xs text-textMuted/60">Reference: {result.clientId}</p>}
+          <a
+            href={calUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:opacity-90"
+          >
+            Want it faster? Book your free 30-min strategy call
+            <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          {result?.clientId && <p className="text-[11px] text-textMuted/50">Reference: {result.clientId}</p>}
         </div>
       </div>
     );

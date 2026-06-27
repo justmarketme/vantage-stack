@@ -13,6 +13,7 @@
 // loop. This component reads the src prop, so swapping the file is a one-liner.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BLUEPRINT_TOOL_EVENT, type BlueprintToolDetail } from "../../lib/blueprint/voice-tools";
 
 const DEFAULT_SRC = "/audio/blueprint-ambient.mp3";
 const BASE_VOLUME = 0.1; // very soft background level when Isabel is silent
@@ -31,6 +32,7 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   const playingRef = useRef(false);
   const speakingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
+  const [pulse, setPulse] = useState(false); // brief glow when Isabel touches the button
 
   const clearFade = () => {
     if (fadeRef.current !== null) {
@@ -65,26 +67,48 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   // Current intended volume given play + Isabel-speaking state.
   const intendedVolume = () => (!playingRef.current ? 0 : speakingRef.current ? DUCK_VOLUME : BASE_VOLUME);
 
-  const toggle = useCallback(async () => {
+  const playMusic = useCallback(async () => {
     const audio = audioRef.current;
-    if (!audio) return;
-    if (playingRef.current) {
-      playingRef.current = false;
-      setPlaying(false);
-      fadeTo(0, FADE_MS, () => audio.pause());
-    } else {
-      try {
-        audio.muted = false;
-        audio.volume = 0;
-        await audio.play();
-        playingRef.current = true;
-        setPlaying(true);
-        fadeTo(intendedVolume());
-      } catch {
-        /* user gesture required or autoplay blocked — leave paused */
-      }
+    if (!audio || playingRef.current) return;
+    try {
+      audio.muted = false;
+      audio.volume = 0;
+      await audio.play();
+      playingRef.current = true;
+      setPlaying(true);
+      fadeTo(intendedVolume());
+    } catch {
+      /* user gesture required or autoplay blocked — leave paused */
     }
   }, [fadeTo]);
+
+  const stopMusic = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !playingRef.current) return;
+    playingRef.current = false;
+    setPlaying(false);
+    fadeTo(0, FADE_MS, () => audio.pause());
+  }, [fadeTo]);
+
+  const toggle = useCallback(() => {
+    if (playingRef.current) stopMusic();
+    else void playMusic();
+  }, [playMusic, stopMusic]);
+
+  // Isabel can play/stop the music by voice (controlBlueprintMusic tool) and the
+  // button pulses so the user sees what she's doing.
+  useEffect(() => {
+    function onTool(e: Event) {
+      const d = (e as CustomEvent<BlueprintToolDetail>).detail;
+      if (!d || d.tool !== "music") return;
+      if (d.action === "stop") stopMusic();
+      else void playMusic();
+      setPulse(true);
+      window.setTimeout(() => setPulse(false), 1600);
+    }
+    window.addEventListener(BLUEPRINT_TOOL_EVENT, onTool as EventListener);
+    return () => window.removeEventListener(BLUEPRINT_TOOL_EVENT, onTool as EventListener);
+  }, [playMusic, stopMusic]);
 
   // Duck the music while Isabel speaks; restore when she stops.
   useEffect(() => {
@@ -101,23 +125,9 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   // Start the music when Isabel's voice session connects (the user's click to
   // talk is the gesture that allows playback).
   useEffect(() => {
-    function onStart() {
-      const audio = audioRef.current;
-      if (!audio || playingRef.current) return;
-      audio.muted = false;
-      audio.volume = 0;
-      audio
-        .play()
-        .then(() => {
-          playingRef.current = true;
-          setPlaying(true);
-          fadeTo(speakingRef.current ? DUCK_VOLUME : BASE_VOLUME);
-        })
-        .catch(() => {});
-    }
-    window.addEventListener("blueprint:start-music", onStart);
-    return () => window.removeEventListener("blueprint:start-music", onStart);
-  }, [fadeTo]);
+    window.addEventListener("blueprint:start-music", playMusic);
+    return () => window.removeEventListener("blueprint:start-music", playMusic);
+  }, [playMusic]);
 
   useEffect(() => () => clearFade(), []);
 
@@ -132,7 +142,11 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
         aria-pressed={playing}
         aria-label={playing ? "Mute background music" : "Play calm background music"}
         title={playing ? "Mute background music" : "Play calm background music"}
-        className="fixed bottom-6 left-4 sm:left-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-[#17171f]/90 text-textMuted shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur transition-all hover:border-accent/40 hover:text-accent"
+        className={`fixed bottom-6 left-4 sm:left-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl border bg-[#17171f]/90 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur transition-all hover:border-accent/40 hover:text-accent ${
+          pulse
+            ? "scale-110 border-accent/70 text-accent shadow-[0_0_26px_6px_rgba(56,189,248,0.45)]"
+            : "border-white/10 text-textMuted"
+        }`}
       >
         {playing ? (
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

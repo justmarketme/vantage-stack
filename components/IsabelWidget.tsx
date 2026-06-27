@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createBlueprintClientTools } from "../lib/blueprint/voice-tools";
+import { createBlueprintClientTools, BLUEPRINT_TOOL_EVENT } from "../lib/blueprint/voice-tools";
 import { ISABEL_BLUEPRINT_FIRST_MESSAGE } from "../lib/isabel/persona";
 
 const AGENT_ID =
@@ -244,8 +244,15 @@ export function IsabelWidget() {
     useConversation({
       onConnect: () => {
         console.log("✅ Isabel connected!");
-        // On the blueprint, gently bring in the ambient music as she greets.
-        if (onBlueprint) window.dispatchEvent(new CustomEvent("blueprint:start-music"));
+        if (onBlueprint) {
+          // Bring in the ambient music as she greets…
+          window.dispatchEvent(new CustomEvent("blueprint:start-music"));
+          // …and light up the first field so her opening ("see this lighting up?")
+          // is true from the first second, before she's called a tool herself.
+          window.dispatchEvent(
+            new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "clientName" } }),
+          );
+        }
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
       onDisconnect: () => {

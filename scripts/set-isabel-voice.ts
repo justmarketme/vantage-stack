@@ -38,16 +38,24 @@ async function main() {
   const current = (await getRes.json()) as { conversation_config?: { tts?: Record<string, unknown> } };
   const currentTts = current.conversation_config?.tts ?? {};
 
+  // Model is overridable so we can test whether the warmer eleven_v3 (the voice
+  // used in the intro video) works for the LIVE realtime agent. ConvAI realtime
+  // historically only supports the turbo/flash/multilingual_v2 family — if v3 is
+  // rejected or breaks audio, fall back to multilingual_v2 with higher `style`.
+  const MODEL = (process.env.VS_TTS_MODEL || "eleven_multilingual_v2").trim();
+  const STYLE = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : undefined;
+
   const tts = {
     ...currentTts,
     voice_id: VOICE_ID,
-    model_id: "eleven_multilingual_v2", // expressive + multilingual (SA English, Afrikaans, etc.)
+    model_id: MODEL,
     // 0.45 keeps her lively but steadier than 0.35 — tames the rising "high pitch
     // at the end of every sentence". Her warmth/energy now comes from the persona
     // (happy, eager word choice) rather than from very low stability alone.
     stability: 0.45,
     similarity_boost: 0.85,
     speed: 1.0, // natural, leading pace
+    ...(STYLE !== undefined ? { style: STYLE } : {}),
     expressive_mode: true, // turn her expression up (enables natural laughter/emotion)
   };
 

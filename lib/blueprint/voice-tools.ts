@@ -17,7 +17,8 @@ export type BlueprintToolDetail =
   | { tool: "previous" }
   | { tool: "submit" }
   | { tool: "openCalendar" }
-  | { tool: "showConsent" };
+  | { tool: "showConsent" }
+  | { tool: "music"; action: "play" | "stop" };
 
 function emit(detail: BlueprintToolDetail) {
   if (typeof window !== "undefined") {
@@ -55,6 +56,11 @@ export function createBlueprintClientTools() {
     showWhatsAppConsent: async () => {
       emit({ tool: "showConsent" });
       return "consent shown";
+    },
+    controlBlueprintMusic: async ({ action }: { action: string }) => {
+      const a = action === "stop" ? "stop" : "play";
+      emit({ tool: "music", action: a });
+      return a === "stop" ? "music stopped" : "music playing";
     },
   };
 }
@@ -111,5 +117,14 @@ export const BLUEPRINT_TOOL_DEFINITIONS = [
       "Show the POPIA WhatsApp-contact consent prompt so the user can explicitly agree before you continue with them on WhatsApp.",
     parameters: {},
     required: [],
+  },
+  {
+    name: "controlBlueprintMusic",
+    description:
+      "Play or stop the background music on the blueprint page, and briefly highlight the music button so the user sees it. Use when you mention the music, or whenever the user asks you to stop it or play it again.",
+    parameters: {
+      action: { type: "string", description: "Either 'play' to start the music or 'stop' to stop it." },
+    },
+    required: ["action"],
   },
 ] as const;

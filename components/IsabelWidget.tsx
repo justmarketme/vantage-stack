@@ -7,14 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createBlueprintClientTools, BLUEPRINT_TOOL_EVENT } from "../lib/blueprint/voice-tools";
 import { ISABEL_BLUEPRINT_FIRST_MESSAGE } from "../lib/isabel/persona";
 
-const AGENT_ID =
-  process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
+const AGENT_ID = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
 
-// Debug: log the agent ID to verify it's loading
-if (typeof window !== 'undefined') {
-  console.log('📌 Isabel Agent ID loaded:', AGENT_ID === "YOUR_AGENT_ID" ? "⚠️ FALLBACK (missing env var)" : "✅ From environment");
-  console.log('Agent ID value:', AGENT_ID.substring(0, 10) + '...');
-}
+// Dev-only logging — no console noise (or fallback sentinels) in production.
+const dev = process.env.NODE_ENV !== "production";
+/* eslint-disable no-console */
+const dlog = (...a: unknown[]) => { if (dev) console.log(...a); };
+const derr = (...a: unknown[]) => { if (dev) console.error(...a); };
+/* eslint-enable no-console */
 
 /** Isabel avatar — place your photo at public/images/isabel-avatar.png */
 const ISABEL_AVATAR = "/images/isabel-avatar.jpg";
@@ -243,7 +243,7 @@ export function IsabelWidget() {
   const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
       onConnect: () => {
-        console.log("✅ Isabel connected!");
+        dlog("✅ Isabel connected!");
         if (onBlueprint) {
           // Light up the first field so her opening ("see this lighting up?") is
           // true from the first second. The MUSIC is intentionally NOT started
@@ -256,7 +256,7 @@ export function IsabelWidget() {
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
       onDisconnect: () => {
-        console.log("🔌 Isabel disconnected");
+        dlog("🔌 Isabel disconnected");
         setFeedbackSent(null);
       },
       onMessage: (msg) => {
@@ -274,9 +274,9 @@ export function IsabelWidget() {
         if (goto) router.push("/blueprint");
       },
       onError: (err) => {
-        console.error("❌ Isabel error:", err);
+        derr("❌ Isabel error:", err);
         if (typeof err === 'object' && err !== null) {
-          console.error("Error details:", {
+          derr("Error details:", {
             message: (err as any)?.message,
             code: (err as any)?.code,
             stack: (err as any)?.stack
@@ -319,16 +319,18 @@ export function IsabelWidget() {
     return () => window.removeEventListener("blueprint:intro-done", onIntroDone);
   }, []);
 
-  // Auto-extract data from conversation into blueprint form
+  // Auto-extract data from conversation into the widget's own mini-form.
+  // NOT on /blueprint — there the GuidedBlueprint deck (driven by client tools) is
+  // the single source of truth; a second regex-fed form would be a competing UI.
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (onBlueprint || messages.length === 0) return;
     const extracted = extractFromMessages(messages);
     setBlueprint((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(extracted).filter(([, v]) => v)) }));
     // Show form once Isabel has asked the first question (at least 1 exchange)
     // Only show form once Isabel has captured at least a name or email
     const hasData = !!(extracted.name || extracted.email || extracted.phone);
     if (hasData) setShowForm(true);
-  }, [messages]);
+  }, [messages, onBlueprint]);
 
   const getMicStream = useCallback(async () => {
     if (mediaStreamRef.current) return mediaStreamRef.current;
@@ -349,26 +351,26 @@ export function IsabelWidget() {
 
   const startVoice = useCallback(async () => {
     try {
-      console.log("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
+      dlog("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
       await getMicStream();
-      console.log("🎤 Mic stream acquired, initiating session...");
+      dlog("🎤 Mic stream acquired, initiating session...");
       const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false), clientTools: createBlueprintClientTools() });
-      console.log("✅ Voice session started:", sessionId);
+      dlog("✅ Voice session started:", sessionId);
     } catch (err) {
-      console.error("❌ Failed to start voice:", err);
-      console.error("Error type:", typeof err);
-      console.error("Error details:", err);
+      derr("❌ Failed to start voice:", err);
+      derr("Error type:", typeof err);
+      derr("Error details:", err);
     }
   }, [getMicStream, startSession, blueprintOverrides]);
 
   const startText = useCallback(async () => {
     try {
-      console.log("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
+      dlog("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
       const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: blueprintOverrides(true), clientTools: createBlueprintClientTools() });
-      console.log("✅ Text session started:", sessionId);
+      dlog("✅ Text session started:", sessionId);
     } catch (err) {
-      console.error("❌ Failed to start text:", err);
-      console.error("Error details:", err);
+      derr("❌ Failed to start text:", err);
+      derr("Error details:", err);
     }
   }, [startSession, blueprintOverrides]);
 

@@ -53,6 +53,9 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
 
   // ── Layer 3 glue: Isabel's client tools (voice) drive the machine + UI ──
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
+  // Announced to screen readers (and HoH/muted users) so Isabel's actions are
+  // perceivable without sound — what she's asking about and what she just filled.
+  const [announcement, setAnnouncement] = useState("");
   const fieldByKey = useMemo(() => {
     const map: Record<string, FieldDef> = {};
     schema.steps.forEach((s) => s.fields.forEach((f) => (map[f.key] = f)));
@@ -72,6 +75,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         case "highlight":
           setHighlightedField(d.fieldId);
           scrollToField(d.fieldId);
+          setAnnouncement(`Now: ${fieldByKey[d.fieldId]?.label ?? d.fieldId}`);
           break;
         case "set": {
           const f = fieldByKey[d.fieldId];
@@ -83,6 +87,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
           else send({ type: "SET_FIELD", key: d.fieldId, value });
           setHighlightedField(d.fieldId);
           scrollToField(d.fieldId);
+          setAnnouncement(`${f?.label ?? "Field"}: ${value}`);
           break;
         }
         case "advance":
@@ -131,8 +136,10 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
 
   return (
     <div className="vs-card" data-step-id={step.id}>
+      {/* SR-only live region — announces Isabel's actions for non-sighted/HoH/muted users. */}
+      <div className="vs-sr-only" role="status" aria-live="polite">{announcement}</div>
       <div className="mb-6 space-y-2">
-        <p className="vs-section-heading">{step.label(data)}</p>
+        <p className="vs-section-heading" aria-current="step">{step.label(data)}</p>
         {step.intro && <p className="text-sm italic text-textMuted/80">{step.intro(data)}</p>}
       </div>
 
@@ -154,7 +161,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         ))}
       </div>
 
-      {submitError && <p className="mt-4 text-sm text-rose-300">{submitError}</p>}
+      {submitError && <p role="alert" className="mt-4 text-sm text-rose-300">{submitError}</p>}
 
       <div className="mt-8 flex items-center justify-between gap-3">
         <button

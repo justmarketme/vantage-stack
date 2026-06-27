@@ -106,3 +106,31 @@ select.vs-input {
   z-index: 50;
 }
 
+/* Accessibility: honour reduced-motion across ALL chrome (not just the hologram).
+   Neutralises CSS animations/transitions — bounce nudges, pulse bars, ping rings,
+   step transitions — for vestibular-sensitive users. (Framer components are also
+   gated via useReducedMotion where used.) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Screen-reader-only helper for live-region announcements of Isabel's narration. */
+.vs-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+

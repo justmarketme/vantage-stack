@@ -18,6 +18,11 @@ import { quickFormSchema, type FieldDef, type OptionDef } from "./form-schema";
 import { getIndustryData } from "../crm/industry-data";
 
 export const BLUEPRINT_TOOL_EVENT = "blueprint:tool";
+// Reverse channel: the UI tells Isabel what the USER did directly (clicked a
+// card, typed a name, moved a step) so she stays aware — acknowledges it, doesn't
+// re-ask, and notices anything they skipped. IsabelWidget forwards the text to
+// the agent via the SDK's sendContextualUpdate (non-interrupting).
+export const BLUEPRINT_USER_ACTION_EVENT = "blueprint:user-action";
 
 export type BlueprintToolDetail =
   | { tool: "highlight"; fieldId: string }

@@ -9,7 +9,7 @@
 // engine drives both. Isabel's voice layer (client tools) and the intro
 // choreography bind to this via the machine's emitted events (added next).
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useActor } from "@xstate/react";
 import { createFormMachine } from "../../lib/blueprint/form-machine";
 import {
@@ -20,7 +20,11 @@ import {
   type OptionDef,
   type FormData,
 } from "../../lib/blueprint/form-schema";
-import { BLUEPRINT_TOOL_EVENT, type BlueprintToolDetail } from "../../lib/blueprint/voice-tools";
+import {
+  BLUEPRINT_TOOL_EVENT,
+  BLUEPRINT_USER_ACTION_EVENT,
+  type BlueprintToolDetail,
+} from "../../lib/blueprint/voice-tools";
 import { matchOption } from "../../lib/blueprint/match-option";
 import { ProgressBar } from "../ui/ProgressBar";
 
@@ -70,6 +74,26 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
   }, [schema]);
   const dataRef = useRef(data);
   dataRef.current = data;
+
+  // Reverse awareness channel — report what the USER does directly (Isabel's own
+  // tool actions never flow through these handlers, so this is user-only). Lets
+  // her acknowledge their pick, skip what they've answered, and notice gaps.
+  const reportUserEdit = useCallback(
+    (field: FieldDef, value: string, opts?: { toggled?: boolean }) => {
+      const o = (field.options ?? []).find((x) => optValue(x) === value);
+      const shown = o ? optLabel(o) : value;
+      const text = opts?.toggled
+        ? `[Screen] The user just tapped "${shown}" under "${field.label}".`
+        : value
+          ? `[Screen] The user set "${field.label}" to "${shown}".`
+          : `[Screen] The user cleared "${field.label}".`;
+      window.dispatchEvent(new CustomEvent(BLUEPRINT_USER_ACTION_EVENT, { detail: { text } }));
+    },
+    [],
+  );
+  const reportStep = useCallback((text: string) => {
+    window.dispatchEvent(new CustomEvent(BLUEPRINT_USER_ACTION_EVENT, { detail: { text: `[Screen] ${text}` } }));
+  }, []);
 
   useEffect(() => {
     const scrollToField = (key: string) =>
@@ -184,6 +208,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
             highlighted={highlightedField === field.key}
             onSet={(value) => send({ type: "SET_FIELD", key: field.key, value })}
             onToggle={(value) => send({ type: "TOGGLE_MULTI", key: field.key, value, maxItems: field.maxItems })}
+            onUserEdit={reportUserEdit}
           />
         ))}
       </div>
@@ -193,7 +218,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
       <div className="mt-8 flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => send({ type: "PREV" })}
+          onClick={() => { reportStep("The user pressed Back."); send({ type: "PREV" }); }}
           disabled={stepIndex === 0 || submitting}
           className="rounded-xl border border-white/10 px-4 py-2 text-sm text-textMuted transition hover:text-textPrimary disabled:cursor-not-allowed disabled:opacity-30"
         >
@@ -202,7 +227,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         {isLast ? (
           <button
             type="button"
-            onClick={() => send({ type: "SUBMIT" })}
+            onClick={() => { reportStep("The user pressed Submit."); send({ type: "SUBMIT" }); }}
             disabled={submitting}
             className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
           >
@@ -211,7 +236,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         ) : (
           <button
             type="button"
-            onClick={() => send({ type: "NEXT" })}
+            onClick={() => { reportStep("The user pressed Continue to the next step."); send({ type: "NEXT" }); }}
             className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
           >
             Continue
@@ -315,6 +340,7 @@ function FieldRenderer({
   highlighted,
   onSet,
   onToggle,
+  onUserEdit,
 }: {
   field: FieldDef;
   data: FormData;
@@ -322,6 +348,7 @@ function FieldRenderer({
   highlighted?: boolean;
   onSet: (value: string) => void;
   onToggle: (value: string) => void;
+  onUserEdit: (field: FieldDef, value: string, opts?: { toggled?: boolean }) => void;
 }) {
   const options = fieldOptions(field, data);
   const value = data[field.key];
@@ -347,7 +374,7 @@ function FieldRenderer({
           <input
             type="checkbox"
             checked={checked}
-            onChange={(e) => onSet(e.target.checked ? "true" : "")}
+            onChange={(e) => { const v = e.target.checked ? "true" : ""; onSet(v); onUserEdit(field, v); }}
             className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
           />
           <span>{field.label}</span>
@@ -365,7 +392,7 @@ function FieldRenderer({
           <CustomSelect
             options={options}
             value={asString(value)}
-            onSet={onSet}
+            onSet={(v) => { onSet(v); onUserEdit(field, v); }}
             highlighted={highlighted}
             labelId={`label-${field.key}`}
           />
@@ -386,7 +413,7 @@ function FieldRenderer({
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  onClick={() => onSet(selected ? "" : v)}
+                  onClick={() => { const nv = selected ? "" : v; onSet(nv); onUserEdit(field, nv); }}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     selected
                       ? "border-accent/60 bg-accent/10 text-textPrimary"
@@ -417,7 +444,7 @@ function FieldRenderer({
                   type="button"
                   aria-pressed={selected}
                   disabled={capped}
-                  onClick={() => onToggle(v)}
+                  onClick={() => { onToggle(v); onUserEdit(field, v, { toggled: true }); }}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     selected
                       ? "border-accent/60 bg-accent/10 text-textPrimary"
@@ -440,6 +467,7 @@ function FieldRenderer({
             className="vs-input min-h-[90px]"
             value={asString(value)}
             onChange={(e) => onSet(e.target.value)}
+            onBlur={(e) => onUserEdit(field, e.target.value)}
           />
           {errEl}
         </div>
@@ -453,6 +481,7 @@ function FieldRenderer({
             type={field.kind === "email" ? "email" : field.kind === "tel" ? "tel" : field.kind === "url" ? "url" : "text"}
             value={asString(value)}
             onChange={(e) => onSet(e.target.value)}
+            onBlur={(e) => onUserEdit(field, e.target.value)}
           />
           {errEl}
         </div>

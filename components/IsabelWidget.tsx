@@ -240,7 +240,7 @@ export function IsabelWidget() {
   const pathname = usePathname();
   const onBlueprint = !!pathname?.startsWith("/blueprint");
 
-  const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
+  const { startSession, endSession, sendUserMessage, sendContextualUpdate, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
       onConnect: () => {
         dlog("✅ Isabel connected!");
@@ -411,6 +411,19 @@ export function IsabelWidget() {
     window.addEventListener("blueprint:start-voice", onStartVoice);
     return () => window.removeEventListener("blueprint:start-voice", onStartVoice);
   }, [handleVoiceQuickStart]);
+
+  // Reverse awareness: when the user clicks/types in the form THEMSELVES, tell
+  // Isabel (non-interrupting) so she stays in sync — acknowledges their pick,
+  // doesn't re-ask, and can flag anything they skipped. Only while connected.
+  useEffect(() => {
+    if (!onBlueprint) return;
+    const onUserAction = (e: Event) => {
+      const text = (e as CustomEvent<{ text?: string }>).detail?.text;
+      if (text && status === "connected") sendContextualUpdate(text);
+    };
+    window.addEventListener("blueprint:user-action", onUserAction as EventListener);
+    return () => window.removeEventListener("blueprint:user-action", onUserAction as EventListener);
+  }, [onBlueprint, status, sendContextualUpdate]);
 
   const handleTextQuickStart = useCallback(() => {
     setIsOpen(true);

@@ -99,8 +99,8 @@ The golden loop for EVERY question:
 5. One line on WHY it matters when it helps ("revenue just helps us benchmark you realistically"), never a lecture. Optional questions can be skipped.
 6. When the step's answers are captured, call advanceBlueprintStep. If they want to change something earlier, goBackBlueprintStep.
 
-### Background music
-As you greet them, casually mention you're putting a little music on, and that they can tell you to stop it or bring it back anytime — you'll just tap the music button. Call controlBlueprintMusic with "play" or "stop" whenever the moment (or the user) calls for it. Keep it light and witty, never a big deal.
+### Background music — YOU turn it on (it never starts by itself)
+The music only plays when you actually start it, so it always lines up with what you say — never claim it's on without doing it. At a natural early moment (a lovely one is just after they tell you their name), casually say you're popping a little music on to set the mood, and AT THAT SAME MOMENT call controlBlueprintMusic with "play". Then let them know they can tell you to stop it or bring it back whenever — and when they do, call controlBlueprintMusic "stop" or "play". Keep it light and witty, never a big deal.
 
 ### The questions — ask in THIS exact order (field key in brackets)
 STEP 1 — Your business:
@@ -136,4 +136,4 @@ export const ISABEL_FIRST_MESSAGE = `Hi there, I'm Isabel 😊 so lovely to meet
 // Spoken intro used ONLY on the /blueprint page (passed as a per-session
 // first_message override). She greets warmly, frames the value, and leads
 // straight into the guided form (which she then highlights field-by-field).
-export const ISABEL_BLUEPRINT_FIRST_MESSAGE = `Hey, welcome — lovely to have you! 😊 I'm Isabel, and I'm going to walk you through your free VantageStack blueprint. By the end you'll have a proper plan to grow your business — two minutes, tops, and I'll do the heavy lifting. Oh, and I'm popping a little music on to keep things chilled 🎶 if it's ever too much just tell me to kill it, or bring it back — I've got the button right here. Right, let's dive in: see this first box lighting up on the left? That's where we start. What's your name, and what's the business called?`;
+export const ISABEL_BLUEPRINT_FIRST_MESSAGE = `Hey, welcome — lovely to have you! 😊 I'm Isabel, and I'm going to walk you through your free VantageStack blueprint. By the end you'll have a proper plan to grow your business — two minutes, tops, and I'll do the heavy lifting. Right, let's dive in: see this first box lighting up on the left? That's where we start. What's your name, and what's the business called?`;

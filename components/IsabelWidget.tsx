@@ -245,10 +245,10 @@ export function IsabelWidget() {
       onConnect: () => {
         console.log("✅ Isabel connected!");
         if (onBlueprint) {
-          // Bring in the ambient music as she greets…
-          window.dispatchEvent(new CustomEvent("blueprint:start-music"));
-          // …and light up the first field so her opening ("see this lighting up?")
-          // is true from the first second, before she's called a tool herself.
+          // Light up the first field so her opening ("see this lighting up?") is
+          // true from the first second. The MUSIC is intentionally NOT started
+          // here — Isabel turns it on herself (controlBlueprintMusic) when she
+          // says she's putting it on, so it lines up with her words.
           window.dispatchEvent(
             new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "clientName" } }),
           );

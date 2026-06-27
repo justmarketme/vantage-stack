@@ -234,6 +234,7 @@ export function IsabelWidget() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<BlueprintData>(EMPTY_BLUEPRINT);
   const [showForm, setShowForm] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
@@ -350,16 +351,25 @@ export function IsabelWidget() {
   );
 
   const startVoice = useCallback(async () => {
+    setVoiceError(null);
+    if (!AGENT_ID) {
+      setVoiceError("Isabel isn't available right now — you can type to me instead.");
+      return;
+    }
     try {
-      dlog("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
       await getMicStream();
-      dlog("🎤 Mic stream acquired, initiating session...");
       const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false), clientTools: createBlueprintClientTools() });
       dlog("✅ Voice session started:", sessionId);
     } catch (err) {
-      derr("❌ Failed to start voice:", err);
-      derr("Error type:", typeof err);
-      derr("Error details:", err);
+      derr("Failed to start voice:", err);
+      // Mic blocked vs connection trouble — either way, offer the text path.
+      const name = (err as { name?: string })?.name ?? "";
+      const micBlocked = /NotAllowed|Permission|NotFound|SecurityError/i.test(name) || /permission|denied|getusermedia/i.test(String(err));
+      setVoiceError(
+        micBlocked
+          ? "I can't reach your microphone — check the mic permission, or just type to me instead."
+          : "I couldn't connect just now — give it another go, or type to me instead.",
+      );
     }
   }, [getMicStream, startSession, blueprintOverrides]);
 
@@ -598,6 +608,36 @@ export function IsabelWidget() {
             >
               <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Voice-failure recovery (mic denied / connection) ─────────────── */}
+      <AnimatePresence>
+        {voiceError && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.25 }}
+            role="alert"
+            className="fixed bottom-24 right-4 z-50 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-amber-400/30 bg-[#17171f] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.7)] sm:right-6"
+          >
+            <p className="text-sm leading-snug text-textPrimary">{voiceError}</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => { setVoiceError(null); setDismissed(false); setIsOpen(true); }}
+                className="flex-1 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+              >
+                Type to me instead
+              </button>
+              <button
+                onClick={() => { void handleVoiceQuickStart(); }}
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-textMuted transition hover:text-textPrimary"
+              >
+                Try again
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

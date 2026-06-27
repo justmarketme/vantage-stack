@@ -415,6 +415,13 @@ export function IsabelWidget() {
     await startVoice();
   }, [startVoice, onBlueprint]);
 
+  // The value-first hero's "Start with Isabel" CTA hands off here.
+  useEffect(() => {
+    const onStartVoice = () => { void handleVoiceQuickStart(); };
+    window.addEventListener("blueprint:start-voice", onStartVoice);
+    return () => window.removeEventListener("blueprint:start-voice", onStartVoice);
+  }, [handleVoiceQuickStart]);
+
   const handleTextQuickStart = useCallback(() => {
     setIsOpen(true);
   }, []);

@@ -1,6 +1,7 @@
 import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
 import { GuidedBlueprint } from "../../components/blueprint/GuidedBlueprint";
+import { BlueprintHero } from "../../components/blueprint/BlueprintHero";
 import { BlueprintAmbientAudio } from "../../components/blueprint/BlueprintAmbientAudio";
 import { IsabelIntro } from "../../components/blueprint/IsabelIntro";
 
@@ -20,8 +21,9 @@ export default async function BlueprintPage({
       <Navbar />
       <main className="pt-28">
         <section className="vs-section">
-          <div className="vs-container">
-            <div className="mx-auto max-w-2xl xl:ml-8">
+          <div className="vs-container space-y-12">
+            <BlueprintHero />
+            <div id="blueprint-deck" className="mx-auto max-w-2xl scroll-mt-24 xl:ml-8">
               <GuidedBlueprint schemaId={schemaId} />
             </div>
           </div>

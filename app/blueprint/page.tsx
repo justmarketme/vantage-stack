@@ -4,7 +4,6 @@ import { GuidedBlueprint } from "../../components/blueprint/GuidedBlueprint";
 import { BlueprintHero } from "../../components/blueprint/BlueprintHero";
 import { BlueprintAmbientAudio } from "../../components/blueprint/BlueprintAmbientAudio";
 import { IsabelIntro } from "../../components/blueprint/IsabelIntro";
-import { IsabelTalkingIntro } from "../../components/blueprint/IsabelTalkingIntro";
 
 // The /blueprint page IS the guided, Isabel-led experience. Defaults to the
 // public quick form; ?form=detailed renders the longer detailed schema (the
@@ -53,9 +52,8 @@ export default async function BlueprintPage({
       </main>
       <Footer />
       <BlueprintAmbientAudio />
-      <IsabelIntro />
-      {/* Lip-synced welcome — plays on the hero CTA, then hands off to the live agent. */}
-      <IsabelTalkingIntro />
+      {/* Transparent lip-synced Isabel — welcomes on the hero CTA, then idles beside the form. */}
+      <IsabelIntro className="pointer-events-none fixed bottom-0 right-0 z-30 hidden h-[88vh] w-[420px] xl:block" />
     </div>
   );
 }

@@ -1,61 +1,41 @@
-# Isabel — the /blueprint video assets
+# Isabel — the /blueprint transparent presence
 
-Two clips power the guided experience. They're generated in **logged-in browser
-tools** (so they're a manual step — Claude can't sign in), but everything around
-them is automated.
+The desktop `/blueprint` shows the **real olive Isabel**, AI-lip-synced to her own
+ElevenLabs voice and keyed **transparent**, so she blends straight into the dark
+page with no card or background. It's **fully automated** — no Hedra, no manual
+upload, no token (uses a free HuggingFace Space).
 
-| Asset | File | Tool | Has audio? | Role |
-|---|---|---|---|---|
-| **Talking intro** *(optional)* | `public/videos/isabel_intro_talk.mp4` | **Hedra** (lip-sync) | ✅ her voice | Plays once on the hero CTA — she greets + starts the music, then hands off |
-| **Standing presence** | `public/images/isabel-hedra-source.jpg` | — (framed portrait) | — | The olive Isabel sits beside the form during the live session (framed card, glows while she speaks) |
+| Asset | File | Source |
+|---|---|---|
+| Transparent talking clip | `public/videos/isabel-talk.webm` | OmniAvatar (HF) → ffmpeg key |
+| Green-screen source | `public/images/isabel-hedra-green.jpg` | `isabel-avatar.jpg` cut onto #00b140 (rembg) |
+| Welcome voiceover | `public/audio/isabel-welcome.mp3` | `scripts/make-isabel-welcome-audio.ts` (voice "Cay", same as live agent) |
 
-> NOTE: The earlier full-body green-screen "hologram" (Veo) was retired — Veo
-> text-to-video can't reproduce the canonical olive Isabel, so the desktop
-> presence is now a framed portrait of her (consistent with the avatar/poster).
-> The WebGL chroma-key overlay was removed with it.
+## Pipeline (reproduce with one command)
 
-The two voices match because the talking intro is voiced by the **same ElevenLabs
-voice** ("Cay", `voice_id TTY70JqFvDxeExufZ1za`) the live agent uses — see
-`scripts/make-isabel-intro-audio.ts`.
-
----
-
-## 1. Talking intro (Hedra)
-
-**Inputs** (staged at `C:\tmp\isabel-hedra\`, also in repo):
-- `public/images/isabel-hedra-source.jpg` — clean upper-body Isabel (navy feminine suit), cropped from `isabel-avatar.jpg` with the UI overlay removed.
-- `public/audio/isabel-intro.mp3` — the voiceover. Regenerate after any script change:
-  ```
-  node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/make-isabel-intro-audio.ts
-  ```
-
-**Generate:** upload both into Hedra, prompt:
-> Animate this portrait of the woman speaking the attached audio with accurate, natural lip-sync. Warm, friendly, professional delivery. Subtle head movement and gentle hand gestures, friendly eye contact with the camera. Keep her navy suit and the office background steady. Upper-body framing, photorealistic, no distortion of the face or hands.
-
-**Install:**
 ```
-scripts/process-isabel-intro.sh <downloaded-hedra-clip>.mp4
-# but write the OUTPUT to public/videos/isabel_intro_talk.mp4 (talking, with audio)
+python scripts/make-isabel-talk-video.py
 ```
 
-## 2. Standing hologram (Veo / Gemini)
+1. **OmniAvatar** (`alexnasa/OmniAvatar` on HF, via `gradio_client`) lip-syncs the
+   green-screen olive Isabel to her voiceover → talking Isabel on green (~5s; the
+   model caps clip length, and free ZeroGPU caps duration — keep the audio ≤5s).
+2. **ffmpeg** keys the green to a **VP9/alpha webm** using the chroma-key shader
+   math (de-spill + soft alpha) — keeps her navy suit, removes only the green.
+   (`scripts/key-isabel-transparent.sh` is the standalone keyer.)
 
-**Generate** (the green screen is **required** — `IsabelOverlay.tsx` keys it out live):
-> Full-body cinematic shot of a warm South African woman, early 30s — olive skin, dark hair in a low bun, brown eyes, warm smile — in an elegant tailored navy feminine business suit. She stands facing camera against a solid, evenly-lit bright chroma-green screen (#00b140), full body head-to-toe with even space around her. She smiles and points with an open hand to her right (viewer's left), as if presenting a screen beside her, then settles to a relaxed neutral stance. Subtle idle motion — gentle breathing, slight nod. Soft even studio lighting, no shadows on the green, no props, no text, hands clean and fully visible. Static eye-level camera, photorealistic, seamlessly loopable, ~8 seconds.
+To regenerate the voiceover (kept ≤5s so it fits one clip):
+`node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/make-isabel-welcome-audio.ts`
 
-**Install:**
-```
-scripts/process-isabel-intro.sh <downloaded-veo-clip>.mp4   # → public/videos/isabel_intro.mp4 + poster
-```
+## How it renders
 
----
+`components/blueprint/IsabelIntro.tsx` plays the muted transparent webm in the
+corner. It's **live-driven**: her mouth animates only while the live agent is
+actually speaking (the `isabel:speaking` event) and rests when she's listening,
+so the transparent video tracks the real voice's rhythm. The hero CTA reveals her
+and starts the live session (full greeting). Mobile / reduced-motion → straight to
+the live agent (poster band only), no video.
 
-## How they wire in (no code changes needed once the files land)
-
-- `components/blueprint/IsabelTalkingIntro.tsx` plays `isabel_intro_talk.mp4` on the
-  hero CTA, then dispatches `blueprint:start-voice { afterIntro: true }`. If the file
-  is missing it falls straight through to the live agent (full greeting) — invisibly.
-- `components/blueprint/IsabelOverlay.tsx` chroma-keys `isabel_intro.mp4` as the
-  standing hologram (appears once the live session begins).
-- The live agent's first line is shortened after the intro
-  (`ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO`) so it doesn't re-greet.
+> History: an earlier full-body green-screen "hologram" (Veo) was retired — Veo
+> text-to-video couldn't reproduce the canonical olive Isabel. OmniAvatar can,
+> because it animates her actual photo.

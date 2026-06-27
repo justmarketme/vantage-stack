@@ -1,16 +1,21 @@
 "use client";
 
-// Desktop-only ambient PRESENCE: a framed portrait of the (olive, canonical)
-// Isabel sits beside the blueprint like a friendly video-call tile — the SAME
-// Isabel as the avatar/poster everywhere, so she's consistent. It slides in once
-// the live session begins, glows gently while she's speaking, and tucks away when
-// the session ends. (Phones get the poster band in page.tsx instead.)
+// Desktop-only PRESENCE — the REAL olive Isabel, AI-lip-synced to her own
+// ElevenLabs voice and keyed TRANSPARENT (VP9/alpha webm), so she blends straight
+// into the dark blueprint with no card or background.
+//
+// She's LIVE-DRIVEN: her mouth animates only while the live agent is actually
+// speaking (the `isabel:speaking` event), and rests when she's listening — so the
+// transparent video tracks the real voice's rhythm and reads as one person.
+//
+// The hero CTA (blueprint:intro-play) reveals her + starts the live session
+// (full greeting). Mobile / reduced-motion → straight to the live agent, no video.
 
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
-export function IsabelIntro() {
-  // Reactive so a resize across 1280px keeps step with the rest of the choreography.
+const TALK_SRC = "/videos/isabel-talk.webm";
+
+export function IsabelIntro({ className = "" }: { className?: string }) {
   const [desktop, setDesktop] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1280px)").matches,
   );
@@ -21,74 +26,45 @@ export function IsabelIntro() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  // Present only during the live session (after blueprint:start-voice), hidden on
-  // a fresh intro or when the session ends.
   const [active, setActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Hero CTA → start the live session (full greeting) + reveal the presence.
   useEffect(() => {
-    const on = () => setActive(true);
-    const off = () => setActive(false);
-    window.addEventListener("blueprint:start-voice", on);
-    window.addEventListener("blueprint:intro-play", off);
-    window.addEventListener("blueprint:session-ended", off);
-    return () => {
-      window.removeEventListener("blueprint:start-voice", on);
-      window.removeEventListener("blueprint:intro-play", off);
-      window.removeEventListener("blueprint:session-ended", off);
+    const onPlay = () => {
+      window.dispatchEvent(new CustomEvent("blueprint:start-voice"));
+      document.getElementById("blueprint-deck")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (window.matchMedia("(min-width: 1280px)").matches && !reduce) setActive(true);
     };
+    window.addEventListener("blueprint:intro-play", onPlay);
+    return () => window.removeEventListener("blueprint:intro-play", onPlay);
   }, []);
 
-  // Glow while she's actually speaking so the still portrait feels alive.
-  const [speaking, setSpeaking] = useState(false);
+  // Animate her mouth only while the live agent speaks; settle to a neutral frame
+  // when she's listening.
   useEffect(() => {
-    const on = (e: Event) => setSpeaking(Boolean((e as CustomEvent<{ speaking?: boolean }>).detail?.speaking));
-    window.addEventListener("isabel:speaking", on as EventListener);
-    return () => window.removeEventListener("isabel:speaking", on as EventListener);
+    const onSpeaking = (e: Event) => {
+      const v = videoRef.current;
+      if (!v) return;
+      const speaking = Boolean((e as CustomEvent<{ speaking?: boolean }>).detail?.speaking);
+      if (speaking) {
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+        try { v.currentTime = 0; } catch { /* noop */ }
+      }
+    };
+    window.addEventListener("isabel:speaking", onSpeaking as EventListener);
+    return () => window.removeEventListener("isabel:speaking", onSpeaking as EventListener);
   }, []);
-
-  const reduce = useReducedMotion();
 
   if (!desktop) return null;
   return (
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          initial={{ opacity: 0, y: 28, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 28, scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 260, damping: 26 }}
-          className="pointer-events-none fixed bottom-6 right-6 z-30 w-[300px]"
-          aria-hidden="true"
-        >
-          <div
-            className={`overflow-hidden rounded-3xl border bg-gradient-to-b from-[#141518] to-[#0b0b0c] transition-shadow duration-500 ${
-              speaking
-                ? "border-accent/50 shadow-[0_0_60px_rgba(56,189,248,0.35)]"
-                : "border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
-            }`}
-          >
-            <motion.img
-              src="/images/isabel-hedra-source.jpg"
-              alt=""
-              className="h-[300px] w-full object-cover object-top"
-              animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
-              transition={reduce ? undefined : { duration: 16, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <div className="flex items-center gap-2 px-4 py-3">
-              <span className="relative flex h-2.5 w-2.5">
-                <span
-                  className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 ${
-                    speaking ? "animate-ping opacity-70" : "opacity-0"
-                  }`}
-                />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              </span>
-              <p className="text-sm font-semibold text-white">
-                Isabel <span className="font-normal text-textMuted">· your guide</span>
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className={`${className} transition-opacity duration-700 ${active ? "opacity-100" : "opacity-0"}`}>
+      {/* Transparent VP9 alpha clip — the page shows through, so she floats in the
+          corner with no frame. muted/loop; play/pause is driven by isabel:speaking. */}
+      <video ref={videoRef} src={TALK_SRC} muted loop playsInline preload="auto" className="h-full w-full object-contain object-bottom" />
+    </div>
   );
 }

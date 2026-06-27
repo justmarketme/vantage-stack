@@ -412,10 +412,11 @@ export function IsabelWidget() {
   return (
     <>
       {/* ── Collapsed invite widget ───────────────────────────────────────── */}
-      {/* Hidden during an active /blueprint voice session — the slim live bar
-          (below) takes over so nothing covers the on-screen form. */}
+      {/* The big invite card is for OTHER pages. On /blueprint it's intentionally
+          minimised to a small glowing button (below) so it never blocks Isabel /
+          the video or the form. */}
       <AnimatePresence>
-        {!isOpen && !dismissed && !(onBlueprint && (isConnected || isTransitioning)) && (
+        {!isOpen && !dismissed && !onBlueprint && (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -508,28 +509,51 @@ export function IsabelWidget() {
         )}
       </AnimatePresence>
 
-      {/* ── Minimised button (after dismissed / when open) ────────────────── */}
+      {/* ── Minimised button — also the COMPACT /blueprint CTA ────────────── */}
       <AnimatePresence>
-        {(dismissed || isOpen) && (
-          <motion.button
+        {(dismissed || isOpen || (onBlueprint && agentState === "disconnected")) && (
+          <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            onClick={() => { setIsOpen(!isOpen); if (dismissed) setDismissed(false); }}
-            className="fixed bottom-6 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)]"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            aria-label={isOpen ? "Close chat" : "Open chat"}
+            className="fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2"
           >
-            {isOpen ? (
-              <svg className="h-5 w-5 text-textPrimary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            ) : (
-              <IsabelAvatar className="h-10 w-10" isActive={isConnected} />
+            {/* Small label to the LEFT (away from the video on the right) */}
+            {onBlueprint && agentState === "disconnected" && (
+              <span
+                className={`hidden rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur transition-all sm:block ${
+                  introCued
+                    ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_24px_rgba(56,189,248,0.4)]"
+                    : "border-white/10 bg-[#17171f]/80 text-textMuted"
+                }`}
+              >
+                Talk to Isabel
+              </span>
             )}
-          </motion.button>
+            <button
+              onClick={() => {
+                if (onBlueprint && agentState === "disconnected") {
+                  void handleVoiceQuickStart();
+                  return;
+                }
+                setIsOpen(!isOpen);
+                if (dismissed) setDismissed(false);
+              }}
+              className={`flex h-14 w-14 items-center justify-center rounded-2xl border bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:scale-105 hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)] active:scale-95 ${
+                introCued && onBlueprint ? "border-accent/70 shadow-[0_0_34px_rgba(56,189,248,0.5)]" : "border-white/10"
+              }`}
+              aria-label={onBlueprint ? "Talk to Isabel" : isOpen ? "Close chat" : "Open chat"}
+            >
+              {isOpen ? (
+                <svg className="h-5 w-5 text-textPrimary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              ) : (
+                <IsabelAvatar className="h-10 w-10" isActive={isConnected} />
+              )}
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

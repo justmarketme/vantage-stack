@@ -66,6 +66,31 @@ body {
   @apply w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-accent/70;
 }
 
+/* Native <select> popup — match the dark blueprint aesthetic instead of the
+   browser's default white menu. A SOLID surface bg on the select drives the
+   option-list background; explicit option colours theme each row. */
+select.vs-input {
+  background-color: #1a1a1d; /* surface — opaque so the popup isn't translucent */
+  color: #f8f9fa; /* textPrimary */
+  color-scheme: dark; /* native scrollbar + control chrome go dark too */
+  appearance: none;
+  -webkit-appearance: none;
+  /* chevron, accent-tinted, so the closed control reads as ours */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+.vs-input option {
+  background-color: #1a1a1d; /* surface */
+  color: #f8f9fa; /* textPrimary */
+}
+.vs-input option:checked,
+.vs-input option:hover {
+  background-color: #3b82f6; /* accent */
+  color: #ffffff;
+}
+
 .vs-badge {
   @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-xs uppercase tracking-[0.16em] text-textMuted;
 }

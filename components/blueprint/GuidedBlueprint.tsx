@@ -39,6 +39,26 @@ function fieldOptions(field: FieldDef, data: FormData): OptionDef[] {
   return [];
 }
 
+/** A field counts as answered once it holds a value (multi = at least one pick). */
+function fieldAnswered(field: FieldDef, data: FormData): boolean {
+  const v = data[field.key];
+  return field.kind === "multi" ? asArray(v).length > 0 : asString(v).trim() !== "";
+}
+
+/** Human-readable value for the collapsed summary row. */
+function fieldDisplayValue(field: FieldDef, data: FormData): string {
+  const opts = fieldOptions(field, data);
+  if (field.kind === "multi") {
+    return asArray(data[field.key])
+      .map((v) => { const o = opts.find((x) => optValue(x) === v); return o ? optLabel(o) : v; })
+      .join(", ");
+  }
+  const v = asString(data[field.key]);
+  if (field.kind === "checkbox") return v === "true" ? "Yes" : "";
+  const o = opts.find((x) => optValue(x) === v);
+  return o ? optLabel(o) : v;
+}
+
 export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "detailed" }) {
   const schema = FORM_SCHEMAS[schemaId];
   const machine = useMemo(() => createFormMachine(schema), [schema]);
@@ -146,6 +166,34 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
     return () => window.removeEventListener(BLUEPRINT_TOOL_EVENT, onTool as EventListener);
   }, [send, fieldByKey]);
 
+  // Accordion flow: one question open at a time. The OPEN (expanded) field is
+  // highlightedField; answered fields collapse to a one-line summary. Moving on
+  // from the open field reveals + opens the next unanswered one (scrolling to it),
+  // so the page visibly steps down question-by-question.
+  const advanceFrom = useCallback(
+    (currentKey: string, justSet?: Record<string, string>) => {
+      if (!step) return;
+      const merged = { ...dataRef.current, ...justSet };
+      const vf = step.fields.filter((f) => !f.visibleWhen || f.visibleWhen(merged));
+      const idx = vf.findIndex((f) => f.key === currentKey);
+      const next = vf.slice(idx + 1).find((f) => !fieldAnswered(f, merged));
+      setHighlightedField(next ? next.key : null);
+      if (next)
+        requestAnimationFrame(() =>
+          document.querySelector(`[data-field="${next.key}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        );
+    },
+    [step],
+  );
+
+  // On entering a step, open its first unanswered field.
+  useEffect(() => {
+    if (!step) return;
+    const vf = step.fields.filter((f) => !f.visibleWhen || f.visibleWhen(dataRef.current));
+    const first = vf.find((f) => !fieldAnswered(f, dataRef.current));
+    setHighlightedField(first ? first.key : null);
+  }, [stepIndex, step]);
+
   if (snapshot.matches("submitted")) {
     const fullName = asString(data.personName) || asString(data.clientName);
     const who = fullName.split(" ")[0];
@@ -198,19 +246,48 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         <ProgressBar value={progress} label={`Step ${stepIndex + 1} of ${schema.steps.length}`} />
       </div>
 
-      <div className="space-y-6">
-        {visibleFields.map((field) => (
-          <FieldRenderer
-            key={field.key}
-            field={field}
-            data={data}
-            error={errors[field.key]}
-            highlighted={highlightedField === field.key}
-            onSet={(value) => send({ type: "SET_FIELD", key: field.key, value })}
-            onToggle={(value) => send({ type: "TOGGLE_MULTI", key: field.key, value, maxItems: field.maxItems })}
-            onUserEdit={reportUserEdit}
-          />
-        ))}
+      <div className="space-y-3">
+        {visibleFields.map((field) => {
+          const active = highlightedField === field.key;
+          if (!active) {
+            return fieldAnswered(field, data) ? (
+              <CollapsedField key={field.key} field={field} data={data} onEdit={() => setHighlightedField(field.key)} />
+            ) : null;
+          }
+          // Single-choice fields auto-advance on pick; multi/free-text get a "Next"
+          // so the user controls when that question collapses.
+          const isChoice = field.kind === "select" || field.kind === "cards" || field.kind === "checkbox";
+          return (
+            <div key={field.key} className="space-y-3">
+              <FieldRenderer
+                field={field}
+                data={data}
+                error={errors[field.key]}
+                highlighted
+                onSet={(value) => {
+                  send({ type: "SET_FIELD", key: field.key, value });
+                  if (isChoice && value) advanceFrom(field.key, { [field.key]: value });
+                }}
+                onToggle={(value) => send({ type: "TOGGLE_MULTI", key: field.key, value, maxItems: field.maxItems })}
+                onUserEdit={reportUserEdit}
+              />
+              {!isChoice && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => advanceFrom(field.key)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-textMuted transition hover:bg-white/[0.08] hover:text-textPrimary"
+                  >
+                    Next
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {submitError && <p role="alert" className="mt-4 text-sm text-rose-300">{submitError}</p>}
@@ -244,6 +321,30 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
         )}
       </div>
     </div>
+  );
+}
+
+/** A collapsed, answered question — a compact one-line summary that re-opens on
+ *  click/Enter so the user can edit it. Keeps `data-field` so Isabel's highlight
+ *  can still scroll to (and re-open) it. */
+function CollapsedField({ field, data, onEdit }: { field: FieldDef; data: FormData; onEdit: () => void }) {
+  const val = fieldDisplayValue(field, data);
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      data-field={field.key}
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-left transition hover:border-white/15"
+    >
+      <span className="flex min-w-0 items-center gap-2.5">
+        <svg className="h-4 w-4 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span className="shrink-0 text-xs text-textMuted">{field.label}</span>
+        <span className="truncate text-sm text-textPrimary">{val || "—"}</span>
+      </span>
+      <span className="shrink-0 text-xs text-textMuted/60">Edit</span>
+    </button>
   );
 }
 

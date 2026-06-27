@@ -48,7 +48,10 @@ async function main() {
   // higher stability holds the accent while staying warmer than turbo/flash.
   // Override with VS_TTS_MODEL=eleven_v3_conversational for the expressive (drifty) path.
   const MODEL = (process.env.VS_TTS_MODEL || "eleven_multilingual_v2").trim();
-  const STABILITY = process.env.VS_STABILITY ? Number(process.env.VS_STABILITY) : 0.6;
+  // Authentic-SA-but-warm: stability ~0.45 keeps natural variation/warmth (close
+  // to the well-liked original 0.35) while high similarity_boost anchors the SA
+  // accent so it doesn't wander American the way v3 did.
+  const STABILITY = process.env.VS_STABILITY ? Number(process.env.VS_STABILITY) : 0.45;
   const isV3 = MODEL.includes("v3_conversational") || MODEL === "eleven_v3";
 
   const tts: Record<string, unknown> = { ...currentTts, voice_id: VOICE_ID, model_id: MODEL };
@@ -66,9 +69,11 @@ async function main() {
       .filter(Boolean)
       .map((tag) => ({ tag }));
   } else {
-    // Higher stability = tighter accent adherence (less drift) while staying warm.
+    // similarity_boost HIGH = anchor hard to Cay's SA accent (kills the drift);
+    // moderate style = a little warmth/expression without loosening the accent.
     tts.stability = STABILITY;
-    tts.similarity_boost = 0.85;
+    tts.similarity_boost = 0.9;
+    tts.style = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : 0.35;
     tts.speed = 1.0;
     tts.expressive_mode = true; // ignored by ConvAI but harmless
     tts.suggested_audio_tags = []; // v3-only — clear them so they can't loosen the accent

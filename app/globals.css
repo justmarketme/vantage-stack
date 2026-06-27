@@ -63,7 +63,12 @@ body {
 }
 
 .vs-input {
-  @apply w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-accent/70;
+  @apply w-full min-h-[44px] rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-accent/70;
+}
+
+/* Safe-area-aware bottom offset for floating controls on notched phones. */
+.vs-fab-bottom {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
 /* Native <select> popup — match the dark blueprint aesthetic instead of the

@@ -142,7 +142,7 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
         aria-pressed={playing}
         aria-label={playing ? "Mute background music" : "Play calm background music"}
         title={playing ? "Mute background music" : "Play calm background music"}
-        className={`fixed bottom-6 left-4 sm:left-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl border bg-[#17171f]/90 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur transition-all hover:border-accent/40 hover:text-accent ${
+        className={`vs-fab-bottom fixed bottom-6 left-4 sm:left-6 z-40 flex h-11 w-11 items-center justify-center rounded-xl border bg-[#17171f]/90 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur transition-all hover:border-accent/40 hover:text-accent ${
           pulse
             ? "scale-110 border-accent/70 text-accent shadow-[0_0_26px_6px_rgba(56,189,248,0.45)]"
             : "border-white/10 text-textMuted"

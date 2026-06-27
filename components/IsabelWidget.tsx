@@ -529,7 +529,7 @@ export function IsabelWidget() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2"
+            className="vs-fab-bottom fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2"
           >
             {/* Small label to the LEFT (away from the video on the right) */}
             {onBlueprint && agentState === "disconnected" && (
@@ -577,7 +577,7 @@ export function IsabelWidget() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_50px_rgba(56,189,248,0.1)]"
+            className="vs-fab-bottom fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_50px_rgba(56,189,248,0.1)]"
           >
             <IsabelAvatar className="h-11 w-11" isActive={isConnected} />
             <div className="min-w-0">

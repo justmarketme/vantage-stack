@@ -48,10 +48,11 @@ async function main() {
   // higher stability holds the accent while staying warmer than turbo/flash.
   // Override with VS_TTS_MODEL=eleven_v3_conversational for the expressive (drifty) path.
   const MODEL = (process.env.VS_TTS_MODEL || "eleven_multilingual_v2").trim();
-  // Authentic-SA-but-warm: stability ~0.45 keeps natural variation/warmth (close
-  // to the well-liked original 0.35) while high similarity_boost anchors the SA
-  // accent so it doesn't wander American the way v3 did.
-  const STABILITY = process.env.VS_STABILITY ? Number(process.env.VS_STABILITY) : 0.45;
+  // Expressive-but-anchored: LOW stability (~0.38) + higher style brings the
+  // emotion/expression back (close to the liked original 0.35), while a high
+  // similarity_boost anchors Cay's SA accent so it doesn't wander American the
+  // way raw v3 did. The sweet spot between "flat old self" and "drifty v3".
+  const STABILITY = process.env.VS_STABILITY ? Number(process.env.VS_STABILITY) : 0.38;
   const isV3 = MODEL.includes("v3_conversational") || MODEL === "eleven_v3";
 
   const tts: Record<string, unknown> = { ...currentTts, voice_id: VOICE_ID, model_id: MODEL };
@@ -69,11 +70,11 @@ async function main() {
       .filter(Boolean)
       .map((tag) => ({ tag }));
   } else {
-    // similarity_boost HIGH = anchor hard to Cay's SA accent (kills the drift);
-    // moderate style = a little warmth/expression without loosening the accent.
+    // similarity_boost HIGH = anchor hard to Cay's SA accent (counters the drift);
+    // higher style = more expression/emotion back in her delivery.
     tts.stability = STABILITY;
-    tts.similarity_boost = 0.9;
-    tts.style = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : 0.35;
+    tts.similarity_boost = 0.92;
+    tts.style = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : 0.5;
     tts.speed = 1.0;
     tts.expressive_mode = true; // ignored by ConvAI but harmless
     tts.suggested_audio_tags = []; // v3-only — clear them so they can't loosen the accent

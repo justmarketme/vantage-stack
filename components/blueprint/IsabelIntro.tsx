@@ -7,7 +7,7 @@
 // the session ends. (Phones get the poster band in page.tsx instead.)
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 export function IsabelIntro() {
   // Reactive so a resize across 1280px keeps step with the rest of the choreography.
@@ -45,6 +45,8 @@ export function IsabelIntro() {
     return () => window.removeEventListener("isabel:speaking", on as EventListener);
   }, []);
 
+  const reduce = useReducedMotion();
+
   if (!desktop) return null;
   return (
     <AnimatePresence>
@@ -64,7 +66,13 @@ export function IsabelIntro() {
                 : "border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
             }`}
           >
-            <img src="/images/isabel-hedra-source.jpg" alt="" className="h-[300px] w-full object-cover object-top" />
+            <motion.img
+              src="/images/isabel-hedra-source.jpg"
+              alt=""
+              className="h-[300px] w-full object-cover object-top"
+              animate={reduce ? undefined : { scale: [1, 1.06, 1] }}
+              transition={reduce ? undefined : { duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            />
             <div className="flex items-center gap-2 px-4 py-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span

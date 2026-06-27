@@ -255,7 +255,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       industry: payload.industry,
       website_url: website_url || null,
       whatsapp: payload.whatsapp,
-      monthly_budget: monthly_budget ?? 0,
+      monthly_budget: monthly_budget ?? null,
       success_goals: payload.successGoals,
       current_marketing: payload.currentMarketing,
       challenges: derived_challenges,
@@ -276,6 +276,19 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       biggest_frustration: payload.biggestFrustration || null,
       previous_vendor_exp: payload.previousVendorExp || null,
       primary_intent: payload.primaryIntent || null,
+      // Previously NEVER passed → the generator's LEADS/PRESENCE/EXPLORE sections,
+      // benchmarks and ROI calculator were starved. Now wired end-to-end.
+      enquiry_volume: payload.enquiryVolume || null,
+      follow_up_method: payload.followUpMethod || null,
+      missed_call_handling: payload.missedCallHandling || null,
+      current_website_status: payload.currentWebsiteStatus || null,
+      google_maps_status: payload.googleMapsStatus || null,
+      website_goal: payload.websiteGoal || null,
+      biggest_time_waste: payload.biggestTimeWaste || null,
+      team_size: payload.teamSize || null,
+      package_preference: payload.packagePreference || null,
+      site_conversion_status: payload.siteConversionStatus || null,
+      avg_transaction_value: payload.avgTransactionValue || null,
     });
 
     // Auto-generate design brief when client has no website (fire-and-forget)

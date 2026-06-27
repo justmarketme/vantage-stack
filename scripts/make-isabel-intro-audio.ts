@@ -27,9 +27,13 @@ const OUT = resolve(process.cwd(), "public/audio/isabel-intro.mp3");
 
 // Expressive, happy, declarative endings. v3 gets emotion tags; v2 gets the
 // plain text (tags would be read aloud on v2).
-const SCRIPT_V3 = `[warmly] Hey — hi, welcome! Lovely to have you here. I'm Isabel, from VantageStack, [happy] and I'm so glad you came. In the next two minutes, I'll help you map out your free growth blueprint — what's working well, what's slipping through the cracks, and where your fastest wins are hiding. And honestly? [laughs] this is the easy part. I'll guide you through every step — it's just a relaxed chat between us. So whenever you're ready, tap the button to talk to me, and let's get started together.`;
+// New single-CTA flow: the intro VIDEO greets + starts the music + hands off to
+// the LIVE agent (same voice) for the guided form — so NO "tap the button", and
+// it ends on "let's begin" so the live agent picks up with the first question.
+// It sets the on-screen contract: wherever it lights up is where you answer.
+const SCRIPT_V3 = `[warmly] Hey — welcome! Lovely to have you here. I'm Isabel, from VantageStack. [happy] I'm going to walk you through your free growth blueprint — it's quick, and honestly, it's just a relaxed chat between us. I'll light up each step as we go, so wherever it lights up, that's where you pop your answer in — take your time, [warmly] I'll be right here with you. Let me put a little music on to set the mood… and let's begin.`;
 
-const SCRIPT_V2 = `Hey — hi, welcome! Lovely to have you here. I'm Isabel, from VantageStack, and I'm so glad you came. In the next two minutes, I'll help you map out your free growth blueprint — what's working well, what's slipping through the cracks, and where your fastest wins are hiding. And honestly? Ha — this is the easy part. I'll guide you through every step, it's just a relaxed chat between us. So whenever you're ready, tap the button to talk to me, and let's get started together.`;
+const SCRIPT_V2 = `Hey — welcome! Lovely to have you here. I'm Isabel, from VantageStack. I'm going to walk you through your free growth blueprint — it's quick, and honestly, it's just a relaxed chat between us. I'll light up each step as we go, so wherever it lights up, that's where you pop your answer in — take your time, I'll be right here with you. Let me put a little music on to set the mood… and let's begin.`;
 
 async function tts(model: string, text: string, voiceSettings: Record<string, unknown>) {
   const apiKey = resolveElevenLabsApiKey();

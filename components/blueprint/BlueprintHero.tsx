@@ -12,10 +12,11 @@ export function BlueprintHero() {
   const [imgOk, setImgOk] = useState({ jono: true, kg: true });
 
   const start = () => {
-    // Hand off to IsabelWidget to begin the guided voice session…
-    window.dispatchEvent(new CustomEvent("blueprint:start-voice"));
-    // …and bring the deck into view so she has something to drive.
-    document.getElementById("blueprint-deck")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // This click is the gesture that unlocks audio. Play Isabel's lip-synced
+    // welcome first (IsabelTalkingIntro) — it greets, starts the music, then hands
+    // off to the live agent and scrolls to the form. (Falls straight through to
+    // the live agent if the intro clip isn't present.)
+    window.dispatchEvent(new CustomEvent("blueprint:intro-play"));
   };
   const toForm = () =>
     document.getElementById("blueprint-deck")?.scrollIntoView({ behavior: "smooth", block: "start" });

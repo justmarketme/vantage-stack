@@ -31,6 +31,7 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   const fadeRef = useRef<number | null>(null);
   const playingRef = useRef(false);
   const speakingRef = useRef(false);
+  const userStoppedRef = useRef(false); // user deliberately muted — don't auto-restart over them
   const [playing, setPlaying] = useState(false);
   const [pulse, setPulse] = useState(false); // brief glow when Isabel touches the button
 
@@ -91,18 +92,19 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   }, [fadeTo]);
 
   const toggle = useCallback(() => {
-    if (playingRef.current) stopMusic();
-    else void playMusic();
+    if (playingRef.current) { userStoppedRef.current = true; stopMusic(); }
+    else { userStoppedRef.current = false; void playMusic(); }
   }, [playMusic, stopMusic]);
 
   // Isabel can play/stop the music by voice (controlBlueprintMusic tool) and the
-  // button pulses so the user sees what she's doing.
+  // button pulses so the user sees what she's doing. An explicit request from her
+  // (or the user) overrides a prior mute.
   useEffect(() => {
     function onTool(e: Event) {
       const d = (e as CustomEvent<BlueprintToolDetail>).detail;
       if (!d || d.tool !== "music") return;
-      if (d.action === "stop") stopMusic();
-      else void playMusic();
+      if (d.action === "stop") { userStoppedRef.current = true; stopMusic(); }
+      else { userStoppedRef.current = false; void playMusic(); }
       setPulse(true);
       window.setTimeout(() => setPulse(false), 1600);
     }
@@ -125,8 +127,9 @@ export function BlueprintAmbientAudio({ src = DEFAULT_SRC }: { src?: string }) {
   // Start the music when Isabel's voice session connects (the user's click to
   // talk is the gesture that allows playback).
   useEffect(() => {
-    window.addEventListener("blueprint:start-music", playMusic);
-    return () => window.removeEventListener("blueprint:start-music", playMusic);
+    const onStart = () => { if (!userStoppedRef.current) void playMusic(); };
+    window.addEventListener("blueprint:start-music", onStart);
+    return () => window.removeEventListener("blueprint:start-music", onStart);
   }, [playMusic]);
 
   useEffect(() => () => clearFade(), []);

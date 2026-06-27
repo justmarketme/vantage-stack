@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createBlueprintClientTools, BLUEPRINT_TOOL_EVENT } from "../lib/blueprint/voice-tools";
-import { ISABEL_BLUEPRINT_FIRST_MESSAGE } from "../lib/isabel/persona";
+import { ISABEL_BLUEPRINT_FIRST_MESSAGE, ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO } from "../lib/isabel/persona";
 
 const AGENT_ID = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
 
@@ -235,7 +235,10 @@ export function IsabelWidget() {
   const [showForm, setShowForm] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const micPrimedRef = useRef(false);
+  // Tracks whether the last start was after the lip-synced intro (which already
+  // owns the music cue) so onConnect doesn't fire a second start-music.
+  const afterIntroRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
   const onBlueprint = !!pathname?.startsWith("/blueprint");
@@ -250,16 +253,20 @@ export function IsabelWidget() {
           window.dispatchEvent(
             new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "personName" } }),
           );
-          // Bring the ambient track up as she greets — her first line says "let me
-          // pop a little music on… there we go", so it lands exactly on her words.
-          // (The connect gesture is the user's own click, so playback is allowed.)
-          window.dispatchEvent(new CustomEvent("blueprint:start-music"));
+          // Bring the ambient track up as she greets — UNLESS the lip-synced intro
+          // already started it (afterIntro), so we don't double-fire or override a
+          // user who muted during the clip. (The connect is the user's own click,
+          // so playback is allowed.)
+          if (!afterIntroRef.current) window.dispatchEvent(new CustomEvent("blueprint:start-music"));
         }
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
       onDisconnect: () => {
         dlog("🔌 Isabel disconnected");
         setFeedbackSent(null);
+        afterIntroRef.current = false;
+        // Let the standing hologram unmount + reset for a clean re-run.
+        window.dispatchEvent(new CustomEvent("blueprint:session-ended"));
       },
       onMessage: (msg) => {
         if (!msg.message) return;
@@ -323,32 +330,39 @@ export function IsabelWidget() {
     if (hasData) setShowForm(true);
   }, [messages, onBlueprint]);
 
-  const getMicStream = useCallback(async () => {
-    if (mediaStreamRef.current) return mediaStreamRef.current;
+  // Prime the mic PERMISSION (then release the stream — the ConvAI SDK opens its
+  // own capture for the WebRTC transport, so a held stream just leaks a hot mic).
+  // Priming early, under the CTA gesture, means the prompt isn't sprung ~15s
+  // later at the post-intro handoff.
+  const primeMic = useCallback(async () => {
+    if (micPrimedRef.current) return;
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStreamRef.current = stream;
-    return stream;
+    stream.getTracks().forEach((t) => t.stop());
+    micPrimedRef.current = true;
   }, []);
 
   // On /blueprint, give Isabel the walkthrough-specific spoken intro (requires
   // the first_message override enabled on the agent).
   const blueprintOverrides = useCallback(
-    (textOnly: boolean) => ({
+    (textOnly: boolean, afterIntro = false) => ({
       conversation: { textOnly },
-      ...(onBlueprint ? { agent: { firstMessage: ISABEL_BLUEPRINT_FIRST_MESSAGE } } : {}),
+      ...(onBlueprint
+        ? { agent: { firstMessage: afterIntro ? ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO : ISABEL_BLUEPRINT_FIRST_MESSAGE } }
+        : {}),
     }),
     [onBlueprint],
   );
 
-  const startVoice = useCallback(async () => {
+  const startVoice = useCallback(async (afterIntro = false) => {
     setVoiceError(null);
+    afterIntroRef.current = afterIntro;
     if (!AGENT_ID) {
       setVoiceError("Isabel isn't available right now — you can type to me instead.");
       return;
     }
     try {
-      await getMicStream();
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false), clientTools: createBlueprintClientTools() });
+      await primeMic();
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false, afterIntro), clientTools: createBlueprintClientTools() });
       dlog("✅ Voice session started:", sessionId);
     } catch (err) {
       derr("Failed to start voice:", err);
@@ -361,7 +375,7 @@ export function IsabelWidget() {
           : "I couldn't connect just now — give it another go, or type to me instead.",
       );
     }
-  }, [getMicStream, startSession, blueprintOverrides]);
+  }, [primeMic, startSession, blueprintOverrides]);
 
   const startText = useCallback(async () => {
     try {
@@ -376,7 +390,7 @@ export function IsabelWidget() {
 
   const endVoice = useCallback(async () => {
     await endSession();
-    if (mediaStreamRef.current) { mediaStreamRef.current.getTracks().forEach((t) => t.stop()); mediaStreamRef.current = null; }
+    afterIntroRef.current = false;
   }, [endSession]);
 
   const handleCall = useCallback(async () => {
@@ -397,17 +411,21 @@ export function IsabelWidget() {
     if (canSendFeedback) { sendFeedback(positive); setFeedbackSent(positive); }
   }, [canSendFeedback, sendFeedback]);
 
-  const handleVoiceQuickStart = useCallback(async () => {
+  const handleVoiceQuickStart = useCallback(async (afterIntro = false) => {
     // On /blueprint the on-screen form (left) is the star — Isabel highlights and
     // fills it as she talks, so we DON'T open the big chat panel over her. A slim
     // live bar handles status + End instead. Elsewhere, open the panel as normal.
     if (!onBlueprint) setIsOpen(true);
-    await startVoice();
+    await startVoice(afterIntro);
   }, [startVoice, onBlueprint]);
 
-  // The value-first hero's "Start with Isabel" CTA hands off here.
+  // The lip-synced intro hands off here when it ends (afterIntro: true → the live
+  // agent skips the greeting); the hero's fallback path fires it with no detail.
   useEffect(() => {
-    const onStartVoice = () => { void handleVoiceQuickStart(); };
+    const onStartVoice = (e: Event) => {
+      const afterIntro = Boolean((e as CustomEvent<{ afterIntro?: boolean }>).detail?.afterIntro);
+      void handleVoiceQuickStart(afterIntro);
+    };
     window.addEventListener("blueprint:start-voice", onStartVoice);
     return () => window.removeEventListener("blueprint:start-voice", onStartVoice);
   }, [handleVoiceQuickStart]);
@@ -429,7 +447,13 @@ export function IsabelWidget() {
     setIsOpen(true);
   }, []);
 
-  useEffect(() => { return () => { mediaStreamRef.current?.getTracks().forEach((t) => t.stop()); }; }, []);
+  // The talking intro pre-warms the mic on the CTA gesture (so the permission
+  // prompt appears with the click, not abruptly at the post-intro handoff).
+  useEffect(() => {
+    const onPrewarm = () => { void primeMic().catch(() => {}); };
+    window.addEventListener("blueprint:prewarm-mic", onPrewarm);
+    return () => window.removeEventListener("blueprint:prewarm-mic", onPrewarm);
+  }, [primeMic]);
 
   return (
     <>
@@ -460,7 +484,7 @@ export function IsabelWidget() {
               className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 cursor-pointer max-w-[360px] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] transition-all"
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={onBlueprint ? handleVoiceQuickStart : handleTextQuickStart}
+              onClick={onBlueprint ? () => void handleVoiceQuickStart() : handleTextQuickStart}
             >
               {/* Subtle shimmer line */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent rounded-t-2xl" />
@@ -734,7 +758,7 @@ export function IsabelWidget() {
                   {onBlueprint ? (
                     <div className="w-full space-y-2.5 px-2">
                       <button
-                        onClick={handleVoiceQuickStart}
+                        onClick={() => void handleVoiceQuickStart()}
                         disabled={isTransitioning}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:opacity-90 disabled:opacity-50"
                       >
@@ -762,7 +786,7 @@ export function IsabelWidget() {
                         Type a message
                       </button>
                       <button
-                        onClick={handleVoiceQuickStart}
+                        onClick={() => void handleVoiceQuickStart()}
                         className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-textMuted hover:bg-white/[0.09] hover:text-textPrimary transition-all"
                       >
                         <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

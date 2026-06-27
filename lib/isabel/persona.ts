@@ -151,3 +151,14 @@ export const ISABEL_FIRST_MESSAGE = `Hi there, I'm Isabel 😊 so lovely to meet
 // first_message override). She greets warmly, frames the value, and leads
 // straight into the guided form (which she then highlights field-by-field).
 export const ISABEL_BLUEPRINT_FIRST_MESSAGE = `Hey, welcome — lovely to have you! 😊 I'm Isabel, your guide here at VantageStack. I'm going to walk you through your free growth blueprint — nice and easy, just a chat between us. Here's how it works: I'll light up each step as we go, and wherever it lights up is exactly where you pop your answer in — type it or tap it, take your time, and I'll wait for you. By the end you'll have a proper plan to grow your business. Let me pop a little music on to set the mood… there we go 🎶. Right — see this first box lighting up? That's where we start. What's your name?`;
+
+// Used when the LIP-SYNCED intro video has just played (it already did the warm
+// welcome + music + "let's begin"), so the live agent must NOT re-introduce —
+// it picks up mid-breath, straight into the first question. Same voice ("Cay"),
+// so it feels like one continuous person.
+export const ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO = `So — let's dive straight in! 😊 See this first box lighting up? That's where we start. What's your name?`;
+
+// Visible transcript of the lip-synced intro clip (WCAG 1.2.2) — mirrors the
+// spoken words in scripts/make-isabel-intro-audio.ts so deaf/HoH users get the
+// welcome. Shown beneath the video in IsabelTalkingIntro.
+export const ISABEL_INTRO_TRANSCRIPT = `Hey — welcome! Lovely to have you here. I'm Isabel, from VantageStack. I'm going to walk you through your free growth blueprint — it's quick, and it's just a relaxed chat between us. I'll light up each step as we go, so wherever it lights up, that's where you pop your answer in — take your time, I'll be right here with you. Let me put a little music on… and let's begin.`;

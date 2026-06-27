@@ -250,7 +250,7 @@ export function IsabelWidget() {
           // here — Isabel turns it on herself (controlBlueprintMusic) when she
           // says she's putting it on, so it lines up with her words.
           window.dispatchEvent(
-            new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "clientName" } }),
+            new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "personName" } }),
           );
         }
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }

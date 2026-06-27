@@ -200,6 +200,7 @@ export async function ensureCrmSchema(db: Sql) {
       alter table public.clients add column if not exists biggest_time_waste text[];
       alter table public.clients add column if not exists website_goal text[];
       alter table public.clients add column if not exists current_website_status text;
+      alter table public.clients add column if not exists city text;
       create index if not exists clients_status_idx on public.clients (status);
       create index if not exists clients_created_idx on public.clients (created_at desc);
     `),

@@ -19,7 +19,9 @@ function set(actor: ReturnType<typeof createActor>, key: string, value: string |
 }
 
 function fillStep1Leads(actor: ReturnType<typeof createActor>) {
-  set(actor, "clientName", "John — Apex Plumbing");
+  set(actor, "personName", "John");
+  set(actor, "businessName", "Apex Plumbing");
+  set(actor, "city", "Johannesburg");
   set(actor, "industry", "Healthcare");
   set(actor, "websiteExists", "Yes — it's live");
   set(actor, "revenueRange", "Under R50k/month");
@@ -38,7 +40,7 @@ describe("blueprint form machine — lifecycle", () => {
     expect(actor.getSnapshot().context.stepIndex).toBe(0);
 
     const highlight = emitted.find((e) => e.type === "fieldHighlighted");
-    expect(highlight).toMatchObject({ type: "fieldHighlighted", field: "clientName", stepId: "business" });
+    expect(highlight).toMatchObject({ type: "fieldHighlighted", field: "personName", stepId: "business" });
   });
 });
 
@@ -50,7 +52,8 @@ describe("blueprint form machine — progression & validation", () => {
 
     expect(actor.getSnapshot().context.stepIndex).toBe(0); // did not advance
     const errs = actor.getSnapshot().context.errors;
-    expect(errs.clientName).toBeDefined();
+    expect(errs.personName).toBeDefined();
+    expect(errs.businessName).toBeDefined();
     expect(errs.primaryIntent).toBeDefined();
     expect(emitted.some((e) => e.type === "validationFailed")).toBe(true);
   });
@@ -73,7 +76,9 @@ describe("blueprint form machine — progression & validation", () => {
     const { actor } = startQuick();
     actor.send({ type: "START" });
     // PRESENCE branch, no live site so currentWebsiteStatus is not required.
-    set(actor, "clientName", "Lebo — Bright Dental");
+    set(actor, "personName", "Lebo");
+    set(actor, "businessName", "Bright Dental");
+    set(actor, "city", "Cape Town");
     set(actor, "industry", "Healthcare");
     set(actor, "websiteExists", "No — I need one built");
     set(actor, "revenueRange", "R50k – R150k/month");
@@ -158,7 +163,15 @@ describe("blueprint form machine — submission", () => {
     await waitFor(actor, (s) => s.status === "done");
     expect(submit).toHaveBeenCalledTimes(1);
     const payload = (submit as jest.Mock).mock.calls[0][0];
-    expect(payload).toMatchObject({ clientName: "John — Apex Plumbing", primaryIntent: "LEADS", email: "john@apexplumbing.co.za" });
+    expect(payload).toMatchObject({
+      clientName: "John",
+      personName: "John",
+      businessName: "Apex Plumbing",
+      company: "Apex Plumbing",
+      city: "Johannesburg",
+      primaryIntent: "LEADS",
+      email: "john@apexplumbing.co.za",
+    });
     expect(actor.getSnapshot().context.result).toEqual({ clientId: "abc123" });
     expect(completed).toHaveLength(1);
   });
@@ -202,14 +215,15 @@ describe("blueprint form machine — serialization", () => {
 
     const persisted = actor.getPersistedSnapshot();
     const round = JSON.parse(JSON.stringify(persisted));
-    expect(round.context.data.clientName).toBe("John — Apex Plumbing");
+    expect(round.context.data.personName).toBe("John");
+    expect(round.context.data.businessName).toBe("Apex Plumbing");
     expect(round.context.data.primaryIntent).toBe("LEADS");
     expect(typeof round.context.stepIndex).toBe("number");
 
     // rehydrate from the serialized snapshot
     const revived = createActor(createFormMachine(quickFormSchema), { snapshot: round });
     revived.start();
-    expect(revived.getSnapshot().context.data.clientName).toBe("John — Apex Plumbing");
+    expect(revived.getSnapshot().context.data.personName).toBe("John");
   });
 });
 
@@ -220,7 +234,8 @@ describe("detailed form schema — same engine, 4 fixed steps", () => {
     actor.start();
     actor.send({ type: "START" });
     // step 0: contact
-    set(actor, "clientName", "Acme Co");
+    set(actor, "personName", "Ada");
+    set(actor, "businessName", "Acme Co");
     set(actor, "email", "ops@acme.co.za");
     set(actor, "whatsapp", "+27110001111");
     actor.send({ type: "NEXT" });

@@ -79,7 +79,14 @@ export function splitListish(v: string): string[] {
 
 export const BlueprintSubmitSchema = z.object({
   // ── Step 1 ──────────────────────────────────────────────────────
+  // clientName stays required for back-compat — the quick form's buildPayload
+  // always emits it (= personName), so existing API callers keep working — but
+  // person and business are now captured SEPARATELY.
   clientName: z.string().trim().min(1, "Name is required."),
+  personName: z.string().trim().optional(),
+  businessName: z.string().trim().optional(),
+  company: z.string().trim().optional(),
+  city: z.string().trim().optional(),
   email: z.string().trim().toLowerCase().email("Please enter a valid email address."),
   whatsapp: z
     .string()

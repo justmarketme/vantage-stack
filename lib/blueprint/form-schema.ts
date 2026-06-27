@@ -175,7 +175,8 @@ export const quickFormSchema: FormSchema = {
       id: "business",
       label: () => "STEP 1 OF 3: YOUR BUSINESS",
       fields: [
-        { key: "clientName", label: "Your name & business name", kind: "text", required: true, requiredMessage: "Name is required." },
+        { key: "personName", label: "First, what's your name?", kind: "text", required: true, requiredMessage: "Your name is required." },
+        { key: "businessName", label: "And what's your business called?", kind: "text", required: true, requiredMessage: "Your business name is required." },
         { key: "industry", label: "What industry are you in?", kind: "select", options: INDUSTRIES, required: true, requiredMessage: "Please select your industry." },
         {
           key: "industryCustomDescription",
@@ -195,6 +196,7 @@ export const quickFormSchema: FormSchema = {
             try { return getIndustryData(asString(d.industry)).subNiches ?? []; } catch { return []; }
           },
         },
+        { key: "city", label: "Which town or city are you based in?", kind: "text", required: true, requiredMessage: "Please tell us your town or city.", hint: "helps us pull your Google Business listing" },
         { key: "websiteExists", label: "Do you currently have a website?", kind: "cards", options: WEBSITE_EXISTS, required: true, requiredMessage: "Please select an option." },
         { key: "revenueRange", label: "Roughly, what's your current monthly revenue?", kind: "select", options: REVENUE_RANGES, required: true, requiredMessage: "Please select your revenue range." },
         { key: "primaryIntent", label: "What's the main reason you're here today?", kind: "cards", options: INTENTS, required: true, requiredMessage: "Please pick an option so we can tailor the next questions." },
@@ -243,9 +245,15 @@ export const quickFormSchema: FormSchema = {
         { key: "email", label: "Email address", kind: "email", required: true, requiredMessage: "Email is required.", validate: validateEmailValue },
         { key: "whatsapp", label: "WhatsApp number", kind: "tel", required: true, requiredMessage: "WhatsApp number is required.", validate: validateWhatsappValue, hint: "Include country code if possible (e.g. +27…)." },
         { key: "websiteUrl", label: "Website URL (optional)", kind: "url", validate: validateOptionalUrl },
+        {
+          key: "avgTransactionValue",
+          label: "Roughly, what's an average sale or client worth to you? (optional)",
+          kind: "cards",
+          options: ["Under R1k", "R1k – R5k", "R5k – R20k", "R20k – R100k", "Over R100k", "Not sure"],
+          hint: "powers your ROI projection",
+        },
         { key: "urgencyTimeline", label: "When are you looking to get started? (optional)", kind: "cards", options: ["ASAP — I need this now", "Within the next month", "Just exploring for now"] },
         { key: "primarySocialHandle", label: "Your most active social profile (optional)", kind: "text", hint: "@yourbusiness or paste a profile link" },
-        { key: "preferredContactTime", label: "Best time to reach you (optional)", kind: "text" },
         {
           key: "whatsappConsent",
           label:
@@ -268,7 +276,13 @@ export const quickFormSchema: FormSchema = {
             ? "In progress / being built"
             : asString(data.currentWebsiteStatus);
     return {
-      clientName: asString(data.clientName).trim(),
+      // name column = the PERSON; business name lives in `company`.
+      clientName: asString(data.personName).trim() || asString(data.businessName).trim(),
+      personName: asString(data.personName).trim(),
+      businessName: asString(data.businessName).trim(),
+      company: asString(data.businessName).trim(),
+      city: asString(data.city).trim(),
+      avgTransactionValue: asString(data.avgTransactionValue),
       email: asString(data.email).trim(),
       whatsapp: asString(data.whatsapp).trim(),
       websiteUrl: asString(data.websiteUrl).trim(),
@@ -306,6 +320,8 @@ export const quickFormSchema: FormSchema = {
   },
 };
 
+// Note: the detailed form also splits person vs business (see below).
+
 // ─── DETAILED FORM ──────────────────────────────────────────────────────────
 
 const DETAILED_INDUSTRIES = INDUSTRIES;
@@ -319,7 +335,8 @@ export const detailedFormSchema: FormSchema = {
       id: "contact",
       label: () => "Contact",
       fields: [
-        { key: "clientName", label: "Client name / business name", kind: "text", required: true, requiredMessage: "This field is required." },
+        { key: "personName", label: "Your name", kind: "text", required: true, requiredMessage: "This field is required." },
+        { key: "businessName", label: "Business name", kind: "text", required: true, requiredMessage: "This field is required." },
         { key: "email", label: "Email address", kind: "email", required: true, requiredMessage: "Email is required.", validate: validateEmailValue },
         { key: "whatsapp", label: "WhatsApp number", kind: "tel", required: true, requiredMessage: "WhatsApp number is required.", validate: validateWhatsappValue, hint: "Include country code if possible (e.g. +27…)." },
         { key: "websiteUrl", label: "Website URL (optional)", kind: "url", validate: validateOptionalUrl },
@@ -367,7 +384,10 @@ export const detailedFormSchema: FormSchema = {
     },
   ],
   buildPayload: (data) => ({
-    clientName: asString(data.clientName).trim(),
+    clientName: asString(data.personName).trim() || asString(data.businessName).trim(),
+    personName: asString(data.personName).trim(),
+    businessName: asString(data.businessName).trim(),
+    company: asString(data.businessName).trim(),
     email: asString(data.email).trim(),
     whatsapp: asString(data.whatsapp).trim(),
     websiteUrl: asString(data.websiteUrl).trim(),

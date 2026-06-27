@@ -21,43 +21,13 @@ import {
   type FormData,
 } from "../../lib/blueprint/form-schema";
 import { BLUEPRINT_TOOL_EVENT, type BlueprintToolDetail } from "../../lib/blueprint/voice-tools";
+import { matchOption } from "../../lib/blueprint/match-option";
 import { ProgressBar } from "../ui/ProgressBar";
 
 const CAL_LINK = "https://cal.com/vantagestack/discovery-call";
 
 const optValue = (o: OptionDef) => (typeof o === "string" ? o : o.value);
 const optLabel = (o: OptionDef) => (typeof o === "string" ? o : o.label);
-
-// Voice answers are free-form ("real estate", "I'm losing leads") but the form
-// options are exact ("Real estate", value "LEADS"). Snap the spoken value to the
-// closest real option so the field actually selects — and so dependent options
-// (sub-niche keys off the exact industry string) populate. Returns the option's
-// VALUE, or null if nothing reasonably matches.
-function matchOption(options: OptionDef[], raw: string): string | null {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const r = norm(raw);
-  if (!r) return null;
-  const cand = options.map((o) => ({ value: optValue(o), v: norm(optValue(o)), l: norm(optLabel(o)) }));
-  // 1) exact match on value or label
-  let m = cand.find((c) => c.v === r || c.l === r);
-  if (m) return m.value;
-  // 2) containment either direction (label/value inside the spoken answer or vice-versa)
-  m = cand.find((c) => (c.l && (c.l.includes(r) || r.includes(c.l))) || (c.v && (c.v.includes(r) || r.includes(c.v))));
-  if (m) return m.value;
-  // 3) most shared words
-  const rtok = new Set(r.split(" ").filter(Boolean));
-  let best: string | null = null;
-  let bestScore = 0;
-  for (const c of cand) {
-    const ctok = `${c.l} ${c.v}`.split(" ").filter(Boolean);
-    const score = ctok.filter((t) => rtok.has(t)).length;
-    if (score > bestScore) {
-      bestScore = score;
-      best = c.value;
-    }
-  }
-  return bestScore > 0 ? best : null;
-}
 
 function fieldOptions(field: FieldDef, data: FormData): OptionDef[] {
   if (field.options) return field.options;

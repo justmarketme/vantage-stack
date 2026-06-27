@@ -264,7 +264,7 @@ function FieldRenderer({
       return (
         <div className={`space-y-2 ${ring}`} data-field={field.key}>
           {labelEl}
-          <div className="grid gap-2">
+          <div className="grid gap-2" role="radiogroup" aria-labelledby={`label-${field.key}`}>
             {options.map((o) => {
               const v = optValue(o);
               const selected = asString(value) === v;
@@ -272,6 +272,8 @@ function FieldRenderer({
                 <button
                   key={v}
                   type="button"
+                  role="radio"
+                  aria-checked={selected}
                   onClick={() => onSet(selected ? "" : v)}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
                     selected
@@ -291,7 +293,7 @@ function FieldRenderer({
       return (
         <div className={`space-y-2 ${ring}`} data-field={field.key}>
           {labelEl}
-          <div className="grid gap-2">
+          <div className="grid gap-2" role="group" aria-labelledby={`label-${field.key}`}>
             {options.map((o) => {
               const v = optValue(o);
               const arr = asArray(value);
@@ -301,6 +303,7 @@ function FieldRenderer({
                 <button
                   key={v}
                   type="button"
+                  aria-pressed={selected}
                   disabled={capped}
                   onClick={() => onToggle(v)}
                   className={`rounded-xl border px-4 py-3 text-left text-sm transition ${

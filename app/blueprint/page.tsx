@@ -53,7 +53,7 @@ export default async function BlueprintPage({
       </main>
       <Footer />
       <BlueprintAmbientAudio />
-      <IsabelIntro className="pointer-events-none fixed bottom-0 right-0 z-30 hidden h-[88vh] w-[420px] xl:block" />
+      <IsabelIntro />
       {/* Lip-synced welcome — plays on the hero CTA, then hands off to the live agent. */}
       <IsabelTalkingIntro />
     </div>

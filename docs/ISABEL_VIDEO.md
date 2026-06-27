@@ -4,10 +4,15 @@ Two clips power the guided experience. They're generated in **logged-in browser
 tools** (so they're a manual step — Claude can't sign in), but everything around
 them is automated.
 
-| Asset | File | Tool | Has audio? | Background | Role |
-|---|---|---|---|---|---|
-| **Talking intro** | `public/videos/isabel_intro_talk.mp4` | **Hedra** (lip-sync) | ✅ her voice | any (framed card) | Plays once on the hero CTA — she greets + starts the music, then hands off |
-| **Standing hologram** | `public/videos/isabel_intro.mp4` | **Veo / Gemini** | ❌ silent loop | **chroma green** | Stands beside the form during the live session, "points" at it |
+| Asset | File | Tool | Has audio? | Role |
+|---|---|---|---|---|
+| **Talking intro** *(optional)* | `public/videos/isabel_intro_talk.mp4` | **Hedra** (lip-sync) | ✅ her voice | Plays once on the hero CTA — she greets + starts the music, then hands off |
+| **Standing presence** | `public/images/isabel-hedra-source.jpg` | — (framed portrait) | — | The olive Isabel sits beside the form during the live session (framed card, glows while she speaks) |
+
+> NOTE: The earlier full-body green-screen "hologram" (Veo) was retired — Veo
+> text-to-video can't reproduce the canonical olive Isabel, so the desktop
+> presence is now a framed portrait of her (consistent with the avatar/poster).
+> The WebGL chroma-key overlay was removed with it.
 
 The two voices match because the talking intro is voiced by the **same ElevenLabs
 voice** ("Cay", `voice_id TTY70JqFvDxeExufZ1za`) the live agent uses — see

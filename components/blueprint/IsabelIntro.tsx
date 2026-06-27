@@ -18,6 +18,9 @@ type Phase = "idle" | "playing" | "fading" | "gone";
 export function IsabelIntro({ className = "" }: { className?: string }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  // Desktop-only: phones get a lightweight poster band (in page.tsx) instead of
+  // the WebGL hologram, so the chroma shader never runs on a phone GPU.
+  const [mobile] = useState(() => typeof window !== "undefined" && !window.matchMedia("(min-width: 1280px)").matches);
 
   // After the dissolve, unmount so the WebGL loop stops.
   useEffect(() => {
@@ -41,7 +44,7 @@ export function IsabelIntro({ className = "" }: { className?: string }) {
     window.dispatchEvent(new CustomEvent("blueprint:intro-done"));
   };
 
-  if (phase === "gone") return null;
+  if (mobile || phase === "gone") return null;
 
   const fading = phase === "fading";
   return (

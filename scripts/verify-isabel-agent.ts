@@ -8,6 +8,7 @@
  */
 
 import { resolveElevenLabsApiKey, resolveIsabelAgentId } from "./isabel-env";
+import { BLUEPRINT_TOOL_DEFINITIONS } from "../lib/blueprint/voice-tools";
 
 const API_BASE = "https://api.elevenlabs.io/v1";
 
@@ -34,14 +35,16 @@ async function main() {
   const sys = prompt.prompt ?? "";
   const tags = (tts.suggested_audio_tags ?? []).map((t) => t.tag).filter(Boolean);
 
+  const expectedTools = BLUEPRINT_TOOL_DEFINITIONS.length;
   const checks: [string, boolean, string][] = [
-    ["TTS model is V3 Conversational (expressive)", tts.model_id === "eleven_v3_conversational", String(tts.model_id)],
+    ["TTS model is multilingual_v2 (warm + accent-stable)", tts.model_id === "eleven_multilingual_v2", String(tts.model_id)],
     ["Voice is Cay", tts.voice_id === "TTY70JqFvDxeExufZ1za", String(tts.voice_id)],
-    ["Audio tags include Laughing", tags.includes("Laughing"), tags.join(", ") || "(none)"],
+    ["Audio tags cleared (v3-only, drop for stable accent)", tags.length === 0, tags.join(", ") || "(none)"],
     ["Persona: South African flavour", /South African voice & flavour/.test(sys), ""],
     ["Persona: real blueprint questions", /ask in THIS exact order/.test(sys), ""],
+    ["Persona: per-field tools (set_industry)", /set_industry/.test(sys), ""],
     ["Persona: music control", /controlBlueprintMusic/.test(sys), ""],
-    ["Blueprint tools attached (8)", (prompt.tool_ids?.length ?? 0) === 8, String(prompt.tool_ids?.length ?? 0)],
+    [`Blueprint tools attached (${expectedTools})`, (prompt.tool_ids?.length ?? 0) === expectedTools, String(prompt.tool_ids?.length ?? 0)],
   ];
 
   let ok = true;

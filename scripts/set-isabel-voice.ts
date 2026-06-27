@@ -42,36 +42,36 @@ async function main() {
   // used in the intro video) works for the LIVE realtime agent. ConvAI realtime
   // historically only supports the turbo/flash/multilingual_v2 family — if v3 is
   // rejected or breaks audio, fall back to multilingual_v2 with higher `style`.
-  // Default to the realtime EXPRESSIVE model (V3 Conversational) — confirmed
-  // entitled on this account. NOTE: the agent model id is "eleven_v3_conversational",
-  // NOT the non-streaming "eleven_v3" (which agents reject as expressive_tts_not_allowed).
-  const MODEL = (process.env.VS_TTS_MODEL || "eleven_v3_conversational").trim();
-  const STYLE = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : undefined;
+  // Default = the WARM-BUT-STABLE middle ground: eleven_multilingual_v2 at high
+  // stability. v3_conversational is more expressive but DRIFTS the SA accent toward
+  // American (it's a minority accent and v3's loose sampling lets it wander); v2 at
+  // higher stability holds the accent while staying warmer than turbo/flash.
+  // Override with VS_TTS_MODEL=eleven_v3_conversational for the expressive (drifty) path.
+  const MODEL = (process.env.VS_TTS_MODEL || "eleven_multilingual_v2").trim();
+  const STABILITY = process.env.VS_STABILITY ? Number(process.env.VS_STABILITY) : 0.6;
   const isV3 = MODEL.includes("v3_conversational") || MODEL === "eleven_v3";
 
   const tts: Record<string, unknown> = { ...currentTts, voice_id: VOICE_ID, model_id: MODEL };
   if (isV3) {
-    // Expressive Mode is inherent to V3 Conversational. Stability / Speed /
-    // Similarity / Style are NOT customizable for v3 — drop them so the agent
-    // accepts the PATCH. Expression comes from the model + audio tags.
+    // Expressive Mode is inherent to V3 Conversational; stability/speed/similarity
+    // are not customizable. Warm audio tags (laughs, warmth) — SuggestedAudioTag objects.
     delete tts.stability;
     delete tts.speed;
     delete tts.similarity_boost;
     delete tts.style;
     delete tts.expressive_mode;
-    // Warm, on-brand audio tags she can lean on (laughs, warmth, empathy).
-    // The agent schema expects SuggestedAudioTag objects, not bare strings.
     tts.suggested_audio_tags = (process.env.VS_AUDIO_TAGS || "Warmly,Empathetically,Excitedly,Enthusiastically,Chuckles,Laughing")
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean)
       .map((tag) => ({ tag }));
   } else {
-    tts.stability = 0.45;
+    // Higher stability = tighter accent adherence (less drift) while staying warm.
+    tts.stability = STABILITY;
     tts.similarity_boost = 0.85;
     tts.speed = 1.0;
-    if (STYLE !== undefined) tts.style = STYLE;
-    tts.expressive_mode = true;
+    tts.expressive_mode = true; // ignored by ConvAI but harmless
+    tts.suggested_audio_tags = []; // v3-only — clear them so they can't loosen the accent
   }
 
   const patchRes = await fetch(`${API_BASE}/convai/agents/${agentId}`, {

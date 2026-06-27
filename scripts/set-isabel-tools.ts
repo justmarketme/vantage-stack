@@ -34,23 +34,33 @@ async function main() {
 
   const toolIds: string[] = [];
   for (const def of BLUEPRINT_TOOL_DEFINITIONS) {
-    const existingId = byName.get(def.name);
-    if (existingId) {
-      console.log(`• ${def.name} — already exists (${existingId})`);
-      toolIds.push(existingId);
-      continue;
-    }
     const tool_config = {
       type: "client",
       name: def.name,
       description: def.description,
-      expects_response: false,
+      expects_response: Boolean(def.expectsResponse),
       parameters: {
         type: "object",
         properties: def.parameters,
         required: def.required,
       },
     };
+    const existingId = byName.get(def.name);
+    if (existingId) {
+      // UPSERT: keep description + enum in sync with the schema (single source of truth).
+      const res = await fetch(`${API_BASE}/convai/tools/${existingId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ tool_config }),
+      });
+      if (!res.ok) {
+        console.error(`✗ update ${def.name} failed:`, res.status, await res.text());
+        process.exit(1);
+      }
+      console.log(`↻ updated ${def.name} (${existingId})`);
+      toolIds.push(existingId);
+      continue;
+    }
     const res = await fetch(`${API_BASE}/convai/tools`, { method: "POST", headers, body: JSON.stringify({ tool_config }) });
     if (!res.ok) {
       console.error(`✗ create ${def.name} failed:`, res.status, await res.text());

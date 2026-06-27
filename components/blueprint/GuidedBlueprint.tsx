@@ -139,7 +139,7 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
           </h2>
           <p className="text-sm text-textMuted">
             Your tailored blueprint is being built — it lands on your WhatsApp within 1 business day, personally reviewed
-            by Jono &amp; KG.
+            by Jono &amp; Motso.
           </p>
           <a
             href={calUrl}
@@ -222,6 +222,92 @@ export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "
   );
 }
 
+/** Custom dropdown that the voice layer can OPEN — when Isabel highlights this
+ *  field, the options expand so the user actually SEES them (a native <select>
+ *  can't be opened programmatically). Themed to the dark blueprint. */
+function CustomSelect({
+  options,
+  value,
+  onSet,
+  highlighted,
+  labelId,
+}: {
+  options: OptionDef[];
+  value: string;
+  onSet: (v: string) => void;
+  highlighted?: boolean;
+  labelId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  // Auto-open when Isabel lands on the field so the user sees the choices.
+  useEffect(() => {
+    if (highlighted) setOpen(true);
+  }, [highlighted]);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const current = options.find((o) => optValue(o) === value);
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby={labelId}
+        className="vs-input flex items-center justify-between text-left"
+      >
+        <span className={current ? "text-textPrimary" : "text-textMuted"}>
+          {current ? optLabel(current) : "Select an option"}
+        </span>
+        <svg
+          className={`h-4 w-4 shrink-0 text-textMuted transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          className="absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-[#1a1a1d] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
+        >
+          {options.map((o) => {
+            const v = optValue(o);
+            const sel = v === value;
+            return (
+              <button
+                key={v}
+                type="button"
+                role="option"
+                aria-selected={sel}
+                onClick={() => {
+                  onSet(sel ? "" : v);
+                  setOpen(false);
+                }}
+                className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                  sel ? "bg-accent text-white" : "text-textPrimary hover:bg-white/[0.06]"
+                }`}
+              >
+                {optLabel(o)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FieldRenderer({
   field,
   data,
@@ -276,14 +362,13 @@ function FieldRenderer({
       return (
         <div className={`space-y-2 ${ring}`} data-field={field.key}>
           {labelEl}
-          <select className="vs-input" value={asString(value)} onChange={(e) => onSet(e.target.value)}>
-            <option value="">Select an option</option>
-            {options.map((o) => (
-              <option key={optValue(o)} value={optValue(o)}>
-                {optLabel(o)}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            options={options}
+            value={asString(value)}
+            onSet={onSet}
+            highlighted={highlighted}
+            labelId={`label-${field.key}`}
+          />
           {errEl}
         </div>
       );

@@ -63,10 +63,10 @@ export function BlueprintHero() {
       <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
         <div className="flex -space-x-3">
           <Face who="jono" src="/images/jono.jpg" label="Jono" />
-          <Face who="kg" src="/images/kg.jpg" label="KG" />
+          <Face who="kg" src="/images/kg.jpg" label="Motso" />
         </div>
         <p className="text-left text-xs leading-snug text-textMuted">
-          A real human — <span className="text-textPrimary">Jono &amp; KG</span>, the VantageStack founders —
+          A real human — <span className="text-textPrimary">Jono &amp; Motso</span>, the VantageStack founders —
           <br className="hidden sm:block" /> personally reviews every blueprint.
         </p>
       </div>

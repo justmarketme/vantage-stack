@@ -227,7 +227,6 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
 export function IsabelWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [introCued, setIntroCued] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [textInput, setTextInput] = useState("");
   const [feedbackSent, setFeedbackSent] = useState<boolean | null>(null);
@@ -247,12 +246,14 @@ export function IsabelWidget() {
         dlog("✅ Isabel connected!");
         if (onBlueprint) {
           // Light up the first field so her opening ("see this lighting up?") is
-          // true from the first second. The MUSIC is intentionally NOT started
-          // here — Isabel turns it on herself (controlBlueprintMusic) when she
-          // says she's putting it on, so it lines up with her words.
+          // true from the first second.
           window.dispatchEvent(
             new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "personName" } }),
           );
+          // Bring the ambient track up as she greets — her first line says "let me
+          // pop a little music on… there we go", so it lands exactly on her words.
+          // (The connect gesture is the user's own click, so playback is allowed.)
+          window.dispatchEvent(new CustomEvent("blueprint:start-music"));
         }
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
@@ -308,17 +309,6 @@ export function IsabelWidget() {
   useEffect(() => {
     if (onBlueprint) setDismissed(false);
   }, [onBlueprint]);
-
-  // When the intro video finishes (Isabel fades back), draw the eye to the chat CTA.
-  useEffect(() => {
-    function onIntroDone() {
-      setIntroCued(true);
-      setDismissed(false);
-      setIsOpen(false);
-    }
-    window.addEventListener("blueprint:intro-done", onIntroDone);
-    return () => window.removeEventListener("blueprint:intro-done", onIntroDone);
-  }, []);
 
   // Auto-extract data from conversation into the widget's own mini-form.
   // NOT on /blueprint — there the GuidedBlueprint deck (driven by client tools) is
@@ -454,7 +444,7 @@ export function IsabelWidget() {
 
             {/* Main card */}
             <motion.div
-              className={`relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border px-5 py-4 cursor-pointer max-w-[360px] transition-all ${introCued ? "border-accent/70 shadow-[0_0_55px_rgba(56,189,248,0.55)]" : "border-white/[0.09] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)]"}`}
+              className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 cursor-pointer max-w-[360px] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] transition-all"
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
               onClick={onBlueprint ? handleVoiceQuickStart : handleTextQuickStart}
@@ -538,18 +528,6 @@ export function IsabelWidget() {
             transition={{ duration: 0.2 }}
             className="vs-fab-bottom fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2"
           >
-            {/* Small label to the LEFT (away from the video on the right) */}
-            {onBlueprint && agentState === "disconnected" && (
-              <span
-                className={`hidden rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur transition-all sm:block ${
-                  introCued
-                    ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_24px_rgba(56,189,248,0.4)]"
-                    : "border-white/10 bg-[#17171f]/80 text-textMuted"
-                }`}
-              >
-                Talk to Isabel
-              </span>
-            )}
             <button
               onClick={() => {
                 if (onBlueprint && agentState === "disconnected") {
@@ -559,9 +537,7 @@ export function IsabelWidget() {
                 setIsOpen(!isOpen);
                 if (dismissed) setDismissed(false);
               }}
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl border bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:scale-105 hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)] active:scale-95 ${
-                introCued && onBlueprint ? "border-accent/70 shadow-[0_0_34px_rgba(56,189,248,0.5)]" : "border-white/10"
-              }`}
+              className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:scale-105 hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)] active:scale-95"
               aria-label={onBlueprint ? "Talk to Isabel" : isOpen ? "Close chat" : "Open chat"}
             >
               {isOpen ? (

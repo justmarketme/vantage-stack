@@ -42,22 +42,37 @@ async function main() {
   // used in the intro video) works for the LIVE realtime agent. ConvAI realtime
   // historically only supports the turbo/flash/multilingual_v2 family — if v3 is
   // rejected or breaks audio, fall back to multilingual_v2 with higher `style`.
-  const MODEL = (process.env.VS_TTS_MODEL || "eleven_multilingual_v2").trim();
+  // Default to the realtime EXPRESSIVE model (V3 Conversational) — confirmed
+  // entitled on this account. NOTE: the agent model id is "eleven_v3_conversational",
+  // NOT the non-streaming "eleven_v3" (which agents reject as expressive_tts_not_allowed).
+  const MODEL = (process.env.VS_TTS_MODEL || "eleven_v3_conversational").trim();
   const STYLE = process.env.VS_STYLE ? Number(process.env.VS_STYLE) : undefined;
+  const isV3 = MODEL.includes("v3_conversational") || MODEL === "eleven_v3";
 
-  const tts = {
-    ...currentTts,
-    voice_id: VOICE_ID,
-    model_id: MODEL,
-    // 0.45 keeps her lively but steadier than 0.35 — tames the rising "high pitch
-    // at the end of every sentence". Her warmth/energy now comes from the persona
-    // (happy, eager word choice) rather than from very low stability alone.
-    stability: 0.45,
-    similarity_boost: 0.85,
-    speed: 1.0, // natural, leading pace
-    ...(STYLE !== undefined ? { style: STYLE } : {}),
-    expressive_mode: true, // turn her expression up (enables natural laughter/emotion)
-  };
+  const tts: Record<string, unknown> = { ...currentTts, voice_id: VOICE_ID, model_id: MODEL };
+  if (isV3) {
+    // Expressive Mode is inherent to V3 Conversational. Stability / Speed /
+    // Similarity / Style are NOT customizable for v3 — drop them so the agent
+    // accepts the PATCH. Expression comes from the model + audio tags.
+    delete tts.stability;
+    delete tts.speed;
+    delete tts.similarity_boost;
+    delete tts.style;
+    delete tts.expressive_mode;
+    // Warm, on-brand audio tags she can lean on (laughs, warmth, empathy).
+    // The agent schema expects SuggestedAudioTag objects, not bare strings.
+    tts.suggested_audio_tags = (process.env.VS_AUDIO_TAGS || "Warmly,Empathetically,Excitedly,Enthusiastically,Chuckles,Laughing")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((tag) => ({ tag }));
+  } else {
+    tts.stability = 0.45;
+    tts.similarity_boost = 0.85;
+    tts.speed = 1.0;
+    if (STYLE !== undefined) tts.style = STYLE;
+    tts.expressive_mode = true;
+  }
 
   const patchRes = await fetch(`${API_BASE}/convai/agents/${agentId}`, {
     method: "PATCH",

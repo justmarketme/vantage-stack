@@ -1,41 +1,43 @@
 # Isabel — the /blueprint transparent presence
 
-The desktop `/blueprint` shows the **real olive Isabel**, AI-lip-synced to her own
-ElevenLabs voice and keyed **transparent**, so she blends straight into the dark
-page with no card or background. It's **fully automated** — no Hedra, no manual
-upload, no token (uses a free HuggingFace Space).
+The desktop `/blueprint` shows the **real olive Isabel**, **full-body**, keyed
+**transparent** (VP9/alpha webm) with a gentle living motion, so she stands beside
+the form and blends straight into the dark page — no card, no background. The live
+agent does the talking; she's the visual presence.
 
-| Asset | File | Source |
-|---|---|---|
-| Transparent talking clip | `public/videos/isabel-talk.webm` | OmniAvatar (HF) → ffmpeg key |
-| Green-screen source | `public/images/isabel-hedra-green.jpg` | `isabel-avatar.jpg` cut onto #00b140 (rembg) |
-| Welcome voiceover | `public/audio/isabel-welcome.mp3` | `scripts/make-isabel-welcome-audio.ts` (voice "Cay", same as live agent) |
+**Fully automated — no Hedra, no manual upload, no token.**
 
-## Pipeline (reproduce with one command)
+| Asset | File |
+|---|---|
+| Transparent full-body clip | `public/videos/isabel-fullbody.webm` |
+| Gemini full-body (generic face) | `public/images/isabel-fullbody-gemini.png` |
+| Face-swapped (her face) | `public/images/isabel-fullbody-source.png` |
+| Her face reference | `public/images/isabel-hedra-source.jpg` |
 
-```
-python scripts/make-isabel-talk-video.py
-```
+## Pipeline
 
-1. **OmniAvatar** (`alexnasa/OmniAvatar` on HF, via `gradio_client`) lip-syncs the
-   green-screen olive Isabel to her voiceover → talking Isabel on green (~5s; the
-   model caps clip length, and free ZeroGPU caps duration — keep the audio ≤5s).
-2. **ffmpeg** keys the green to a **VP9/alpha webm** using the chroma-key shader
-   math (de-spill + soft alpha) — keeps her navy suit, removes only the green.
-   (`scripts/key-isabel-transparent.sh` is the standalone keyer.)
-
-To regenerate the voiceover (kept ≤5s so it fits one clip):
-`node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/make-isabel-welcome-audio.ts`
+1. **Gemini** generates a full-body businesswoman on a green screen (great body /
+   suit / pose, but a generic face — image-gen won't take a face from a URL).
+2. **Face-swap** her real olive face onto it (insightface `inswapper_128`):
+   `python scripts/faceswap.py <her-face>.jpg <gemini-fullbody>.png <out>.png`
+   → full-body figure with HER exact face.
+3. **ffmpeg** keys the green to a **VP9/alpha webm** with the chroma-key shader
+   math (de-spill + soft alpha — keeps the navy suit, removes only the green) and
+   adds a subtle looping motion (gentle bob + micro-sway):
+   ```
+   KEY="format=rgba,geq=r='r(X,Y)':b='b(X,Y)':g='min(g(X,Y),max(r(X,Y),b(X,Y)))':a='st(0,g(X,Y)-max(r(X,Y),b(X,Y)));st(1,clip((ld(0)-4)/22,0,1));255*(1-ld(1)*ld(1)*(3-2*ld(1)))'"
+   ffmpeg -i swapped.png -vf "crop=...,$KEY" keyed.png
+   ffmpeg -loop 1 -t 6 -i keyed.png -vf "scale=...,crop=...:x='..sin(t)..':y='..sin(t)..',scale=460:-2,fps=30" \
+     -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 34 -an public/videos/isabel-fullbody.webm
+   ```
 
 ## How it renders
 
-`components/blueprint/IsabelIntro.tsx` plays the muted transparent webm in the
-corner. It's **live-driven**: her mouth animates only while the live agent is
-actually speaking (the `isabel:speaking` event) and rests when she's listening,
-so the transparent video tracks the real voice's rhythm. The hero CTA reveals her
-and starts the live session (full greeting). Mobile / reduced-motion → straight to
-the live agent (poster band only), no video.
+`components/blueprint/IsabelIntro.tsx` loops the muted transparent webm in the
+corner; the hero CTA reveals her + starts the live session (full greeting). Mobile
+/ reduced-motion → live agent + poster band, no video. VP9 alpha = Chrome/Firefox
+(Safari falls back to live agent + poster).
 
-> History: an earlier full-body green-screen "hologram" (Veo) was retired — Veo
-> text-to-video couldn't reproduce the canonical olive Isabel. OmniAvatar can,
-> because it animates her actual photo.
+> History: Veo/text couldn't reproduce her olive face; OmniAvatar kept her face
+> but only as a 5s close-up. The Gemini-body + insightface-face-swap route gives
+> her exact face AND full-body, fully automated.

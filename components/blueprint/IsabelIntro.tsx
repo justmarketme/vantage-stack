@@ -42,10 +42,36 @@ export function IsabelIntro({ className = "" }: { className?: string }) {
 
   if (!desktop) return null;
   return (
-    <div className={`${className} transition-opacity duration-700 ${active ? "opacity-100" : "opacity-0"}`}>
-      {/* Transparent VP9 alpha clip — the page shows through, so she stands in the
-          corner with no frame. Muted, looping subtle motion. */}
-      <video ref={videoRef} src={SRC} muted loop playsInline preload="auto" className="h-full w-full object-contain object-bottom" />
+    <div
+      className={`${className} transition-all duration-[1100ms] ease-out ${
+        active ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      }`}
+    >
+      {/* Soft ambient hologram glow behind her — she feels lit and present, not
+          pasted on. Shows through the alpha as a gentle halo. */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(56% 44% at 50% 76%, rgba(56,189,248,0.16), rgba(56,189,248,0.05) 45%, transparent 72%)",
+        }}
+      />
+      {/* Transparent VP9 alpha clip; her feet dissolve into the page via a bottom
+          mask for a premium, ethereal hologram feel. Muted, barely-there motion. */}
+      <video
+        ref={videoRef}
+        src={SRC}
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="relative h-full w-full object-contain object-bottom"
+        style={{
+          maskImage: "linear-gradient(to bottom, #000 80%, transparent 98%)",
+          WebkitMaskImage: "linear-gradient(to bottom, #000 80%, transparent 98%)",
+        }}
+      />
     </div>
   );
 }

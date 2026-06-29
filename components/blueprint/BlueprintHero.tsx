@@ -82,6 +82,11 @@ export function BlueprintHero() {
           </svg>
           Start with Isabel — she&apos;ll guide you
         </button>
+        {/* Permission rationale before the mic prompt — a clear reason lifts the
+            grant rate sharply (web.dev / NN/g). */}
+        <p className="max-w-xs text-center text-xs text-textMuted/70">
+          She&apos;ll ask to use your mic so she can hear you and fill this in for you — about 2 minutes, hands-free.
+        </p>
         <button onClick={toForm} className="text-xs text-textMuted underline-offset-2 transition hover:text-textPrimary hover:underline">
           or fill it in yourself
         </button>

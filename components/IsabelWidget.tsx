@@ -1,17 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createBlueprintClientTools, BLUEPRINT_TOOL_EVENT } from "../lib/blueprint/voice-tools";
+import { ISABEL_BLUEPRINT_FIRST_MESSAGE, ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO } from "../lib/isabel/persona";
 
-const AGENT_ID =
-  process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "YOUR_AGENT_ID";
+const AGENT_ID = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
 
-// Debug: log the agent ID to verify it's loading
-if (typeof window !== 'undefined') {
-  console.log('📌 Isabel Agent ID loaded:', AGENT_ID === "YOUR_AGENT_ID" ? "⚠️ FALLBACK (missing env var)" : "✅ From environment");
-  console.log('Agent ID value:', AGENT_ID.substring(0, 10) + '...');
-}
+// Dev-only logging — no console noise (or fallback sentinels) in production.
+const dev = process.env.NODE_ENV !== "production";
+/* eslint-disable no-console */
+const dlog = (...a: unknown[]) => { if (dev) console.log(...a); };
+const derr = (...a: unknown[]) => { if (dev) console.error(...a); };
+/* eslint-enable no-console */
 
 /** Isabel avatar — place your photo at public/images/isabel-avatar.png */
 const ISABEL_AVATAR = "/images/isabel-avatar.jpg";
@@ -109,6 +112,12 @@ function parseBookDirective(text: string): { name: string; email: string } | nul
 
 function stripBookDirective(text: string): string {
   return text.replace(/%%[^%]*%%/g, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** Isabel emits %%GOTO_BLUEPRINT%% to take a website visitor to the guided
+ *  /blueprint page. (On WhatsApp the directive is stripped and never sent.) */
+function hasGotoBlueprint(text: string): boolean {
+  return /%%\s*GOTO_BLUEPRINT\b[^%]*%%/i.test(text);
 }
 
 /** Open the Cal.com Discovery Call booking, prefilled. Falls back to a new tab. */
@@ -224,18 +233,40 @@ export function IsabelWidget() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<BlueprintData>(EMPTY_BLUEPRINT);
   const [showForm, setShowForm] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const micPrimedRef = useRef(false);
+  // Tracks whether the last start was after the lip-synced intro (which already
+  // owns the music cue) so onConnect doesn't fire a second start-music.
+  const afterIntroRef = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const onBlueprint = !!pathname?.startsWith("/blueprint");
 
-  const { startSession, endSession, sendUserMessage, sendFeedback, status, canSendFeedback, isSpeaking } =
+  const { startSession, endSession, sendUserMessage, sendContextualUpdate, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
       onConnect: () => {
-        console.log("✅ Isabel connected!");
+        dlog("✅ Isabel connected!");
+        if (onBlueprint) {
+          // Light up the first field so her opening ("see this lighting up?") is
+          // true from the first second.
+          window.dispatchEvent(
+            new CustomEvent(BLUEPRINT_TOOL_EVENT, { detail: { tool: "highlight", fieldId: "personName" } }),
+          );
+          // Bring the ambient track up as she greets — UNLESS the lip-synced intro
+          // already started it (afterIntro), so we don't double-fire or override a
+          // user who muted during the clip. (The connect is the user's own click,
+          // so playback is allowed.)
+          if (!afterIntroRef.current) window.dispatchEvent(new CustomEvent("blueprint:start-music"));
+        }
         if (pendingMessage) { sendUserMessage(pendingMessage); setPendingMessage(null); }
       },
       onDisconnect: () => {
-        console.log("🔌 Isabel disconnected");
+        dlog("🔌 Isabel disconnected");
         setFeedbackSent(null);
+        afterIntroRef.current = false;
+        // Let the standing hologram unmount + reset for a clean re-run.
+        window.dispatchEvent(new CustomEvent("blueprint:session-ended"));
       },
       onMessage: (msg) => {
         if (!msg.message) return;
@@ -243,16 +274,18 @@ export function IsabelWidget() {
           setMessages((prev) => [...prev, { role: "user", content: msg.message }]);
           return;
         }
-        // Assistant: strip the booking directive from display; if present, open Cal.com.
+        // Assistant: strip directives from display; act on any present.
         const dir = parseBookDirective(msg.message);
+        const goto = hasGotoBlueprint(msg.message);
         const clean = stripBookDirective(msg.message);
         if (clean) setMessages((prev) => [...prev, { role: "assistant", content: clean }]);
         if (dir) openCalBooking(dir.name, dir.email);
+        if (goto) router.push("/blueprint");
       },
       onError: (err) => {
-        console.error("❌ Isabel error:", err);
+        derr("❌ Isabel error:", err);
         if (typeof err === 'object' && err !== null) {
-          console.error("Error details:", {
+          derr("Error details:", {
             message: (err as any)?.message,
             code: (err as any)?.code,
             stack: (err as any)?.stack
@@ -271,52 +304,93 @@ export function IsabelWidget() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // Auto-extract data from conversation into blueprint form
+  // Broadcast Isabel's speaking state so the blueprint ambient audio can duck
+  // the music while she talks (BlueprintAmbientAudio listens for this event).
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("isabel:speaking", { detail: { speaking: isSpeaking } }));
+  }, [isSpeaking]);
+
+  // On the blueprint, keep Isabel's invite visible (un-dismissed) so the single
+  // "Talk to Isabel" voice CTA is always there — without covering her on screen.
+  useEffect(() => {
+    if (onBlueprint) setDismissed(false);
+  }, [onBlueprint]);
+
+  // Auto-extract data from conversation into the widget's own mini-form.
+  // NOT on /blueprint — there the GuidedBlueprint deck (driven by client tools) is
+  // the single source of truth; a second regex-fed form would be a competing UI.
+  useEffect(() => {
+    if (onBlueprint || messages.length === 0) return;
     const extracted = extractFromMessages(messages);
     setBlueprint((prev) => ({ ...prev, ...Object.fromEntries(Object.entries(extracted).filter(([, v]) => v)) }));
     // Show form once Isabel has asked the first question (at least 1 exchange)
     // Only show form once Isabel has captured at least a name or email
     const hasData = !!(extracted.name || extracted.email || extracted.phone);
     if (hasData) setShowForm(true);
-  }, [messages]);
+  }, [messages, onBlueprint]);
 
-  const getMicStream = useCallback(async () => {
-    if (mediaStreamRef.current) return mediaStreamRef.current;
+  // Prime the mic PERMISSION (then release the stream — the ConvAI SDK opens its
+  // own capture for the WebRTC transport, so a held stream just leaks a hot mic).
+  // Priming early, under the CTA gesture, means the prompt isn't sprung ~15s
+  // later at the post-intro handoff.
+  const primeMic = useCallback(async () => {
+    if (micPrimedRef.current) return;
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStreamRef.current = stream;
-    return stream;
+    stream.getTracks().forEach((t) => t.stop());
+    micPrimedRef.current = true;
   }, []);
 
-  const startVoice = useCallback(async () => {
-    try {
-      console.log("🎤 Starting voice call with agent:", AGENT_ID.substring(0, 10) + "...");
-      await getMicStream();
-      console.log("🎤 Mic stream acquired, initiating session...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: { conversation: { textOnly: false } } });
-      console.log("✅ Voice session started:", sessionId);
-    } catch (err) {
-      console.error("❌ Failed to start voice:", err);
-      console.error("Error type:", typeof err);
-      console.error("Error details:", err);
+  // On /blueprint, give Isabel the walkthrough-specific spoken intro (requires
+  // the first_message override enabled on the agent).
+  const blueprintOverrides = useCallback(
+    (textOnly: boolean, afterIntro = false) => ({
+      conversation: { textOnly },
+      ...(onBlueprint
+        ? { agent: { firstMessage: afterIntro ? ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO : ISABEL_BLUEPRINT_FIRST_MESSAGE } }
+        : {}),
+    }),
+    [onBlueprint],
+  );
+
+  const startVoice = useCallback(async (afterIntro = false) => {
+    setVoiceError(null);
+    afterIntroRef.current = afterIntro;
+    if (!AGENT_ID) {
+      setVoiceError("Isabel isn't available right now — you can type to me instead.");
+      return;
     }
-  }, [getMicStream, startSession]);
+    try {
+      await primeMic();
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "webrtc", overrides: blueprintOverrides(false, afterIntro), clientTools: createBlueprintClientTools() });
+      dlog("✅ Voice session started:", sessionId);
+    } catch (err) {
+      derr("Failed to start voice:", err);
+      // Mic blocked vs connection trouble — either way, offer the text path.
+      const name = (err as { name?: string })?.name ?? "";
+      const micBlocked = /NotAllowed|Permission|NotFound|SecurityError/i.test(name) || /permission|denied|getusermedia/i.test(String(err));
+      setVoiceError(
+        micBlocked
+          ? "I can't reach your microphone — check the mic permission, or just type to me instead."
+          : "I couldn't connect just now — give it another go, or type to me instead.",
+      );
+    }
+  }, [primeMic, startSession, blueprintOverrides]);
 
   const startText = useCallback(async () => {
     try {
-      console.log("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
-      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: { conversation: { textOnly: true } } });
-      console.log("✅ Text session started:", sessionId);
+      dlog("💬 Starting text chat with agent:", AGENT_ID.substring(0, 10) + "...");
+      const sessionId = await startSession({ agentId: AGENT_ID, connectionType: "websocket", overrides: blueprintOverrides(true), clientTools: createBlueprintClientTools() });
+      dlog("✅ Text session started:", sessionId);
     } catch (err) {
-      console.error("❌ Failed to start text:", err);
-      console.error("Error details:", err);
+      derr("❌ Failed to start text:", err);
+      derr("Error details:", err);
     }
-  }, [startSession]);
+  }, [startSession, blueprintOverrides]);
 
   const endVoice = useCallback(async () => {
     await endSession();
-    if (mediaStreamRef.current) { mediaStreamRef.current.getTracks().forEach((t) => t.stop()); mediaStreamRef.current = null; }
+    afterIntroRef.current = false;
   }, [endSession]);
 
   const handleCall = useCallback(async () => {
@@ -337,22 +411,58 @@ export function IsabelWidget() {
     if (canSendFeedback) { sendFeedback(positive); setFeedbackSent(positive); }
   }, [canSendFeedback, sendFeedback]);
 
-  const handleVoiceQuickStart = useCallback(async () => {
-    setIsOpen(true);
-    await startVoice();
-  }, [startVoice]);
+  const handleVoiceQuickStart = useCallback(async (afterIntro = false) => {
+    // On /blueprint the on-screen form (left) is the star — Isabel highlights and
+    // fills it as she talks, so we DON'T open the big chat panel over her. A slim
+    // live bar handles status + End instead. Elsewhere, open the panel as normal.
+    if (!onBlueprint) setIsOpen(true);
+    await startVoice(afterIntro);
+  }, [startVoice, onBlueprint]);
+
+  // The lip-synced intro hands off here when it ends (afterIntro: true → the live
+  // agent skips the greeting); the hero's fallback path fires it with no detail.
+  useEffect(() => {
+    const onStartVoice = (e: Event) => {
+      const afterIntro = Boolean((e as CustomEvent<{ afterIntro?: boolean }>).detail?.afterIntro);
+      void handleVoiceQuickStart(afterIntro);
+    };
+    window.addEventListener("blueprint:start-voice", onStartVoice);
+    return () => window.removeEventListener("blueprint:start-voice", onStartVoice);
+  }, [handleVoiceQuickStart]);
+
+  // Reverse awareness: when the user clicks/types in the form THEMSELVES, tell
+  // Isabel (non-interrupting) so she stays in sync — acknowledges their pick,
+  // doesn't re-ask, and can flag anything they skipped. Only while connected.
+  useEffect(() => {
+    if (!onBlueprint) return;
+    const onUserAction = (e: Event) => {
+      const text = (e as CustomEvent<{ text?: string }>).detail?.text;
+      if (text && status === "connected") sendContextualUpdate(text);
+    };
+    window.addEventListener("blueprint:user-action", onUserAction as EventListener);
+    return () => window.removeEventListener("blueprint:user-action", onUserAction as EventListener);
+  }, [onBlueprint, status, sendContextualUpdate]);
 
   const handleTextQuickStart = useCallback(() => {
     setIsOpen(true);
   }, []);
 
-  useEffect(() => { return () => { mediaStreamRef.current?.getTracks().forEach((t) => t.stop()); }; }, []);
+  // The talking intro pre-warms the mic on the CTA gesture (so the permission
+  // prompt appears with the click, not abruptly at the post-intro handoff).
+  useEffect(() => {
+    const onPrewarm = () => { void primeMic().catch(() => {}); };
+    window.addEventListener("blueprint:prewarm-mic", onPrewarm);
+    return () => window.removeEventListener("blueprint:prewarm-mic", onPrewarm);
+  }, [primeMic]);
 
   return (
     <>
       {/* ── Collapsed invite widget ───────────────────────────────────────── */}
+      {/* The big invite card is for OTHER pages. On /blueprint it's intentionally
+          minimised to a small glowing button (below) so it never blocks Isabel /
+          the video or the form. */}
       <AnimatePresence>
-        {!isOpen && !dismissed && (
+        {!isOpen && !dismissed && !onBlueprint && (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -371,10 +481,10 @@ export function IsabelWidget() {
 
             {/* Main card */}
             <motion.div
-              className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] cursor-pointer max-w-[360px]"
+              className="relative flex items-center gap-4 rounded-2xl bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] border border-white/[0.09] px-5 py-4 cursor-pointer max-w-[360px] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.03),0_0_50px_rgba(56,189,248,0.07)] transition-all"
               whileHover={{ scale: 1.015, boxShadow: "0 24px 70px rgba(0,0,0,0.7), 0 0 60px rgba(56,189,248,0.12)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleTextQuickStart}
+              onClick={onBlueprint ? () => void handleVoiceQuickStart() : handleTextQuickStart}
             >
               {/* Subtle shimmer line */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent rounded-t-2xl" />
@@ -392,33 +502,48 @@ export function IsabelWidget() {
               {/* Text content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-textPrimary leading-snug">Want to chat?</p>
+                  <p className="text-sm font-semibold text-textPrimary leading-snug">
+                    {onBlueprint ? "Talk to Isabel" : "Want to chat?"}
+                  </p>
                 </div>
                 <p className="text-[11px] text-textMuted mt-0.5 leading-snug">
-                  Isabel · AI assistant — text or voice
+                  {onBlueprint ? "Tap to start — I'll walk you through it 👋" : "Isabel · AI assistant — text or voice"}
                 </p>
 
-                {/* Mode chips */}
-                <div className="flex items-center gap-1.5 mt-2.5">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleTextQuickStart(); }}
-                    className="flex items-center gap-1.5 rounded-lg bg-accent/12 border border-accent/25 px-2.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent/20 transition-all"
-                  >
-                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    Text chat
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
-                    className="flex items-center gap-1.5 rounded-lg bg-white/[0.05] border border-white/[0.09] px-2.5 py-1 text-[10px] font-semibold text-textMuted hover:bg-white/[0.1] hover:text-textPrimary transition-all"
-                  >
-                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    Voice call
-                  </button>
-                </div>
+                {onBlueprint ? (
+                  <div className="mt-2.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[11px] font-semibold text-white shadow shadow-accent/25 hover:opacity-90 transition-all"
+                    >
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      Talk to Isabel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-2.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleTextQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-accent/12 border border-accent/25 px-2.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent/20 transition-all"
+                    >
+                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                      Text chat
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleVoiceQuickStart(); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-white/[0.05] border border-white/[0.09] px-2.5 py-1 text-[10px] font-semibold text-textMuted hover:bg-white/[0.1] hover:text-textPrimary transition-all"
+                    >
+                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                      Voice call
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Chevron */}
@@ -430,28 +555,110 @@ export function IsabelWidget() {
         )}
       </AnimatePresence>
 
-      {/* ── Minimised button (after dismissed / when open) ────────────────── */}
+      {/* ── Minimised button — also the COMPACT /blueprint CTA ────────────── */}
       <AnimatePresence>
-        {(dismissed || isOpen) && (
-          <motion.button
+        {(dismissed || isOpen || (onBlueprint && agentState === "disconnected")) && (
+          <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.2 }}
-            onClick={() => { setIsOpen(!isOpen); if (dismissed) setDismissed(false); }}
-            className="fixed bottom-6 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)]"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            aria-label={isOpen ? "Close chat" : "Open chat"}
+            className="vs-fab-bottom fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2"
           >
-            {isOpen ? (
-              <svg className="h-5 w-5 text-textPrimary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            ) : (
-              <IsabelAvatar className="h-10 w-10" isActive={isConnected} />
+            <button
+              onClick={() => {
+                if (onBlueprint && agentState === "disconnected") {
+                  void handleVoiceQuickStart();
+                  return;
+                }
+                setIsOpen(!isOpen);
+                if (dismissed) setDismissed(false);
+              }}
+              className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#17171f] shadow-[0_10px_40px_rgba(0,0,0,0.55)] transition-all hover:scale-105 hover:border-accent/40 hover:shadow-[0_0_30px_rgba(56,189,248,0.2)] active:scale-95"
+              aria-label={onBlueprint ? "Talk to Isabel" : isOpen ? "Close chat" : "Open chat"}
+            >
+              {isOpen ? (
+                <svg className="h-5 w-5 text-textPrimary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              ) : (
+                <IsabelAvatar className="h-10 w-10" isActive={isConnected} />
+              )}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── /blueprint live bar — slim, never covers the on-screen form ───── */}
+      <AnimatePresence>
+        {onBlueprint && (isConnected || isTransitioning) && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="vs-fab-bottom fixed bottom-6 right-4 sm:right-6 z-50 flex items-center gap-3 rounded-2xl border border-white/[0.09] bg-gradient-to-br from-[#17171f] via-[#141418] to-[#101014] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_50px_rgba(56,189,248,0.1)]"
+          >
+            <IsabelAvatar className="h-11 w-11" isActive={isConnected} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-snug text-textPrimary">Isabel</p>
+              <p className="text-[11px] leading-snug text-accent/80">
+                {isTransitioning ? "Connecting…" : isSpeaking ? "Speaking — talk to interrupt" : "Listening — go ahead 👋"}
+              </p>
+            </div>
+            {isConnected && (
+              <span className="flex items-end gap-[3px] px-0.5">
+                <span className="h-2.5 w-[3px] animate-pulse rounded-full bg-accent" />
+                <span className="h-4 w-[3px] animate-pulse rounded-full bg-accent [animation-delay:140ms]" />
+                <span className="h-2 w-[3px] animate-pulse rounded-full bg-accent [animation-delay:280ms]" />
+              </span>
             )}
-          </motion.button>
+            <button
+              onClick={endVoice}
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-[11px] font-semibold text-rose-400 transition-all hover:bg-rose-500/20"
+            >
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 7l-7.59 7.59L5.41 7 4 8.41l8 8 8-8z" /></svg>
+              End
+            </button>
+            <button
+              onClick={() => setIsOpen(true)}
+              title="Show transcript"
+              aria-label="Show transcript"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-textMuted transition hover:bg-white/[0.07] hover:text-textPrimary"
+            >
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Voice-failure recovery (mic denied / connection) ─────────────── */}
+      <AnimatePresence>
+        {voiceError && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.25 }}
+            role="alert"
+            className="fixed bottom-24 right-4 z-50 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-amber-400/30 bg-[#17171f] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.7)] sm:right-6"
+          >
+            <p className="text-sm leading-snug text-textPrimary">{voiceError}</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => { setVoiceError(null); setDismissed(false); setIsOpen(true); }}
+                className="flex-1 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+              >
+                Type to me instead
+              </button>
+              <button
+                onClick={() => { void handleVoiceQuickStart(); }}
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-textMuted transition hover:text-textPrimary"
+              >
+                Try again
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -543,29 +750,52 @@ export function IsabelWidget() {
                   <div className="space-y-1.5 px-2">
                     <p className="text-sm font-semibold text-textPrimary">Hi, I'm Isabel 👋</p>
                     <p className="text-xs leading-relaxed text-textMuted">
-                      I'm VantageStack's AI assistant. Ask me anything, or let's have a voice conversation — I'm here to help.
+                      {onBlueprint
+                        ? "I'll walk you through your blueprint — just tap below and we'll talk it through together."
+                        : "I'm VantageStack's AI assistant. Ask me anything, or let's have a voice conversation — I'm here to help."}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleTextQuickStart}
-                      className="flex items-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-all"
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                      </svg>
-                      Type a message
-                    </button>
-                    <button
-                      onClick={handleVoiceQuickStart}
-                      className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-textMuted hover:bg-white/[0.09] hover:text-textPrimary transition-all"
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                      </svg>
-                      Start voice call
-                    </button>
-                  </div>
+                  {onBlueprint ? (
+                    <div className="w-full space-y-2.5 px-2">
+                      <button
+                        onClick={() => void handleVoiceQuickStart()}
+                        disabled={isTransitioning}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:opacity-90 disabled:opacity-50"
+                      >
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        {isTransitioning ? "Connecting…" : "Talk to Isabel"}
+                      </button>
+                      <button
+                        onClick={handleTextQuickStart}
+                        className="text-[11px] text-textMuted/70 underline-offset-2 transition hover:text-textMuted hover:underline"
+                      >
+                        or type instead
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleTextQuickStart}
+                        className="flex items-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-all"
+                      >
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        Type a message
+                      </button>
+                      <button
+                        onClick={() => void handleVoiceQuickStart()}
+                        className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-textMuted hover:bg-white/[0.09] hover:text-textPrimary transition-all"
+                      >
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        Start voice call
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col h-full">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { IsabelWidget } from "../components/IsabelWidget";
 
@@ -10,6 +10,16 @@ export const metadata: Metadata = {
     icon: "/images/vs-logo.png",
     apple: "/images/vs-logo.png",
   },
+};
+
+// viewportFit:'cover' is the prerequisite for env(safe-area-inset-*) on notched
+// phones — without it every safe-area offset is a no-op. themeColor darkens the
+// mobile browser chrome to match the app.
+export const viewport: Viewport = {
+  themeColor: "#0b0b0c",
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

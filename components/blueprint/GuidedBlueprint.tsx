@@ -1,0 +1,591 @@
+"use client";
+
+// Track 3/Glue (layer 1) — the guided, one-step-at-a-time blueprint deck.
+// Renders the schema-driven XState machine (Track B) as a deck: the current
+// step's visible fields, generated from the form-schema descriptor, with
+// progress, validation, and Next/Prev/Submit wired to machine events.
+//
+// Schema-selectable (quick | detailed) per Jonathan's decision — the same
+// engine drives both. Isabel's voice layer (client tools) and the intro
+// choreography bind to this via the machine's emitted events (added next).
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useActor } from "@xstate/react";
+import { createFormMachine } from "../../lib/blueprint/form-machine";
+import {
+  FORM_SCHEMAS,
+  asArray,
+  asString,
+  type FieldDef,
+  type OptionDef,
+  type FormData,
+} from "../../lib/blueprint/form-schema";
+import {
+  BLUEPRINT_TOOL_EVENT,
+  BLUEPRINT_USER_ACTION_EVENT,
+  type BlueprintToolDetail,
+} from "../../lib/blueprint/voice-tools";
+import { matchOption } from "../../lib/blueprint/match-option";
+import { ProgressBar } from "../ui/ProgressBar";
+
+const CAL_LINK = "https://cal.com/vantagestack/discovery-call";
+
+const optValue = (o: OptionDef) => (typeof o === "string" ? o : o.value);
+const optLabel = (o: OptionDef) => (typeof o === "string" ? o : o.label);
+
+function fieldOptions(field: FieldDef, data: FormData): OptionDef[] {
+  if (field.options) return field.options;
+  if (field.getOptions) return field.getOptions(data);
+  return [];
+}
+
+/** A field counts as answered once it holds a value (multi = at least one pick). */
+function fieldAnswered(field: FieldDef, data: FormData): boolean {
+  const v = data[field.key];
+  return field.kind === "multi" ? asArray(v).length > 0 : asString(v).trim() !== "";
+}
+
+/** Human-readable value for the collapsed summary row. */
+function fieldDisplayValue(field: FieldDef, data: FormData): string {
+  const opts = fieldOptions(field, data);
+  if (field.kind === "multi") {
+    return asArray(data[field.key])
+      .map((v) => { const o = opts.find((x) => optValue(x) === v); return o ? optLabel(o) : v; })
+      .join(", ");
+  }
+  const v = asString(data[field.key]);
+  if (field.kind === "checkbox") return v === "true" ? "Yes" : "";
+  const o = opts.find((x) => optValue(x) === v);
+  return o ? optLabel(o) : v;
+}
+
+export function GuidedBlueprint({ schemaId = "quick" }: { schemaId?: "quick" | "detailed" }) {
+  const schema = FORM_SCHEMAS[schemaId];
+  const machine = useMemo(() => createFormMachine(schema), [schema]);
+  const [snapshot, send] = useActor(machine, { input: {} });
+
+  const successRef = useRef<HTMLHeadingElement>(null);
+
+  // Begin the flow once mounted.
+  useEffect(() => {
+    send({ type: "START" });
+  }, [send]);
+
+  // On completion, move focus to the success heading (a11y) so AT users land there.
+  useEffect(() => {
+    if (snapshot.matches("submitted")) requestAnimationFrame(() => successRef.current?.focus());
+  }, [snapshot]);
+
+  const { stepIndex, data, errors, submitError, result } = snapshot.context;
+  const step = schema.steps[stepIndex];
+  const isLast = stepIndex === schema.steps.length - 1;
+  const submitting = snapshot.matches("submitting");
+  const progress = Math.round(((stepIndex + 1) / schema.steps.length) * 100);
+
+  // ── Layer 3 glue: Isabel's client tools (voice) drive the machine + UI ──
+  const [highlightedField, setHighlightedField] = useState<string | null>(null);
+  // Announced to screen readers (and HoH/muted users) so Isabel's actions are
+  // perceivable without sound — what she's asking about and what she just filled.
+  const [announcement, setAnnouncement] = useState("");
+  const fieldByKey = useMemo(() => {
+    const map: Record<string, FieldDef> = {};
+    schema.steps.forEach((s) => s.fields.forEach((f) => (map[f.key] = f)));
+    return map;
+  }, [schema]);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  // Reverse awareness channel — report what the USER does directly (Isabel's own
+  // tool actions never flow through these handlers, so this is user-only). Lets
+  // her acknowledge their pick, skip what they've answered, and notice gaps.
+  const reportUserEdit = useCallback(
+    (field: FieldDef, value: string, opts?: { toggled?: boolean }) => {
+      const o = (field.options ?? []).find((x) => optValue(x) === value);
+      const shown = o ? optLabel(o) : value;
+      const text = opts?.toggled
+        ? `[Screen] The user just tapped "${shown}" under "${field.label}".`
+        : value
+          ? `[Screen] The user set "${field.label}" to "${shown}".`
+          : `[Screen] The user cleared "${field.label}".`;
+      window.dispatchEvent(new CustomEvent(BLUEPRINT_USER_ACTION_EVENT, { detail: { text } }));
+    },
+    [],
+  );
+  const reportStep = useCallback((text: string) => {
+    window.dispatchEvent(new CustomEvent(BLUEPRINT_USER_ACTION_EVENT, { detail: { text: `[Screen] ${text}` } }));
+  }, []);
+
+  useEffect(() => {
+    const scrollToField = (key: string) =>
+      requestAnimationFrame(() =>
+        document.querySelector(`[data-field="${key}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      );
+    function onTool(e: Event) {
+      const d = (e as CustomEvent<BlueprintToolDetail>).detail;
+      switch (d.tool) {
+        case "highlight":
+          setHighlightedField(d.fieldId);
+          scrollToField(d.fieldId);
+          setAnnouncement(`Now: ${fieldByKey[d.fieldId]?.label ?? d.fieldId}`);
+          break;
+        case "set": {
+          const f = fieldByKey[d.fieldId];
+          // Snap the spoken value to the real option for choice fields; free-text
+          // fields (name/email) pass through untouched.
+          const opts = f ? fieldOptions(f, dataRef.current) : [];
+          const value = opts.length ? matchOption(opts, d.value) ?? d.value : d.value;
+          if (f?.kind === "multi") send({ type: "TOGGLE_MULTI", key: d.fieldId, value, maxItems: f.maxItems });
+          else send({ type: "SET_FIELD", key: d.fieldId, value });
+          setHighlightedField(d.fieldId);
+          scrollToField(d.fieldId);
+          setAnnouncement(`${f?.label ?? "Field"}: ${value}`);
+          break;
+        }
+        case "advance":
+          send({ type: "NEXT" });
+          break;
+        case "previous":
+          send({ type: "PREV" });
+          break;
+        case "submit":
+          send({ type: "SUBMIT" });
+          break;
+        case "openCalendar": {
+          const name = encodeURIComponent(asString(dataRef.current.clientName));
+          const email = encodeURIComponent(asString(dataRef.current.email));
+          window.open(`${CAL_LINK}?name=${name}&email=${email}`, "_blank", "noopener");
+          break;
+        }
+        case "showConsent":
+          setHighlightedField("whatsappConsent");
+          scrollToField("whatsappConsent");
+          break;
+      }
+    }
+    window.addEventListener(BLUEPRINT_TOOL_EVENT, onTool as EventListener);
+    return () => window.removeEventListener(BLUEPRINT_TOOL_EVENT, onTool as EventListener);
+  }, [send, fieldByKey]);
+
+  // Accordion flow: one question open at a time. The OPEN (expanded) field is
+  // highlightedField; answered fields collapse to a one-line summary. Moving on
+  // from the open field reveals + opens the next unanswered one (scrolling to it),
+  // so the page visibly steps down question-by-question.
+  const advanceFrom = useCallback(
+    (currentKey: string, justSet?: Record<string, string>) => {
+      if (!step) return;
+      const merged = { ...dataRef.current, ...justSet };
+      const vf = step.fields.filter((f) => !f.visibleWhen || f.visibleWhen(merged));
+      const idx = vf.findIndex((f) => f.key === currentKey);
+      const next = vf.slice(idx + 1).find((f) => !fieldAnswered(f, merged));
+      setHighlightedField(next ? next.key : null);
+      if (next)
+        requestAnimationFrame(() =>
+          document.querySelector(`[data-field="${next.key}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        );
+    },
+    [step],
+  );
+
+  // On entering a step, open its first unanswered field.
+  useEffect(() => {
+    if (!step) return;
+    const vf = step.fields.filter((f) => !f.visibleWhen || f.visibleWhen(dataRef.current));
+    const first = vf.find((f) => !fieldAnswered(f, dataRef.current));
+    setHighlightedField(first ? first.key : null);
+  }, [stepIndex, step]);
+
+  if (snapshot.matches("submitted")) {
+    const fullName = asString(data.personName) || asString(data.clientName);
+    const who = fullName.split(" ")[0];
+    const calUrl = `${CAL_LINK}?name=${encodeURIComponent(fullName)}&email=${encodeURIComponent(asString(data.email))}`;
+    return (
+      <div className="vs-card text-center">
+        <div className="mx-auto max-w-md space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 ref={successRef} tabIndex={-1} className="font-heading text-2xl outline-none md:text-3xl">
+            {who ? `You're in, ${who}.` : "You're in."}
+          </h2>
+          <p className="text-sm text-textMuted">
+            Your tailored blueprint is being built — it lands on your WhatsApp within 1 business day, personally reviewed
+            by Jono &amp; Motso.
+          </p>
+          <a
+            href={calUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:opacity-90"
+          >
+            Want it faster? Book your free 30-min strategy call
+            <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          {result?.clientId && <p className="text-[11px] text-textMuted/50">Reference: {result.clientId}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (!step) return null;
+  const visibleFields = step.fields.filter((f) => !f.visibleWhen || f.visibleWhen(data));
+
+  return (
+    <div className="vs-card" data-step-id={step.id}>
+      {/* SR-only live region — announces Isabel's actions for non-sighted/HoH/muted users. */}
+      <div className="vs-sr-only" role="status" aria-live="polite">{announcement}</div>
+      <div className="mb-6 space-y-2">
+        <p className="vs-section-heading" aria-current="step">{step.label(data)}</p>
+        {step.intro && <p className="text-sm italic text-textMuted/80">{step.intro(data)}</p>}
+      </div>
+
+      <div className="mb-8">
+        <ProgressBar value={progress} label={`Step ${stepIndex + 1} of ${schema.steps.length}`} />
+      </div>
+
+      <div className="space-y-3">
+        {visibleFields.map((field) => {
+          const active = highlightedField === field.key;
+          if (!active) {
+            return fieldAnswered(field, data) ? (
+              <CollapsedField key={field.key} field={field} data={data} onEdit={() => setHighlightedField(field.key)} />
+            ) : null;
+          }
+          // Single-choice fields auto-advance on pick; multi/free-text get a "Next"
+          // so the user controls when that question collapses.
+          const isChoice = field.kind === "select" || field.kind === "cards" || field.kind === "checkbox";
+          return (
+            <div key={field.key} className="space-y-3">
+              <FieldRenderer
+                field={field}
+                data={data}
+                error={errors[field.key]}
+                highlighted
+                onSet={(value) => {
+                  send({ type: "SET_FIELD", key: field.key, value });
+                  if (isChoice && value) advanceFrom(field.key, { [field.key]: value });
+                }}
+                onToggle={(value) => send({ type: "TOGGLE_MULTI", key: field.key, value, maxItems: field.maxItems })}
+                onUserEdit={reportUserEdit}
+              />
+              {!isChoice && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => advanceFrom(field.key)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-textMuted transition hover:bg-white/[0.08] hover:text-textPrimary"
+                  >
+                    Next
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {submitError && <p role="alert" className="mt-4 text-sm text-rose-300">{submitError}</p>}
+
+      <div className="mt-8 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => { reportStep("The user pressed Back."); send({ type: "PREV" }); }}
+          disabled={stepIndex === 0 || submitting}
+          className="rounded-xl border border-white/10 px-4 py-2 text-sm text-textMuted transition hover:text-textPrimary disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Back
+        </button>
+        {isLast ? (
+          <button
+            type="button"
+            onClick={() => { reportStep("The user pressed Submit."); send({ type: "SUBMIT" }); }}
+            disabled={submitting}
+            className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? "Submitting…" : "Submit blueprint"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { reportStep("The user pressed Continue to the next step."); send({ type: "NEXT" }); }}
+            className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Continue
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A collapsed, answered question — a compact one-line summary that re-opens on
+ *  click/Enter so the user can edit it. Keeps `data-field` so Isabel's highlight
+ *  can still scroll to (and re-open) it. */
+function CollapsedField({ field, data, onEdit }: { field: FieldDef; data: FormData; onEdit: () => void }) {
+  const val = fieldDisplayValue(field, data);
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      data-field={field.key}
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5 text-left transition hover:border-white/15"
+    >
+      <span className="flex min-w-0 items-center gap-2.5">
+        <svg className="h-4 w-4 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span className="shrink-0 text-xs text-textMuted">{field.label}</span>
+        <span className="truncate text-sm text-textPrimary">{val || "—"}</span>
+      </span>
+      <span className="shrink-0 text-xs text-textMuted/60">Edit</span>
+    </button>
+  );
+}
+
+/** Custom dropdown that the voice layer can OPEN — when Isabel highlights this
+ *  field, the options expand so the user actually SEES them (a native <select>
+ *  can't be opened programmatically). Themed to the dark blueprint. */
+function CustomSelect({
+  options,
+  value,
+  onSet,
+  highlighted,
+  labelId,
+}: {
+  options: OptionDef[];
+  value: string;
+  onSet: (v: string) => void;
+  highlighted?: boolean;
+  labelId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  // Auto-open when Isabel lands on the field so the user sees the choices.
+  useEffect(() => {
+    if (highlighted) setOpen(true);
+  }, [highlighted]);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  const current = options.find((o) => optValue(o) === value);
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby={labelId}
+        className="vs-input flex items-center justify-between text-left"
+      >
+        <span className={current ? "text-textPrimary" : "text-textMuted"}>
+          {current ? optLabel(current) : "Select an option"}
+        </span>
+        <svg
+          className={`h-4 w-4 shrink-0 text-textMuted transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          className="absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-[#1a1a1d] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
+        >
+          {options.map((o) => {
+            const v = optValue(o);
+            const sel = v === value;
+            return (
+              <button
+                key={v}
+                type="button"
+                role="option"
+                aria-selected={sel}
+                onClick={() => {
+                  onSet(sel ? "" : v);
+                  setOpen(false);
+                }}
+                className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                  sel ? "bg-accent text-white" : "text-textPrimary hover:bg-white/[0.06]"
+                }`}
+              >
+                {optLabel(o)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FieldRenderer({
+  field,
+  data,
+  error,
+  highlighted,
+  onSet,
+  onToggle,
+  onUserEdit,
+}: {
+  field: FieldDef;
+  data: FormData;
+  error?: string;
+  highlighted?: boolean;
+  onSet: (value: string) => void;
+  onToggle: (value: string) => void;
+  onUserEdit: (field: FieldDef, value: string, opts?: { toggled?: boolean }) => void;
+}) {
+  const options = fieldOptions(field, data);
+  const value = data[field.key];
+  // Prominent, premium "Isabel is pointing here" highlight — a bright accent
+  // ring + outward glow + faint tint, drawn with box-shadow so it never shifts
+  // layout. This is the on-screen cue she refers to ("see this lighting up?").
+  const ring = highlighted
+    ? "rounded-xl bg-accent/[0.06] shadow-[0_0_0_2px_rgba(56,189,248,0.9),0_0_34px_8px_rgba(56,189,248,0.32)] transition-all duration-300"
+    : "rounded-xl transition-all duration-300";
+  const labelEl = (
+    <label className="block text-sm text-textPrimary/90" id={`label-${field.key}`}>
+      {field.label}
+      {field.hint && <span className="ml-1 text-xs text-textMuted/60">{field.hint}</span>}
+    </label>
+  );
+  const errEl = error ? <p className="text-xs text-rose-300">{error}</p> : null;
+
+  if (field.kind === "checkbox") {
+    const checked = asString(value) === "true";
+    return (
+      <div className={`space-y-2 p-3 ${ring}`} data-field={field.key}>
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-textPrimary/90">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => { const v = e.target.checked ? "true" : ""; onSet(v); onUserEdit(field, v); }}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+          />
+          <span>{field.label}</span>
+        </label>
+        {errEl}
+      </div>
+    );
+  }
+
+  switch (field.kind) {
+    case "select":
+      return (
+        <div className={`space-y-2 ${ring}`} data-field={field.key}>
+          {labelEl}
+          <CustomSelect
+            options={options}
+            value={asString(value)}
+            onSet={(v) => { onSet(v); onUserEdit(field, v); }}
+            highlighted={highlighted}
+            labelId={`label-${field.key}`}
+          />
+          {errEl}
+        </div>
+      );
+    case "cards":
+      return (
+        <div className={`space-y-2 ${ring}`} data-field={field.key}>
+          {labelEl}
+          <div className="grid gap-2" role="radiogroup" aria-labelledby={`label-${field.key}`}>
+            {options.map((o) => {
+              const v = optValue(o);
+              const selected = asString(value) === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => { const nv = selected ? "" : v; onSet(nv); onUserEdit(field, nv); }}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    selected
+                      ? "border-accent/60 bg-accent/10 text-textPrimary"
+                      : "border-white/10 text-textMuted hover:border-white/20 hover:text-textPrimary"
+                  }`}
+                >
+                  {optLabel(o)}
+                </button>
+              );
+            })}
+          </div>
+          {errEl}
+        </div>
+      );
+    case "multi":
+      return (
+        <div className={`space-y-2 ${ring}`} data-field={field.key}>
+          {labelEl}
+          <div className="grid gap-2" role="group" aria-labelledby={`label-${field.key}`}>
+            {options.map((o) => {
+              const v = optValue(o);
+              const arr = asArray(value);
+              const selected = arr.includes(v);
+              const capped = !selected && field.maxItems !== undefined && arr.length >= field.maxItems;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={selected}
+                  disabled={capped}
+                  onClick={() => { onToggle(v); onUserEdit(field, v, { toggled: true }); }}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    selected
+                      ? "border-accent/60 bg-accent/10 text-textPrimary"
+                      : "border-white/10 text-textMuted hover:border-white/20 hover:text-textPrimary"
+                  } ${capped ? "cursor-not-allowed opacity-40" : ""}`}
+                >
+                  {optLabel(o)}
+                </button>
+              );
+            })}
+          </div>
+          {errEl}
+        </div>
+      );
+    case "textarea":
+      return (
+        <div className={`space-y-2 ${ring}`} data-field={field.key}>
+          {labelEl}
+          <textarea
+            className="vs-input min-h-[90px]"
+            value={asString(value)}
+            onChange={(e) => onSet(e.target.value)}
+            onBlur={(e) => onUserEdit(field, e.target.value)}
+          />
+          {errEl}
+        </div>
+      );
+    default:
+      return (
+        <div className={`space-y-2 ${ring}`} data-field={field.key}>
+          {labelEl}
+          <input
+            className="vs-input"
+            type={field.kind === "email" ? "email" : field.kind === "tel" ? "tel" : field.kind === "url" ? "url" : "text"}
+            value={asString(value)}
+            onChange={(e) => onSet(e.target.value)}
+            onBlur={(e) => onUserEdit(field, e.target.value)}
+          />
+          {errEl}
+        </div>
+      );
+  }
+}

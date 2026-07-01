@@ -68,6 +68,17 @@ const nav = [
     ),
   },
   {
+    label: "SEO Ops",
+    href: "/crm/seo-ops",
+    tooltip: "Live monitor of the SEO/marketing operation — agents, content pipeline, analytics",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+        <polyline points="17 6 23 6 23 12" />
+      </svg>
+    ),
+  },
+  {
     label: "VS Demo Caller",
     href: "/crm/demo-call",
     tooltip: "Live AI voice call demos — configure a client's agent and demo it on the spot",

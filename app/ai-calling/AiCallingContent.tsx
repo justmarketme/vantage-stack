@@ -161,12 +161,7 @@ export function AiCallingContent() {
                   See your own &ldquo;missed-call cost&rdquo; live on the call.
                 </span>
               </div>
-              {/* >>> REVIEW: booking link (hero) */}
-              <ReviewFlag>
-                Booking currently opens the site&rsquo;s standard Cal.com discovery-call flow
-                (<code className="text-amber-200">{CAL_LINK}</code>). Confirm this is the right
-                destination for /ai-calling, or supply a dedicated Calendly / WhatsApp link.
-              </ReviewFlag>
+              {/* Booking → site Cal.com discovery-call flow (confirmed 2026-07-02). */}
             </Reveal>
           </div>
         </header>
@@ -644,11 +639,7 @@ export function AiCallingContent() {
               <p className="mt-4 text-xs text-textMuted/60">
                 No pressure. No jargon. Just the numbers and a live demo.
               </p>
-              {/* >>> REVIEW: booking link (final CTA) */}
-              <ReviewFlag>
-                Booking opens the site&rsquo;s Cal.com discovery-call flow. Confirm this is the right
-                destination for /ai-calling, or supply a dedicated Calendly / WhatsApp link.
-              </ReviewFlag>
+              {/* Booking → site Cal.com discovery-call flow (confirmed 2026-07-02). */}
             </Reveal>
           </div>
         </section>

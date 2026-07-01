@@ -584,7 +584,7 @@ export function AiCallingContent() {
               <p className="text-sm text-textMuted md:text-base">
                 It&rsquo;s an especially strong fit if you recognise yourself here:
               </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="vs-card border border-white/10">
                   <h3 className="font-heading text-base text-textPrimary/95">You&rsquo;re the bottleneck</h3>
                   <p className="mt-1 text-xs leading-relaxed text-textMuted/90 md:text-sm">
@@ -599,43 +599,55 @@ export function AiCallingContent() {
                     any of those calls go unanswered is paying twice to lose the same customer.
                   </p>
                 </div>
-                {/* >>> REVIEW: source draft was truncated mid-sentence here (see report). */}
-                <div className="vs-card border border-dashed border-amber-500/40 bg-amber-500/[0.04]">
+                <div className="vs-card border border-white/10">
                   <h3 className="font-heading text-base text-textPrimary/95">Your business books time</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-amber-100/70 md:text-sm">
-                    [Draft truncated] — the source HTML cut off mid-sentence in this card. Awaiting the
-                    complete copy from Cowork for the remainder of this section.
+                  <p className="mt-1 text-xs leading-relaxed text-textMuted/90 md:text-sm">
+                    Consultations, viewings, quotes, service visits — anything that lives or dies on
+                    getting an appointment into the diary while the customer is still keen.
+                  </p>
+                </div>
+                <div className="vs-card border border-white/10">
+                  <h3 className="font-heading text-base text-textPrimary/95">After-hours matters</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-textMuted/90 md:text-sm">
+                    A real chunk of your enquiries land evenings and weekends, when there&rsquo;s
+                    currently nobody to catch them.
                   </p>
                 </div>
               </div>
-              <ReviewFlag>
-                Cowork&rsquo;s draft export ended here mid-tag (25,366 bytes, no final CTA or footer).
-                The card above and the final CTA below are stubs pending the complete file — logged
-                back to Cowork as HO-2026-07-01-004.
-              </ReviewFlag>
+              <p className="mt-6 text-sm leading-relaxed text-textMuted md:text-base">
+                If two or more of those sound like your business, you&rsquo;re almost certainly leaving
+                money on the table every month that a voice agent would capture. The strategy call
+                below will tell you roughly how much — with your real numbers, not a guess.
+              </p>
             </Reveal>
           </div>
         </section>
 
-        {/* ================= FINAL CTA (reconstructed — draft truncated) ================= */}
-        <section className="vs-section border-t border-white/5">
+        {/* ================= FINAL SINGLE CTA ================= */}
+        <section id="book" className="vs-section border-t border-white/5">
           <div className="vs-container">
             <Reveal className="vs-card mx-auto max-w-3xl border border-white/10 text-center">
-              <p className="vs-section-heading justify-center">Your next move</p>
-              <h2 className="font-heading text-2xl md:text-3xl">
-                Stop letting ready-to-buy callers reach voicemail.
+              <p className="text-xs uppercase tracking-[0.24em] text-accent">Your move</p>
+              <h2 className="mt-3 font-heading text-2xl md:text-3xl">
+                See exactly how many calls — and how much revenue — you&rsquo;re missing.
               </h2>
-              <p className="mx-auto mt-3 max-w-md text-sm text-textMuted">
-                Book a 30-minute strategy call. We&rsquo;ll show you a live agent and work out your
-                own missed-call cost, live.
+              <p className="mx-auto mt-4 max-w-xl text-sm text-textMuted md:text-base">
+                Book a free 30-minute strategy call. We&rsquo;ll calculate your real missed-call cost,
+                and you&rsquo;ll hear a live AI voice agent book an appointment before the call ends.
               </p>
               <div className="mt-6 flex justify-center">
-                <BookCallButton className="vs-button-primary text-sm" />
+                <BookCallButton
+                  className="vs-button-primary text-sm"
+                  label="Book your 30-minute strategy call"
+                />
               </div>
-              {/* >>> REVIEW: booking link (final CTA) + final-CTA copy */}
+              <p className="mt-4 text-xs text-textMuted/60">
+                No pressure. No jargon. Just the numbers and a live demo.
+              </p>
+              {/* >>> REVIEW: booking link (final CTA) */}
               <ReviewFlag>
-                Final-CTA copy is a placeholder reconstruction (Cowork&rsquo;s draft was truncated
-                before this section). Confirm wording and booking destination.
+                Booking opens the site&rsquo;s Cal.com discovery-call flow. Confirm this is the right
+                destination for /ai-calling, or supply a dedicated Calendly / WhatsApp link.
               </ReviewFlag>
             </Reveal>
           </div>

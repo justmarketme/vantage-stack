@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AiCallingContent } from "./AiCallingContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /ai-calling — AI Voice Agents. Source: SEO_Automation/landing_pages/ai-calling.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -60,6 +61,7 @@ export default function AiCallingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <AiCallingContent />
+      <RelatedReading pillar="Voice Agent Implementation" />
     </>
   );
 }

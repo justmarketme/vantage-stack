@@ -53,6 +53,7 @@
     "chart.js": "^4.5.1",
     "core-js": "^3.49.0",
     "framer-motion": "^11.0.0",
+    "gray-matter": "^4.0.3",
     "html2canvas": "^1.4.1",
     "jose": "^6.2.2",
     "jspdf": "^4.2.1",

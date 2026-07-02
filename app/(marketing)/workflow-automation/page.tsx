@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WorkflowAutomationContent } from "./WorkflowAutomationContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /workflow-automation — AI Workflow Automation. Source: SEO_Automation/landing_pages/workflow-automation.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -41,6 +42,7 @@ export default function WorkflowAutomationPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <WorkflowAutomationContent />
+      <RelatedReading pillar="System Automation" />
     </>
   );
 }

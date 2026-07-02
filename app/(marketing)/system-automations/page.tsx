@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SystemAutomationsContent } from "./SystemAutomationsContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /system-automations — System Automations. Source: SEO_Automation/landing_pages/crm.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -59,6 +60,7 @@ export default function SystemAutomationsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SystemAutomationsContent />
+      <RelatedReading pillar="System Automation" />
     </>
   );
 }

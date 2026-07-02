@@ -5,6 +5,7 @@ import { Reveal } from "../../../components/marketing/Reveal";
 import { BookCta } from "../../../components/marketing/BookCta";
 import {
   Pill,
+  HeroRating,
   Eyebrow,
   SectionTitle,
   AnswerBox,
@@ -58,6 +59,7 @@ export function MarketingContent() {
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <Reveal className="space-y-5">
               <Pill>Growth Systems · South Africa</Pill>
+              <HeroRating />
               <h1 className="font-heading text-[34px] font-medium leading-tight md:text-5xl lg:text-[52px] lg:leading-[1.05]">
                 Not a marketing agency. A <span className="text-accent">revenue engine</span> for your business.
               </h1>

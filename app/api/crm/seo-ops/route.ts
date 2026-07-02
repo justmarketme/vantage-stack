@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
+import { withSeoDb, recentEvents } from "../../../../lib/seo-orchestrator/store";
+import { buildDashboard } from "../../../../lib/seo-orchestrator/dashboard";
 
 // ───────────────────────────────────────────────────────────────────────────
-// SEO operation dashboard data feed.
+// SEO operation dashboard data feed for the CRM SEO Ops tab.
 //
-// Cowork WRITES the JSON (dashboard_template.json + task_events.json); this
-// route only READS it and hands it to the CRM tab (COWORK_INTERFACE.md seam).
-//
-// Default location is the repo-relative shared handoff folder. On a dev machine
-// you can point straight at the live SEO_Automation workspace by setting
-// SEO_DASHBOARD_DATA_DIR. If the files aren't there yet, the tab shows a
-// graceful "waiting for data" state rather than erroring.
+// PRIMARY: the DB-backed orchestrator (CW-004) — aggregated on read from
+// Supabase. FALLBACK: Cowork's JSON files (SEO_DASHBOARD_DATA_DIR / the shared
+// handoff folder), used only when the DB is unreachable, so the tab never
+// hard-fails.
 // ───────────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
@@ -33,11 +32,30 @@ async function readJson(file: string): Promise<{ data: unknown; error: string | 
 }
 
 export async function GET() {
+  // Primary: DB-backed engine.
+  try {
+    const dbOut = await withSeoDb(async (db) => ({
+      dashboard: await buildDashboard(db),
+      events: await recentEvents(db, 20),
+    }));
+    if (dbOut && dbOut.dashboard) {
+      return NextResponse.json({
+        ok: true,
+        source: "db",
+        dashboard: dbOut.dashboard,
+        dashboard_error: null,
+        events: dbOut.events,
+        events_error: null,
+      });
+    }
+  } catch {
+    /* DB unavailable — fall back to Cowork's JSON files */
+  }
+
   const [dash, events] = await Promise.all([
     readJson("dashboard_template.json"),
     readJson("task_events.json"),
   ]);
-
   const dashboard =
     dash.data && typeof dash.data === "object" && "dashboard" in (dash.data as object)
       ? (dash.data as { dashboard: unknown }).dashboard

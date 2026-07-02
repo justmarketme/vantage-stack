@@ -11,6 +11,26 @@
     {
       "path": "/api/cron/isabel-booking-followup",
       "schedule": "23 9 * * *"
+    },
+    {
+      "path": "/api/cron/seo-orchestrator?job=keyword_research",
+      "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/seo-orchestrator?job=outline_generation",
+      "schedule": "0 8 * * 2"
+    },
+    {
+      "path": "/api/cron/seo-orchestrator?job=draft_to_review",
+      "schedule": "0 12 * * 4"
+    },
+    {
+      "path": "/api/cron/seo-orchestrator?job=social_distribution",
+      "schedule": "0 15 * * 5,6,0"
+    },
+    {
+      "path": "/api/cron/seo-orchestrator?job=sunday_briefing",
+      "schedule": "0 4 * * 0"
     }
   ]
 }

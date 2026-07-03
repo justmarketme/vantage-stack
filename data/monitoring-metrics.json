@@ -1,7 +1,15 @@
 {
-  "updated_at": "2026-04-29T03:05:52.759Z",
+  "updated_at": "2026-07-02T12:55:12.431Z",
   "api": {
     "points": [
+      {
+        "ts": "2026-07-02T12:55:12.429Z",
+        "route": "/api/cron/prospecting",
+        "method": "GET",
+        "ms": 8388,
+        "ok": true,
+        "status": 200
+      },
       {
         "ts": "2026-04-29T03:05:52.757Z",
         "route": "/api/crm/clients",
@@ -872,8 +880,9 @@
     "uptime": {},
     "third_party": {},
     "database": {
-      "status": "unknown",
-      "checked_at": "2026-04-07T09:44:30.173Z"
+      "status": "green",
+      "checked_at": "2026-07-02T12:55:12.221Z",
+      "details": "db ok (upsertSchedulerJobRunDb) 452ms"
     }
   }
 }

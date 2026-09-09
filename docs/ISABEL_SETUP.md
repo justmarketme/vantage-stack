@@ -14,6 +14,8 @@ This guide walks you through configuring Isabel in the ElevenLabs dashboard so s
 
 ## 2. System Prompt
 
+> **Source of truth:** Isabel's live persona is defined in [`lib/isabel/persona.ts`](../lib/isabel/persona.ts) and pushed to the dashboard by `scripts/set-isabel-prompt.ts` (or `restore-isabel-prompt.ts`). The block below is an older illustrative copy and may lag — always treat `lib/isabel/persona.ts` as canonical.
+
 Copy this into your agent's **System Prompt** field. This defines Isabel's personality, role, and how she uses the knowledge base.
 
 ```

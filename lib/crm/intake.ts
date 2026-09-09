@@ -73,7 +73,9 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
     status = opts.jumpToStatus;
   }
 
-  const company = (opts.company ?? "").trim() || null;
+  // Business name now comes from the form (payload.company = businessName); opts.company is the CRM-manual path.
+  const company = (payload.company ?? opts.company ?? "").trim() || null;
+  const city = (payload.city ?? "").trim() || null;
   const createdBy = opts.createdBy?.trim() || (opts.source === "crm_manual" ? "crm" : "");
 
   const social_instagram = (payload.socialInstagram || "").trim() || null;
@@ -96,7 +98,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       website_exists, conversion_rate, speed_to_contact, site_conversion_status,
       hours_lost_per_week, urgency_timeline, primary_social_handle, avg_transaction_value,
       enquiry_volume, follow_up_method, missed_call_handling, google_maps_status, biggest_time_waste,
-      website_goal, current_website_status
+      website_goal, current_website_status, city
     ) values (
       ${payload.clientName},
       ${payload.email},
@@ -144,7 +146,8 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       ${payload.googleMapsStatus ?? null},
       ${payload.biggestTimeWaste?.length ? payload.biggestTimeWaste : null}::text[],
       ${payload.websiteGoal?.length ? payload.websiteGoal : null}::text[],
-      ${payload.currentWebsiteStatus ?? null}
+      ${payload.currentWebsiteStatus ?? null},
+      ${city}
     )
     on conflict (email) do update set
       name = excluded.name,
@@ -193,6 +196,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       biggest_time_waste = coalesce(excluded.biggest_time_waste, public.clients.biggest_time_waste),
       website_goal = coalesce(excluded.website_goal, public.clients.website_goal),
       current_website_status = coalesce(excluded.current_website_status, public.clients.current_website_status),
+      city = coalesce(excluded.city, public.clients.city),
       updated_at = now()
     returning id::text as id
   `;
@@ -251,7 +255,7 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       industry: payload.industry,
       website_url: website_url || null,
       whatsapp: payload.whatsapp,
-      monthly_budget: monthly_budget ?? 0,
+      monthly_budget: monthly_budget ?? null,
       success_goals: payload.successGoals,
       current_marketing: payload.currentMarketing,
       challenges: derived_challenges,
@@ -272,6 +276,19 @@ export async function performClientIntake(db: Sql, payload: BlueprintSubmit, opt
       biggest_frustration: payload.biggestFrustration || null,
       previous_vendor_exp: payload.previousVendorExp || null,
       primary_intent: payload.primaryIntent || null,
+      // Previously NEVER passed → the generator's LEADS/PRESENCE/EXPLORE sections,
+      // benchmarks and ROI calculator were starved. Now wired end-to-end.
+      enquiry_volume: payload.enquiryVolume || null,
+      follow_up_method: payload.followUpMethod || null,
+      missed_call_handling: payload.missedCallHandling || null,
+      current_website_status: payload.currentWebsiteStatus || null,
+      google_maps_status: payload.googleMapsStatus || null,
+      website_goal: payload.websiteGoal || null,
+      biggest_time_waste: payload.biggestTimeWaste || null,
+      team_size: payload.teamSize || null,
+      package_preference: payload.packagePreference || null,
+      site_conversion_status: payload.siteConversionStatus || null,
+      avg_transaction_value: payload.avgTransactionValue || null,
     });
 
     // Auto-generate design brief when client has no website (fire-and-forget)

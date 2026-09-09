@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PersonalAiAssistantContent } from "./PersonalAiAssistantContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /personal-ai-assistant — Personal AI Assistant. Source: SEO_Automation/landing_pages/personal-ai-assistant.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -41,6 +42,7 @@ export default function PersonalAiAssistantPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PersonalAiAssistantContent />
+      <RelatedReading pillar="Personal AI Assistant Deployment" />
     </>
   );
 }

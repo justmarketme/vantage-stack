@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PaidAdsContent } from "./PaidAdsContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /paid-ads — Paid Ads Management. Source: SEO_Automation/landing_pages/paid-ads.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -41,6 +42,7 @@ export default function PaidAdsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PaidAdsContent />
+      <RelatedReading pillar="Paid Ads & Social Integration" />
     </>
   );
 }

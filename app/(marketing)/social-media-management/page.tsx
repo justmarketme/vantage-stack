@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SocialMediaManagementContent } from "./SocialMediaManagementContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /social-media-management — Social Media Management. Source: SEO_Automation/landing_pages/social-media-management.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -41,6 +42,7 @@ export default function SocialMediaManagementPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SocialMediaManagementContent />
+      <RelatedReading pillar="Paid Ads & Social Integration" />
     </>
   );
 }

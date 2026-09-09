@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WhatsappAssistantContent } from "./WhatsappAssistantContent";
+import { RelatedReading } from "../../../components/blog/RelatedReading";
 
 // /whatsapp-assistant — WhatsApp & Teams AI Assistant. Source: SEO_Automation/landing_pages/whatsapp-assistant.
 // Behind review (noindex inherited from the (marketing) layout). Booking = Cal.com.
@@ -59,6 +60,7 @@ export default function WhatsappAssistantPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <WhatsappAssistantContent />
+      <RelatedReading pillar="WhatsApp & Teams Assistants" />
     </>
   );
 }

@@ -2,6 +2,11 @@
 
 Standing engineering rules for this project. These apply to **every** task — read and follow them on every run.
 
+> **Working alongside Claude Cowork:** the SEO/marketing operation is run by Claude Cowork from a
+> separate workspace. Before touching marketing content, landing-page copy, the CRM operation
+> dashboard, or analytics delivery, read **`COWORK_INTERFACE.md`** — it defines who owns what and the
+> shared handoff queue. Rule of thumb: **Claude Code owns the machine; Cowork owns the operation.**
+
 ---
 
 ## Project

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { siteConfig } from "../../lib/site-config";
 
 // ───────────────────────────────────────────────────────────────────────────
 // Shared marketing/landing-page primitives, styled with the real design tokens
@@ -6,6 +7,61 @@ import type { ReactNode } from "react";
 // These are presentational only (no hooks) and are composed inside each page's
 // client Content component alongside <Reveal> and <BookCta>.
 // ───────────────────────────────────────────────────────────────────────────
+
+// ── Distributed trust signals ──────────────────────────────────────────────
+// Honest by design: until real Google-review figures are set in
+// lib/site-config.ts, these render CLEARLY-BRACKETED PLACEHOLDERS ([4.8] /
+// [120]) — never an invented number as fact. Set reviews.hideWhenUnset to hide.
+function resolveReviews(): { rating: string; count: string; isPlaceholder: boolean } | null {
+  const r = siteConfig.reviews;
+  const isSet = r.rating != null && r.count != null;
+  if (!isSet && r.hideWhenUnset) return null;
+  return isSet
+    ? { rating: String(r.rating), count: String(r.count), isPlaceholder: false }
+    : { rating: `[${r.placeholderRating}]`, count: `[${r.placeholderCount}]`, isPlaceholder: true };
+}
+
+const PLACEHOLDER_HINT = "Placeholder — set real Google review figures in lib/site-config.ts";
+
+function Stars() {
+  return <span aria-hidden className="tracking-[2px] text-amber-400">★★★★★</span>;
+}
+
+/** Hero rating bar — subtle, sits near the top of the hero. */
+export function HeroRating() {
+  const r = resolveReviews();
+  if (!r) return null;
+  return (
+    <div className="flex items-center gap-2 text-xs text-textMuted" title={r.isPlaceholder ? PLACEHOLDER_HINT : undefined}>
+      <Stars />
+      <span>
+        <span className="font-medium text-textPrimary/80">{r.rating}</span> from{" "}
+        <span className="font-medium text-textPrimary/80">{r.count}+</span> Google reviews
+      </span>
+    </div>
+  );
+}
+
+/** Trust line under a final CTA — rating + POPIA-compliant. Rendered by FinalCta. */
+export function CtaTrustLine() {
+  const r = resolveReviews();
+  if (!r) return null;
+  return (
+    <p
+      className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-textMuted/70"
+      title={r.isPlaceholder ? PLACEHOLDER_HINT : undefined}
+    >
+      <span className="inline-flex items-center gap-2">
+        <Stars />
+        <span>
+          <span className="font-medium text-textPrimary/80">{r.rating}</span> from{" "}
+          <span className="font-medium text-textPrimary/80">{r.count}+</span> Google reviews
+        </span>
+      </span>
+      <span>· POPIA-compliant</span>
+    </p>
+  );
+}
 
 /** Outlined pill eyebrow with a green status dot (homepage hero pattern). */
 export function Pill({ children }: { children: ReactNode }) {
@@ -175,6 +231,7 @@ export function FinalCta({ eyebrow, title, children, cta }: { eyebrow: string; t
         <h2 className="mx-auto mt-3 max-w-2xl font-heading text-2xl md:text-3xl">{title}</h2>
         {children && <p className="mx-auto mt-4 max-w-xl text-sm text-textMuted md:text-base">{children}</p>}
         <div className="mt-7 flex justify-center">{cta}</div>
+        <CtaTrustLine />
       </div>
     </div>
   );

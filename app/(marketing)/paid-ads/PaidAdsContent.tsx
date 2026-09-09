@@ -5,6 +5,7 @@ import { Reveal } from "../../../components/marketing/Reveal";
 import { BookCta } from "../../../components/marketing/BookCta";
 import {
   Pill,
+  HeroRating,
   Eyebrow,
   SectionTitle,
   AnswerBox,
@@ -47,6 +48,7 @@ export function PaidAdsContent() {
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <Reveal className="space-y-5">
               <Pill>Paid Ads Management · South Africa</Pill>
+              <HeroRating />
               <h1 className="font-heading text-[34px] font-medium leading-tight md:text-5xl lg:text-[52px] lg:leading-[1.05]">
                 You&rsquo;re not short of clicks. You&rsquo;re short of <span className="text-accent">leads you can count</span>.
               </h1>

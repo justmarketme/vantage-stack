@@ -13,6 +13,10 @@
       "schedule": "23 9 * * *"
     },
     {
+      "path": "/api/cron/prospecting",
+      "schedule": "0 5 * * *"
+    },
+    {
       "path": "/api/cron/seo-orchestrator?job=keyword_research",
       "schedule": "0 7 * * 1"
     },

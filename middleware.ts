@@ -9,8 +9,13 @@ import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
 const ADMIN_COOKIE = "vs_admin_session";
 
 export const config = {
-  matcher: ["/admin/:path*", "/crm/:path*", "/api/crm/:path*", "/api/admin/:path*"],
+  // "/" is included solely for the clinics-subdomain rewrite below. Everything
+  // else in this matcher is the admin/CRM auth surface.
+  matcher: ["/", "/admin/:path*", "/crm/:path*", "/api/crm/:path*", "/api/admin/:path*"],
 };
+
+/** Host that should serve the clinics landing page at its root. */
+const CLINICS_HOST = "clinics.vantagestack.co.za";
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("x-robots-tag", "noindex, nofollow");
@@ -46,6 +51,30 @@ function isPublicAdminApi(pathname: string, method: string) {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const method = request.method;
+
+  // ── Clinics subdomain ────────────────────────────────────────────────
+  // clinics.vantagestack.co.za shares this deployment with the main site, so
+  // its root must serve /clinics rather than the VantageStack homepage.
+  //
+  // This is done here rather than via a `rewrites()` entry in next.config.mjs
+  // or vercel.json: both were deployed and verified live to be ignored for this
+  // host (the response came back with X-Matched-Path: /). Middleware sees the
+  // real Host header and is the mechanism that actually works.
+  //
+  // Scoped to the root path only, so every other route on the subdomain still
+  // resolves normally, and returns immediately so no auth logic below can run
+  // against a marketing page.
+  if (path === "/") {
+    const host = (request.headers.get("host") || "").toLowerCase().split(":")[0];
+    if (host === CLINICS_HOST) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/clinics";
+      return NextResponse.rewrite(url);
+    }
+    // Any other host hitting "/" is the normal homepage — hand it straight back
+    // untouched. Without this the admin logic below would run on every visit.
+    return NextResponse.next();
+  }
 
   if (isPublicAdminPath(path)) {
     return withNoIndex(NextResponse.next());

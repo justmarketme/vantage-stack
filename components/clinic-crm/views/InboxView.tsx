@@ -39,6 +39,13 @@ export function InboxView() {
                   <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
+            ) : convos.error && !convos.data ? (
+              <p className="cc-notice m-4" data-tone="danger" role="alert">
+                {errorMessage(convos.error, "Couldn't load conversations.")}{" "}
+                <button type="button" className="underline" onClick={() => void convos.refresh()}>
+                  Retry
+                </button>
+              </p>
             ) : list.length === 0 ? (
               <EmptyState icon={<Inbox size={26} />} title="No conversations yet">
                 WhatsApp and SMS messages from patients appear here. New enquiries get an instant automatic reply.
@@ -191,6 +198,13 @@ function Thread({
             <Skeleton className="h-10 w-2/3" />
             <Skeleton className="ml-auto h-10 w-1/2" />
           </>
+        ) : msgs.error && !msgs.data ? (
+          <p className="cc-notice m-auto" data-tone="danger" role="alert">
+            {errorMessage(msgs.error, "Couldn't load this conversation.")}{" "}
+            <button type="button" className="underline" onClick={() => void msgs.refresh()}>
+              Retry
+            </button>
+          </p>
         ) : (msgs.data ?? []).length === 0 ? (
           <p className="cc-muted m-auto text-sm">No messages yet — say hello.</p>
         ) : (

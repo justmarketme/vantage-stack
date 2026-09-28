@@ -107,7 +107,7 @@ export const AUTOMATION_DEFAULTS: Record<AutomationKind, AutomationDefault> = {
     offset: 0,
     body:
       "Hi {{firstName}}, thanks for getting in touch with {{clinicName}}! We've received your message " +
-      "and one of our team will get back to you shortly.",
+      "and one of our team will get back to you shortly. Reply STOP to opt out.",
   },
   recall: {
     kind: "recall",

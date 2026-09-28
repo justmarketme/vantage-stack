@@ -151,6 +151,17 @@ export function GoalsView() {
           ))}
         </div>
 
+        {q.error && !q.data && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 p-4">
+            <p className="cc-notice pointer-events-auto" data-tone="danger" role="alert">
+              {errorMessage(q.error, "Couldn't load the board.")}{" "}
+              <button type="button" className="underline" onClick={() => void q.refresh()}>
+                Retry
+              </button>
+            </p>
+          </div>
+        )}
+
         {q.data && notes.length === 0 && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
             <div className="cc-card pointer-events-auto max-w-sm p-6 text-center">

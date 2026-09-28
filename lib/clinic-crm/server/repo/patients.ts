@@ -148,7 +148,14 @@ export async function updatePatient(
 /** POPIA erasure: hard delete; appointments, messages and outbox rows cascade. */
 export async function deletePatient(sql: Sql, clinicId: string, id: string): Promise<boolean> {
   const rows = await sql`DELETE FROM clinic_crm.patients WHERE clinic_id = ${clinicId} AND id = ${id} RETURNING id`;
-  return rows.length > 0;
+  if (rows.length === 0) return false;
+  // Unsent message drafts (continuity key `draft:<patientId>`) hold the patient's conversation
+  // text and are not FK-linked, so they don't cascade — erase them explicitly.
+  await sql`
+    DELETE FROM clinic_crm.staff_state
+     WHERE key = ${"draft:" + id}
+       AND staff_id IN (SELECT id FROM clinic_crm.staff WHERE clinic_id = ${clinicId})`;
+  return true;
 }
 
 export interface PatientExport {

@@ -24,7 +24,8 @@ test there) and in `.env.local` for scripts. Never paste values into chat, ticke
 | `TWILIO_AUTH_TOKEN` | **yes** | sends + webhook signature validation | Must be the **primary** token. A secondary token is ignored by Twilio's signer until promoted — rotate by promoting, then update this var in the same minute. |
 | `CLINIC_CRM_PUBLIC_URL` | **yes** | webhook signature URL, status callbacks | `https://clinics.vantagestack.co.za` (no trailing slash). Falls back to `NEXT_PUBLIC_APP_URL`. Must be the exact origin configured in Twilio or every webhook fails signature validation (403). |
 | `NEXT_PUBLIC_APP_URL` | fallback | as above | Already set for the site. |
-| `CLINIC_CRM_TWILIO_DRY_RUN` | no | Twilio client, signature bypass | `true` = fake sends. **Must be unset/false in Production.** The webhook-signature bypass (`DEV_SKIP`) only activates when this is `true` AND `NODE_ENV !== "production"`, so it can never switch on in a Vercel build — but the *send* dry-run in `lib/clinic-crm/server/twilio.ts` does not check `NODE_ENV`, so a stray `true` in Production would silently fake every reminder. |
+| `CLINIC_CRM_TWILIO_DRY_RUN` | no | Twilio client | `true` = fake sends (ignored when `VERCEL_ENV=production`). **Must be unset/false in Production.** It does **not** disable webhook signature checks. |
+| `CLINIC_CRM_TWILIO_SKIP_SIGNATURE` | no | webhook signature bypass (`DEV_SKIP`) | Local development only: `true` skips X-Twilio-Signature validation, and only when `NODE_ENV !== "production"` (never on a Vercel build). Leave unset. |
 | `CLINIC_CRM_SEED_PASSWORD` | seed only | `npm run clinic-crm:seed` | Local shell only; never in Vercel. |
 
 <!-- AGENT-3: add any further back-end variables below this line -->

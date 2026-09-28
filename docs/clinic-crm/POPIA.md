@@ -110,7 +110,9 @@ objection and complaint to the Information Regulator (s.18(1)(h)).
 - **AUTOMATED:** `GET /api/clinic-crm/patients/[id]/export` returns everything held on a
   patient (profile, appointments, messages) as JSON — answers an access request.
 - **AUTOMATED:** `PATCH` corrects; `DELETE /patients/[id]` is a hard delete (cascades to
-  appointments, messages, outbox) and is audited.
+  appointments, messages, outbox; also deletes staff message drafts `draft:<patientId>`) and is audited.
+  Not covered: an unsaved *new-patient* form draft (`draft:new-patient`) lives with the staff member
+  until they save or clear it.
 - Note: the audit log keeps the patient's **id** (not their details) after erasure, which is
   needed for accountability. Copies held by Twilio (message logs) and Meta are **not** erased
   by this call — **USER-GATED:** document that Twilio message bodies can be redacted via the
@@ -176,8 +178,8 @@ All sub-operators process outside the Republic:
 |---|---|---|
 | 1 | Operator agreement template (clinic ↔ Vantage Stack) with sub-operator flow-down | Jono + ⚖ lawyer |
 | 2 | s.72 / s.57 position on health data offshore; accept DPAs; confirm Supabase region | Jono + ⚖ lawyer |
-| 3 | Add opt-out line to recall (and no-show / lead) default templates | Agent 3 |
-| 4 | "No clinical notes" warning on the patient form | Agent 1 |
+| 3 | Opt-out line: **done** for reminder, no-show and recall defaults; new-lead ack still has none (advisable) | Agent 3 |
+| 4 | "No clinical notes" warning on the patient form — **done** ("Admin notes only…") | Agent 1 |
 | 5 | Retention period + purge job | Jono + clinic, then dev |
 | 6 | Privacy notice template for clinics (s.18) | ⚖ lawyer |
 | 7 | Incident-response runbook (s.21(2), s.22) | Jono |

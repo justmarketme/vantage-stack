@@ -19,12 +19,16 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Local-development escape hatch: true ONLY when CLINIC_CRM_TWILIO_DRY_RUN=true AND
+ * Local-development escape hatch: true ONLY when CLINIC_CRM_TWILIO_SKIP_SIGNATURE=true AND
  * NODE_ENV !== "production". Every Vercel deployment (preview included) builds with
  * NODE_ENV=production, so this can never be true on a deployed instance.
+ *
+ * Deliberately NOT tied to CLINIC_CRM_TWILIO_DRY_RUN: faking sends must not also switch
+ * off webhook authentication (a dry-run dev box behind a public tunnel would otherwise
+ * accept forged inbound messages, and signature checks could never be exercised locally).
  */
 export const DEV_SKIP: boolean =
-  process.env.CLINIC_CRM_TWILIO_DRY_RUN === "true" && process.env.NODE_ENV !== "production";
+  process.env.CLINIC_CRM_TWILIO_SKIP_SIGNATURE === "true" && process.env.NODE_ENV !== "production";
 
 export function expectedTwilioSignature(authToken: string, url: string, params: Record<string, string>): string {
   let data = url;

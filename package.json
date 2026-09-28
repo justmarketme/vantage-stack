@@ -41,7 +41,9 @@
     "mcp:design-to-code": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/design-to-code/server.ts",
     "mcp:email-orchestrator": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs mcp/email-orchestrator/server.ts",
     "briefing:run": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/run-morning-briefing.ts",
-    "telegram:bot": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/telegram-bot.ts"
+    "telegram:bot": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/telegram-bot.ts",
+    "clinic-crm:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-migrate.ts",
+    "clinic-crm:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-seed.ts"
   },
   "dependencies": {
     "@elevenlabs/react": "^0.14.3",

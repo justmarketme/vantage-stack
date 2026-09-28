@@ -5,11 +5,19 @@ import { roleMayAccessPage } from "./lib/admin/rbac-paths";
 import type { TeamRole } from "./lib/admin/roles";
 import { can } from "./lib/admin/roles";
 import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
+import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/middleware";
 
 const ADMIN_COOKIE = "vs_admin_session";
 
 export const config = {
-  matcher: ["/admin/:path*", "/crm/:path*", "/api/crm/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/crm/:path*",
+    "/api/crm/:path*",
+    "/api/admin/:path*",
+    "/clinic-crm/:path*",
+    "/api/clinic-crm/:path*",
+  ],
 };
 
 function withNoIndex(res: NextResponse) {
@@ -46,6 +54,11 @@ function isPublicAdminApi(pathname: string, method: string) {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const method = request.method;
+
+  // Clinic CRM has its own session and rules; it never falls through to admin auth.
+  if (isClinicCrmPath(path)) {
+    return clinicCrmMiddleware(request);
+  }
 
   if (isPublicAdminPath(path)) {
     return withNoIndex(NextResponse.next());

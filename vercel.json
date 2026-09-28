@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/seo-orchestrator?job=sunday_briefing",
       "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/clinic-crm/cron/dispatch",
+      "schedule": "0 6 * * *"
     }
   ],
   "rewrites": [

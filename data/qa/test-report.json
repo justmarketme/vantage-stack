@@ -1,14 +1,80 @@
 {
-  "generatedAt": "2026-03-18T17:26:44.471Z",
+  "generatedAt": "2026-09-28T10:09:46.165Z",
   "totals": {
-    "tests": 13,
-    "passed": 13,
+    "tests": 137,
+    "passed": 137,
     "failed": 0,
     "pending": 0,
-    "runtimeMs": 5614
+    "runtimeMs": 13536
   },
   "criticalIssues": [],
   "results": [
+    {
+      "testName": "public.clients schema drift guard parsers extracted a plausible number of columns",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 13,
+      "failureMessages": []
+    },
+    {
+      "testName": "public.clients schema drift guard every INSERTed column is a base column or created by ensureCrmSchema",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "public.clients schema drift guard every UPDATEd column is a base column or created by ensureCrmSchema",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Cron job scheduling computes next run for daily schedule",
+      "status": "passed",
+      "expected": {
+        "nextIso": "2026-03-18T02:00:00.000Z"
+      },
+      "actual": {
+        "nextIso": "2026-03-18T02:00:00.000Z"
+      },
+      "notes": null,
+      "executionTimeMs": 37,
+      "failureMessages": []
+    },
+    {
+      "testName": "Cron job scheduling computes next run for step schedule (*/5)",
+      "status": "passed",
+      "expected": {
+        "nextIso": "2026-03-18T02:05:00.000Z"
+      },
+      "actual": {
+        "nextIso": "2026-03-18T02:05:00.000Z"
+      },
+      "notes": null,
+      "executionTimeMs": 6,
+      "failureMessages": []
+    },
+    {
+      "testName": "Cron job scheduling rejects genuinely unsupported cron expressions",
+      "status": "passed",
+      "expected": {
+        "throws": true
+      },
+      "actual": {
+        "throws": true
+      },
+      "notes": null,
+      "executionTimeMs": 50,
+      "failureMessages": []
+    },
     {
       "testName": "Report score calculation health score trends upward with better metrics",
       "status": "passed",
@@ -20,7 +86,7 @@
         "high": 98
       },
       "notes": null,
-      "executionTimeMs": 32,
+      "executionTimeMs": 5,
       "failureMessages": []
     },
     {
@@ -41,7 +107,7 @@
         ]
       },
       "notes": null,
-      "executionTimeMs": 2,
+      "executionTimeMs": 3,
       "failureMessages": []
     },
     {
@@ -54,7 +120,7 @@
         "ok": true
       },
       "notes": null,
-      "executionTimeMs": 22,
+      "executionTimeMs": 23,
       "failureMessages": []
     },
     {
@@ -77,7 +143,7 @@
         ]
       },
       "notes": null,
-      "executionTimeMs": 8,
+      "executionTimeMs": 6,
       "failureMessages": []
     },
     {
@@ -93,7 +159,7 @@
         ]
       },
       "notes": null,
-      "executionTimeMs": 2,
+      "executionTimeMs": 4,
       "failureMessages": []
     },
     {
@@ -109,49 +175,1123 @@
         ]
       },
       "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_industry enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 13,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_websiteExists enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_revenueRange enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_primaryIntent enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_previousVendorExp enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_enquiryVolume enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_followUpMethod enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_missedCallHandling enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_conversionRate enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_speedToContact enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_monthlyBudget enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_currentWebsiteStatus enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_googleMapsStatus enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_websiteGoal enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_serveArea enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_clientAcquisition enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_siteConversionStatus enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_biggestTimeWaste enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_toolsUsed enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_teamSize enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_hoursLostPerWeek enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_biggestFrustration enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_packagePreference enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_avgTransactionValue enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "per-field enum tools mirror the schema exactly set_urgencyTimeline enum == real options",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "tool wiring is consistent no duplicate tool names",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "tool wiring is consistent every definition has a client handler and vice-versa",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "tool wiring is consistent getSubNiches waits for a response; set_subNiche exists",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "tool wiring is consistent free-text fields do NOT get a set_ tool (use generic setBlueprintField)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "tool wiring is consistent every set_<field> enum value is a real option of that field",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 14,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — lifecycle starts idle and enters filling on START, highlighting the first field",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 21,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — progression & validation blocks NEXT on an invalid step and emits validationFailed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — progression & validation advances through the LEADS path and emits slideAdvanced + fieldHighlighted",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — progression & validation step-2 required fields depend on the chosen intent (branch-aware validation)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — progression & validation PREV navigates back and emits slideAdvanced(prev)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — multi-select toggles array values and respects maxItems",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
       "executionTimeMs": 3,
       "failureMessages": []
     },
     {
-      "testName": "Cron job scheduling computes next run for daily schedule",
+      "testName": "blueprint form machine — submission validates, calls the injected submit, and reaches submitted with a clientId",
       "status": "passed",
-      "expected": {
-        "nextIso": "2026-03-18T02:00:00.000Z"
-      },
-      "actual": {
-        "nextIso": "2026-03-18T02:00:00.000Z"
-      },
+      "expected": null,
+      "actual": null,
       "notes": null,
-      "executionTimeMs": 8,
+      "executionTimeMs": 14,
       "failureMessages": []
     },
     {
-      "testName": "Cron job scheduling rejects unsupported cron expressions",
+      "testName": "blueprint form machine — submission returns to filling with submitError when submit fails",
       "status": "passed",
-      "expected": {
-        "throws": true
-      },
-      "actual": {
-        "throws": true
-      },
+      "expected": null,
+      "actual": null,
       "notes": null,
-      "executionTimeMs": 22,
+      "executionTimeMs": 5,
       "failureMessages": []
     },
     {
-      "testName": "Integration: Full delivery flow report generated → Eleven Labs audio → email sent → WhatsApp sent",
+      "testName": "blueprint form machine — submission blocks SUBMIT and surfaces field errors when the last step is invalid",
       "status": "passed",
-      "expected": {
-        "emailMessageId": "msg_123",
-        "waSid": "SM123"
-      },
-      "actual": {
-        "emailMessageId": "msg_123",
-        "waSid": "SM123",
-        "audioUrl": "/reports/client-123/report-123.mp3"
-      },
+      "expected": null,
+      "actual": null,
       "notes": null,
-      "executionTimeMs": 82,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "blueprint form machine — serialization produces a JSON-serializable persisted snapshot (no closures in context)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "detailed form schema — same engine, 4 fixed steps walks all four steps with the detailed schema",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 9,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption industry (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 27,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption websiteExists (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption revenueRange (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption primaryIntent (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption avgTransactionValue (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption urgencyTimeline (E-commerce)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Professional services)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Healthcare)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 6,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Real estate)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Construction)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Education)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Hospitality)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Technology)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Financial services)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Retail)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Food & Beverage)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption subNiche (Marketing)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption enquiryVolume (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption followUpMethod (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption missedCallHandling (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption conversionRate (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption speedToContact (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption monthlyBudget (LEADS)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption currentWebsiteStatus (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption googleMapsStatus (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption websiteGoal (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption serveArea (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption clientAcquisition (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption siteConversionStatus (PRESENCE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption biggestTimeWaste (AUTOMATION)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption toolsUsed (AUTOMATION)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 6,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption teamSize (AUTOMATION)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption hoursLostPerWeek (AUTOMATION)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption biggestFrustration (EXPLORE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "every choice option in every field round-trips through matchOption packagePreference (EXPLORE)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) E-commerce: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) E-commerce: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Professional services: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Professional services: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Healthcare: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Healthcare: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Real estate: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Real estate: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Construction: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Construction: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Education: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Education: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Hospitality: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Hospitality: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Technology: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Technology: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Financial services: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Financial services: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Retail: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Retail: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Food & Beverage: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Food & Beverage: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Marketing: has sub-niches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Marketing: every sub-niche resolves from speech",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Other: no sub-niches (free-text instead)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'real estate' -> Real estate",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'Real Estate' -> Real estate",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'ecommerce' -> E-commerce",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'e commerce' -> E-commerce",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'food and beverage' -> Food & Beverage",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'financial' -> Financial services",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'professional services' -> Professional services",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'health care' -> Healthcare",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'tech' -> Technology",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "industries resolve from natural speech 'marketing' -> Marketing",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "real-estate sub-niche example resolves from speech 'residential sales' -> Residential Sales",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "real-estate sub-niche example resolves from speech 'commercial' -> Commercial Property",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "real-estate sub-niche example resolves from speech 'property management' -> Property Management",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'leads' -> LEADS",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'I'm losing leads' -> LEADS",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'presence' -> PRESENCE",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'online presence' -> PRESENCE",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'automation' -> AUTOMATION",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'automate the admin' -> AUTOMATION",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "primary intent resolves from speech (value or phrase) 'explore' -> EXPLORE",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "clearly-unrelated answers do not false-match gibberish against industries returns null",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "clearly-unrelated answers do not false-match empty string returns null",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
       "failureMessages": []
     },
     {
@@ -184,59 +1324,7 @@
         ]
       },
       "notes": null,
-      "executionTimeMs": 15,
-      "failureMessages": []
-    },
-    {
-      "testName": "E2E: Complete client journey form submission → research structuring → score → ready for delivery",
-      "status": "passed",
-      "expected": {
-        "scoreRange": [
-          0,
-          100
-        ]
-      },
-      "actual": {
-        "total": 50
-      },
-      "notes": null,
-      "executionTimeMs": 19,
-      "failureMessages": []
-    },
-    {
-      "testName": "Integration: Full research flow Agent 2 research → API calls → JSON output → database storage",
-      "status": "passed",
-      "expected": {
-        "hasSections": true
-      },
-      "actual": {
-        "keys": [
-          "generated_at",
-          "client",
-          "website-health",
-          "traffic-analysis",
-          "backlink-profile",
-          "competitor-benchmarks",
-          "seo-gaps",
-          "performance-score",
-          "errors"
-        ]
-      },
-      "notes": null,
-      "executionTimeMs": 54,
-      "failureMessages": []
-    },
-    {
-      "testName": "Integration: Full Telegram flow command received → database query → response sent (format produced)",
-      "status": "passed",
-      "expected": {
-        "includes": "Acme Co"
-      },
-      "actual": {
-        "textSnippet": "👤 *Acme Co*\n• ID: `client\\_123`\n• Industry: B2B\n• Status: active\n• MRR: $5,000\n"
-      },
-      "notes": null,
-      "executionTimeMs": 92,
+      "executionTimeMs": 9,
       "failureMessages": []
     }
   ]

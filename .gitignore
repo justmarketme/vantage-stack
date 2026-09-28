@@ -10,3 +10,7 @@ dev.log
 tsconfig.tsbuildinfo
 .claude/
 data/monitoring-metrics.json
+
+# Local social-asset pipeline — large (~600MB), not part of the app, never commit
+Vantage stack elements/
+Vantage stack general/

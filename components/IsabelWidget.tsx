@@ -6,6 +6,11 @@ import { useConversation } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createBlueprintClientTools, BLUEPRINT_TOOL_EVENT } from "../lib/blueprint/voice-tools";
 import { ISABEL_BLUEPRINT_FIRST_MESSAGE, ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO } from "../lib/isabel/persona";
+import {
+  ISABEL_CLINIC_PROMPT,
+  ISABEL_CLINIC_FIRST_MESSAGE,
+  ISABEL_CLINIC_FIRST_MESSAGE_TEXT,
+} from "../lib/isabel/clinics-persona";
 
 const AGENT_ID = (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "").trim();
 
@@ -242,6 +247,16 @@ export function IsabelWidget() {
   const router = useRouter();
   const pathname = usePathname();
   const onBlueprint = !!pathname?.startsWith("/blueprint");
+  /**
+   * Pages that run their own full-width conversion flow and cannot afford a
+   * fixed invite card sitting on top of it — most visibly on phones, where the
+   * card covers the very inputs the page is asking people to fill in.
+   *
+   * These pages still get the compact launcher, so Isabel is one tap away; it
+   * is only the large auto-appearing invite that is suppressed.
+   */
+  const onClinics = !!pathname?.startsWith("/clinics");
+  const minimalInvite = onBlueprint || onClinics;
 
   const { startSession, endSession, sendUserMessage, sendContextualUpdate, sendFeedback, status, canSendFeedback, isSpeaking } =
     useConversation({
@@ -346,11 +361,25 @@ export function IsabelWidget() {
   const blueprintOverrides = useCallback(
     (textOnly: boolean, afterIntro = false) => ({
       conversation: { textOnly },
-      ...(onBlueprint
-        ? { agent: { firstMessage: afterIntro ? ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO : ISABEL_BLUEPRINT_FIRST_MESSAGE } }
-        : {}),
+      // /clinics gets a different Isabel: same agent, clinic-shaped prompt and a
+      // booking-first objective. Overriding `prompt` here rather than creating a
+      // second agent keeps one knowledge base to maintain — two would drift.
+      //
+      // NOTE: `prompt` and `firstMessage` overrides must be enabled on the agent
+      // in the ElevenLabs dashboard (Security -> Overrides) or they are silently
+      // ignored. scripts/set-isabel-overrides.ts enables them.
+      ...(onClinics
+        ? {
+            agent: {
+              prompt: { prompt: ISABEL_CLINIC_PROMPT },
+              firstMessage: textOnly ? ISABEL_CLINIC_FIRST_MESSAGE_TEXT : ISABEL_CLINIC_FIRST_MESSAGE,
+            },
+          }
+        : onBlueprint
+          ? { agent: { firstMessage: afterIntro ? ISABEL_BLUEPRINT_FIRST_MESSAGE_AFTER_INTRO : ISABEL_BLUEPRINT_FIRST_MESSAGE } }
+          : {}),
     }),
-    [onBlueprint],
+    [onBlueprint, onClinics],
   );
 
   const startVoice = useCallback(async (afterIntro = false) => {
@@ -458,11 +487,12 @@ export function IsabelWidget() {
   return (
     <>
       {/* ── Collapsed invite widget ───────────────────────────────────────── */}
-      {/* The big invite card is for OTHER pages. On /blueprint it's intentionally
-          minimised to a small glowing button (below) so it never blocks Isabel /
-          the video or the form. */}
+      {/* The big invite card is for OTHER pages. On /blueprint and /clinics it's
+          intentionally minimised to a small glowing button (below) so it never
+          blocks Isabel / the video / the form, or — on phones — the fields the
+          page is asking the visitor to complete. */}
       <AnimatePresence>
-        {!isOpen && !dismissed && !onBlueprint && (
+        {!isOpen && !dismissed && !minimalInvite && (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -557,7 +587,7 @@ export function IsabelWidget() {
 
       {/* ── Minimised button — also the COMPACT /blueprint CTA ────────────── */}
       <AnimatePresence>
-        {(dismissed || isOpen || (onBlueprint && agentState === "disconnected")) && (
+        {(dismissed || isOpen || onClinics || (onBlueprint && agentState === "disconnected")) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

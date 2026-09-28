@@ -9,6 +9,7 @@ import { LiveSystemDemo } from "../../components/clinics/LiveSystemDemo";
 import { RoiCalculator } from "../../components/clinics/RoiCalculator";
 import { ClinicBlueprintForm } from "../../components/clinics/ClinicBlueprintForm";
 import { ClinicsNav } from "../../components/clinics/ClinicsNav";
+import { ClinicBookingCalendar } from "../../components/clinics/ClinicBookingCalendar";
 import type { RoiResult } from "../../lib/clinics/schema";
 
 /**
@@ -87,7 +88,7 @@ export default function ClinicsPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="#blueprint" className="vs-button-primary">
+                <a href="#book" className="vs-button-primary">
                   Book a demo
                 </a>
                 <a href="#roi" className="vs-button-ghost">
@@ -118,7 +119,18 @@ export default function ClinicsPage() {
                   // regenerating keeps the mood while making the room, the desk
                   // and the person actually readable — the imagery has to be
                   // visible to be worth having.
-                  className="h-[360px] w-full object-cover brightness-[1.45] contrast-[1.08] saturate-[0.9] md:h-[460px]"
+                  /**
+                   * object-position 88%, not the default centre.
+                   *
+                   * The receptionist sits at roughly 78–95% across the source
+                   * frame and the left half is empty wall, so a centred
+                   * `object-cover` crop discards the actual subject. At 88% the
+                   * visible window is ~32–96% on desktop and ~41–94% on mobile,
+                   * which keeps her, the monitor and the desk in shot at both
+                   * breakpoints. Going to 100% would also hold her, but pins her
+                   * to the edge and throws away the room behind.
+                   */
+                  className="h-[360px] w-full object-cover object-[88%_center] brightness-[1.45] contrast-[1.08] saturate-[0.9] md:h-[460px]"
                 />
                 {/* Scrim weighted to the BOTTOM THIRD only — just enough to seat
                     the card, while the upper two-thirds of the photograph stay
@@ -307,6 +319,28 @@ export default function ClinicsPage() {
         </ol>
       </Section>
 
+      {/* ── Book ───────────────────────────────────────────── */}
+      {/* Two exits, in order of commitment: book now, or take the blueprint if
+          not ready. The calendar comes first because a visitor who has just
+          seen their own recoverable number is at peak intent, and sending them
+          to a form at that moment adds a day of latency for no reason. */}
+      <Section
+        id="book"
+        eyebrow="Book a demo"
+        title="Twenty minutes, on your numbers."
+        lead={
+          <>
+            Not a pitch — we open the calculator with your real figures, show you where the
+            enquiries are going, and tell you plainly whether a system pays for itself at your
+            size. Pick a time that suits.
+          </>
+        }
+      >
+        <div className="mx-auto max-w-3xl">
+          <ClinicBookingCalendar />
+        </div>
+      </Section>
+
       {/* ── Final CTA ──────────────────────────────────────── */}
       <section id="blueprint" className="vs-section relative overflow-hidden scroll-mt-24 md:scroll-mt-28">
         <div
@@ -316,7 +350,7 @@ export default function ClinicsPage() {
         <div className="vs-container relative">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <p className="vs-section-heading">The clinic revenue blueprint</p>
+              <p className="vs-section-heading">Not ready to talk? Start here</p>
               <h2 className="vs-section-title max-w-lg">
                 Four questions about your practice. One honest answer about the money.
               </h2>
@@ -348,15 +382,25 @@ export default function ClinicsPage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/5 py-10">
+      {/* Extra bottom padding clears the fixed Isabel launcher (56px button +
+          24px offset + safe-area inset), so the last line of the footer is
+          never sitting underneath it on a phone. */}
+      <footer className="border-t border-white/5 pb-28 pt-10 md:pb-32">
         <div className="vs-container">
-          <Image
-            src="/images/vs-logo-premium.png"
-            alt="Vantage Stack"
-            width={861}
-            height={232}
-            className="mb-5 h-8 w-auto object-contain opacity-60"
-          />
+          {/* Same sub-brand lockup as the nav, quieter. */}
+          <div className="mb-5 flex items-center gap-2.5 opacity-60">
+            <Image
+              src="/images/vs-logo-premium.png"
+              alt="Vantage Stack"
+              width={861}
+              height={232}
+              className="h-8 w-auto object-contain"
+            />
+            <span aria-hidden className="h-4 w-px bg-white/20" />
+            <span className="font-heading text-sm font-medium leading-none text-textPrimary">
+              Clinics
+            </span>
+          </div>
           <p className="text-xs leading-relaxed text-textMuted">
             Vantage Stack builds booking and communication operations for private practices. The
             system handles scheduling, reminders and enquiry routing. It does not provide medical

@@ -32,15 +32,28 @@ export function ClinicsNav() {
             scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.65)]" : ""
           }`}
         >
-          <Link href="/" className="flex flex-shrink-0 items-center" aria-label="Vantage Stack home">
+          {/* Sub-brand lockup: the existing wordmark, a hairline rule, then
+              "Clinics". Built as a lockup rather than a new logo file so the
+              mark stays vector-crisp at every size and there is only ever one
+              logo asset to maintain. The divider is what makes it read as
+              "Vantage Stack ▸ Clinics" rather than two unrelated words. */}
+          <Link
+            href="/"
+            className="flex flex-shrink-0 items-center gap-2.5 sm:gap-3"
+            aria-label="Vantage Stack Clinics — home"
+          >
             <Image
               src="/images/vs-logo-premium.png"
               alt="Vantage Stack"
               width={861}
               height={232}
               priority
-              className="h-9 w-auto object-contain sm:h-12"
+              className="h-7 w-auto object-contain sm:h-12"
             />
+            <span aria-hidden className="h-4 w-px bg-white/15 sm:h-7" />
+            <span className="font-heading text-sm font-medium leading-none tracking-tight text-textPrimary sm:text-xl">
+              Clinics
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-7 text-xs text-textMuted md:flex">
@@ -53,13 +66,19 @@ export function ClinicsNav() {
             <a href="#roi" className="transition hover:text-textPrimary">
               ROI
             </a>
+            <a href="#book" className="transition hover:text-textPrimary">
+              Book
+            </a>
           </nav>
 
           <a
-            href="#blueprint"
-            className="vs-button-primary flex-shrink-0 !px-4 !py-2 !text-xs sm:!px-5 sm:!text-sm"
+            href="#book"
+            className="vs-button-primary flex-shrink-0 !px-3 !py-2 !text-xs sm:!px-5 sm:!text-sm"
           >
-            Book a demo
+            {/* Full label from sm up; just "Demo" on the narrowest phones, where
+                the lockup + full label overflow the pill. */}
+            <span className="sm:hidden">Demo</span>
+            <span className="hidden sm:inline">Book a demo</span>
           </a>
         </div>
       </div>

@@ -36,12 +36,5 @@
       "path": "/api/cron/seo-orchestrator?job=sunday_briefing",
       "schedule": "0 4 * * 0"
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "clinics.vantagestack.co.za" }],
-      "destination": "/clinics"
-    }
   ]
 }

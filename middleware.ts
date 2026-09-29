@@ -10,7 +10,10 @@ import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/midd
 const ADMIN_COOKIE = "vs_admin_session";
 
 export const config = {
+  // "/" is included solely for the clinics-subdomain rewrite below. Everything
+  // else in this matcher is the admin/CRM auth surface.
   matcher: [
+    "/",
     "/admin/:path*",
     "/crm/:path*",
     "/api/crm/:path*",
@@ -19,6 +22,9 @@ export const config = {
     "/api/clinic-crm/:path*",
   ],
 };
+
+/** Host that should serve the clinics landing page at its root. */
+const CLINICS_HOST = "clinics.vantagestack.co.za";
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("x-robots-tag", "noindex, nofollow");
@@ -58,6 +64,42 @@ export async function middleware(request: NextRequest) {
   // Clinic CRM has its own session and rules; it never falls through to admin auth.
   if (isClinicCrmPath(path)) {
     return clinicCrmMiddleware(request);
+  }
+
+  // ── Clinics subdomain ────────────────────────────────────────────────
+  // clinics.vantagestack.co.za shares this deployment with the main site, so
+  // its root must serve /clinics rather than the VantageStack homepage.
+  //
+  // This is done here rather than via a `rewrites()` entry in next.config.mjs
+  // or vercel.json: both were deployed and verified live to be ignored for this
+  // host (the response came back with X-Matched-Path: /). Middleware sees the
+  // real Host header and is the mechanism that actually works.
+  //
+  // Scoped to the root path only, so every other route on the subdomain still
+  // resolves normally, and returns immediately so no auth logic below can run
+  // against a marketing page.
+  if (path === "/") {
+    const host = (request.headers.get("host") || "").toLowerCase().split(":")[0];
+    if (host === CLINICS_HOST) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/clinics";
+      // REDIRECT, not rewrite — and this distinction cost a production bug.
+      //
+      // A rewrite makes the server render /clinics while the client router
+      // still believes the route is "/". App Router then hydrates the homepage
+      // component against clinics markup, React throws #418 (hydration
+      // mismatch) and the server HTML freezes: every client-side effect stops,
+      // which in practice meant the Isabel invite card could never unmount on
+      // the one origin the gating exists for.
+      //
+      // A redirect keeps server and client agreeing on the route. The cost is a
+      // visible /clinics in the address bar, which is a fair price for a page
+      // that actually hydrates. 308 so it is cached and method-preserving.
+      return NextResponse.redirect(url, 308);
+    }
+    // Any other host hitting "/" is the normal homepage — hand it straight back
+    // untouched. Without this the admin logic below would run on every visit.
+    return NextResponse.next();
   }
 
   if (isPublicAdminPath(path)) {

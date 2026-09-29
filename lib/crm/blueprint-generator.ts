@@ -114,7 +114,56 @@ export type BlueprintClientData = {
   team_size?: string | null;
   package_preference?: string | null;
   website_exists?: string | null;
+  site_conversion_status?: string | null;
+  avg_transaction_value?: string | null;
 };
+
+/** Map a tap-card range to a conservative representative rand value. */
+function avgDealToNumber(v?: string | null): number | null {
+  if (!v) return null;
+  const map: Record<string, number> = {
+    "Under R1k": 750,
+    "R1k – R5k": 3000,
+    "R5k – R20k": 12000,
+    "R20k – R100k": 50000,
+    "Over R100k": 150000,
+  };
+  return map[v.trim()] ?? null;
+}
+
+/** Weekly enquiry band → approx enquiries per month. */
+function enquiriesPerMonth(v?: string | null): number | null {
+  if (!v) return null;
+  const perWeek: Record<string, number> = {
+    "Fewer than 10": 5,
+    "10 – 30": 20,
+    "30 – 60": 45,
+    "More than 60": 70,
+  };
+  const w = perWeek[v.trim()];
+  return w ? Math.round(w * 4.33) : null;
+}
+
+/** Conversions-per-10 band → midpoint number. */
+function conversionPer10(v?: string | null): number | null {
+  if (!v || v === "I don't track this") return null;
+  const map: Record<string, number> = { "1–2": 1.5, "3–4": 3.5, "5–6": 5.5, "7 or more": 7.5 };
+  return map[v.trim()] ?? null;
+}
+
+/** ROI projection from avg deal value + current conversion + enquiry volume. */
+function computeRoi(p: { avg_transaction_value?: string | null; conversion_rate?: string | null; enquiry_volume?: string | null }) {
+  const deal = avgDealToNumber(p.avg_transaction_value);
+  const current = conversionPer10(p.conversion_rate);
+  const perMonth = enquiriesPerMonth(p.enquiry_volume);
+  if (!deal || current === null || !perMonth) return null;
+  // Conservative target: lift to at least 5/10, or +2, whichever is the smaller, realistic step.
+  const target = Math.min(current + 2, Math.max(current, 5));
+  if (target <= current) return null;
+  const extraClients = Math.round(perMonth * ((target - current) / 10) * 10) / 10;
+  const extraRevenue = Math.round(extraClients * deal);
+  return { deal, current, target, perMonth, extraClients, extraRevenue };
+}
 
 function toStr(v: string[] | string | null | undefined): string {
   if (!v) return "";
@@ -450,7 +499,17 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     lines.push(`| Current conversion rate | ${p.conversion_rate || "Not measured"} |`);
     lines.push(`| Response speed | ${p.speed_to_contact || "Not specified"} |`);
     lines.push(`| Follow-up method | ${p.follow_up_method || "Not described"} |`);
+    if (p.missed_call_handling) lines.push(`| When a call is missed | ${p.missed_call_handling} |`);
+    if (p.avg_transaction_value && p.avg_transaction_value !== "Not sure") {
+      lines.push(`| Average deal value | ${p.avg_transaction_value} |`);
+    }
     lines.push(``);
+
+    // Missed-call leak (uses missed_call_handling — previously captured but unused).
+    if (p.missed_call_handling && /miss it|find out later|rarely check|voicemail/i.test(p.missed_call_handling)) {
+      lines.push(`> 📵 **Missed-call leak:** you told us — "${p.missed_call_handling}". Every unanswered call is a high-intent lead handing themselves to a competitor. An AI call-handler answers every one, 24/7, and captures the lead before it's gone.`);
+      lines.push(``);
+    }
 
     lines.push(`**Revenue at Risk:**`);
     if (p.conversion_rate && /1[-–]2|^1$|^2$/i.test(p.conversion_rate)) {
@@ -460,6 +519,19 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
       lines.push(`Studies show businesses that respond within 5 minutes are 21× more likely to qualify a lead than those who respond the next day.`);
     }
     lines.push(``);
+
+    // ROI projection — needs avg deal value + current conversion + enquiry volume.
+    const roi = computeRoi(p);
+    if (roi) {
+      lines.push(`### 💰 Your ROI Opportunity`);
+      lines.push(
+        `You're getting roughly **${roi.perMonth} enquiries/month** and converting about **${roi.current} in 10**. Lifting that to a realistic **${roi.target} in 10** would win you about **${roi.extraClients} more clients every month**.`,
+      );
+      lines.push(
+        `At an average deal value of around **R${roi.deal.toLocaleString()}**, that's approximately **R${roi.extraRevenue.toLocaleString()} in additional revenue per month** — roughly **R${(roi.extraRevenue * 12).toLocaleString()} a year** — from the same enquiries you're already paying to generate.`,
+      );
+      lines.push(``);
+    }
   }
 
   if (p.primary_intent === "PRESENCE") {
@@ -470,7 +542,13 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     lines.push(`| Website | ${p.current_website_status || (p.website_url ? p.website_url : "Not specified")} |`);
     lines.push(`| Google Maps / GMB | ${p.google_maps_status || "Not specified"} |`);
     lines.push(`| Serve area | ${p.serve_area || "Not specified"} |`);
+    if (p.site_conversion_status) lines.push(`| Enquiries via website | ${p.site_conversion_status} |`);
     lines.push(``);
+    // Site-conversion leak (uses site_conversion_status — previously captured but unused).
+    if (p.site_conversion_status && /rarely|never|no idea/i.test(p.site_conversion_status)) {
+      lines.push(`> 🕳️ **Your site isn't converting:** you're getting found, but visitors aren't turning into enquiries ("${p.site_conversion_status}"). That's usually a clarity + capture problem, not a traffic one — the fastest win is a conversion-focused rebuild of your key pages.`);
+      lines.push(``);
+    }
   }
 
   if (p.primary_intent === "AUTOMATION") {
@@ -500,15 +578,25 @@ export function buildBlueprintMarkdown(p: BlueprintClientData, enrichment?: Webs
     lines.push(`## ${n++}. BUSINESS GROWTH OPPORTUNITY`);
     lines.push(``);
     const frustration = p.biggest_frustration || "your current growth challenges";
+    // Prefer their explicit pick (package_preference — previously captured but
+    // unused); fall back to inferring from the frustration.
+    const explicitPackage =
+      p.package_preference && !/not sure|recommend one/i.test(p.package_preference) ? p.package_preference : null;
     let recommendedPackage = "a tailored growth package";
-    if (frustration && /lead|enquir|client|sale/i.test(frustration)) {
+    if (explicitPackage) {
+      recommendedPackage = `the **${explicitPackage}**`;
+    } else if (frustration && /lead|enquir|client|sale/i.test(frustration)) {
       recommendedPackage = "the LEADS conversion package";
     } else if (frustration && /website|online|visible|find/i.test(frustration)) {
       recommendedPackage = "the PRESENCE package";
     } else if (frustration && /time|admin|manual|slow/i.test(frustration)) {
       recommendedPackage = "the AUTOMATION package";
     }
-    lines.push(`Based on your biggest frustration — **${frustration}** — the highest-impact starting point for ${businessName} is ${recommendedPackage}.`);
+    lines.push(
+      explicitPackage
+        ? `You told us **${explicitPackage}** sounds closest to what you need — and based on your biggest frustration (**${frustration}**), that's a strong fit. The highest-impact starting point for ${businessName} is ${recommendedPackage}.`
+        : `Based on your biggest frustration — **${frustration}** — the highest-impact starting point for ${businessName} is ${recommendedPackage}.`,
+    );
     lines.push(``);
   }
 

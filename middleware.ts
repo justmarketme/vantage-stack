@@ -5,13 +5,22 @@ import { roleMayAccessPage } from "./lib/admin/rbac-paths";
 import type { TeamRole } from "./lib/admin/roles";
 import { can } from "./lib/admin/roles";
 import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
+import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/middleware";
 
 const ADMIN_COOKIE = "vs_admin_session";
 
 export const config = {
   // "/" is included solely for the clinics-subdomain rewrite below. Everything
   // else in this matcher is the admin/CRM auth surface.
-  matcher: ["/", "/admin/:path*", "/crm/:path*", "/api/crm/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/",
+    "/admin/:path*",
+    "/crm/:path*",
+    "/api/crm/:path*",
+    "/api/admin/:path*",
+    "/clinic-crm/:path*",
+    "/api/clinic-crm/:path*",
+  ],
 };
 
 /** Host that should serve the clinics landing page at its root. */
@@ -51,6 +60,11 @@ function isPublicAdminApi(pathname: string, method: string) {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const method = request.method;
+
+  // Clinic CRM has its own session and rules; it never falls through to admin auth.
+  if (isClinicCrmPath(path)) {
+    return clinicCrmMiddleware(request);
+  }
 
   // ── Clinics subdomain ────────────────────────────────────────────────
   // clinics.vantagestack.co.za shares this deployment with the main site, so

@@ -229,7 +229,13 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
   );
 }
 
+/** The clinic CRM is a staff app with its own bottom navigation; the sales widget would cover it. */
 export function IsabelWidget() {
+  const pathname = usePathname();
+  return pathname?.startsWith("/clinic-crm") ? null : <IsabelWidgetPanel />;
+}
+
+function IsabelWidgetPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);

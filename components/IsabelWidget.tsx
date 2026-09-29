@@ -255,7 +255,20 @@ export function IsabelWidget() {
    * These pages still get the compact launcher, so Isabel is one tap away; it
    * is only the large auto-appearing invite that is suppressed.
    */
-  const onClinics = !!pathname?.startsWith("/clinics");
+  //
+  // NOTE ON THE HOST CHECK: clinics.vantagestack.co.za serves /clinics via a
+  // SERVER-SIDE rewrite in middleware, so on that origin `usePathname()`
+  // returns "/" — the path the browser asked for — not "/clinics". Matching on
+  // pathname alone therefore missed the subdomain entirely and the big invite
+  // card reappeared in production, which is the exact thing this gating exists
+  // to prevent. The host is read after mount so the first client render still
+  // matches the server output and hydration stays clean.
+  const [onClinicsHost, setOnClinicsHost] = useState(false);
+  useEffect(() => {
+    setOnClinicsHost(window.location.hostname.toLowerCase().startsWith("clinics."));
+  }, []);
+
+  const onClinics = !!pathname?.startsWith("/clinics") || onClinicsHost;
   const minimalInvite = onBlueprint || onClinics;
 
   const { startSession, endSession, sendUserMessage, sendContextualUpdate, sendFeedback, status, canSendFeedback, isSpeaking } =

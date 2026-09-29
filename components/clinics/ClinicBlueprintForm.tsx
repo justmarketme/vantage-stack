@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AFTER_HOURS_HANDLING,
   CLINIC_TYPES,
@@ -127,6 +127,9 @@ function Text({
   placeholder,
   prefix,
   suffix,
+  autoComplete,
+  inputMode,
+  autoFocus,
 }: {
   label: string;
   hint?: string;
@@ -137,6 +140,11 @@ function Text({
   placeholder?: string;
   prefix?: string;
   suffix?: string;
+  /** Lets the browser fill this from the visitor's saved details. */
+  autoComplete?: string;
+  /** Picks the on-screen keyboard on phones — the single biggest mobile win. */
+  inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url";
+  autoFocus?: boolean;
 }) {
   const id = label.replace(/\W+/g, "-").toLowerCase();
   return (
@@ -154,12 +162,17 @@ function Text({
         <input
           id={id}
           type={type}
-          inputMode={type === "number" ? "numeric" : undefined}
+          // Explicit inputMode wins; fall back to numeric for number fields so a
+          // phone never shows the alphabet keyboard for a figure.
+          inputMode={inputMode ?? (type === "number" ? "numeric" : undefined)}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
           className={`vs-input ${prefix ? "pl-7" : ""} ${suffix ? "pr-9" : ""}`}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
         />
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-textMuted">
@@ -167,7 +180,11 @@ function Text({
           </span>
         )}
       </div>
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-xs text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -183,6 +200,18 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
   // password manager (autoComplete="off" + tabIndex -1). A non-empty value on
   // submit means a bot walked the DOM filling every input it found.
   const [honeypot, setHoneypot] = useState("");
+
+  // Focus management. Without this, advancing a step leaves keyboard and
+  // screen-reader users parked on the old "Continue" button with no signal that
+  // the content changed underneath them. Focusing the step heading announces
+  // the new step and puts Tab in the right place.
+  const stepHeadingRef = useRef<HTMLParagraphElement | null>(null);
+  const hasAdvanced = useRef(false);
+  useEffect(() => {
+    // Skip the very first render so we do not steal focus on page load.
+    if (!hasAdvanced.current) { hasAdvanced.current = true; return; }
+    stepHeadingRef.current?.focus();
+  }, [step]);
 
   const set = <K extends keyof FormState>(key: K, v: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: v }));
@@ -322,12 +351,31 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
     );
   }
 
+  /**
+   * A real <form> so Enter does the obvious thing — advance on steps 1-3,
+   * submit on step 4. Without it the visitor has to reach for the mouse on
+   * every step, which on a phone means dismissing the keyboard each time.
+   */
+  const onFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting) return;
+    if (step < 3) next();
+    else void submit();
+  };
+
   return (
-    <div className="vs-card relative">
+    <form className="vs-card relative" onSubmit={onFormSubmit} noValidate>
       {/* Progress */}
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
-          <p className="vs-section-heading !mb-0">
+          <p
+            ref={stepHeadingRef}
+            tabIndex={-1}
+            // aria-live so the step change is announced even when focus does not
+            // land here (e.g. a validation failure kept us on the same step).
+            aria-live="polite"
+            className="vs-section-heading !mb-0 outline-none"
+          >
             Step {step + 1} of 4 · {STEP_TITLES[step]}
           </p>
           <span className="text-xs tabular-nums text-textMuted">{Math.round(progress)}%</span>
@@ -355,6 +403,7 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
             value={form.practiceName}
             onChange={(v) => set("practiceName", v)}
             error={errors.practiceName}
+            autoComplete="organization"
           />
           <Select
             label="What kind of practice is it?"
@@ -471,16 +520,20 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
             value={form.contactName}
             onChange={(v) => set("contactName", v)}
             error={errors.contactName}
+            autoComplete="name"
           />
           <Text
             label="Your role"
             hint="Optional — owner, practice manager, principal."
             value={form.role}
             onChange={(v) => set("role", v)}
+            autoComplete="organization-title"
           />
           <Text
             label="Email"
             type="email"
+            inputMode="email"
+            autoComplete="email"
             value={form.email}
             onChange={(v) => set("email", v)}
             error={errors.email}
@@ -489,6 +542,9 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
             label="WhatsApp"
             hint="This is where the blueprint is sent."
             placeholder="+27 82 123 4567"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={form.whatsapp}
             onChange={(v) => set("whatsapp", v)}
             error={errors.whatsapp}
@@ -497,6 +553,9 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
             label="Website"
             hint="Optional."
             placeholder="yourpractice.co.za"
+            type="url"
+            inputMode="url"
+            autoComplete="url"
             value={form.websiteUrl}
             onChange={(v) => set("websiteUrl", v)}
             error={errors.websiteUrl}
@@ -540,7 +599,11 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
       )}
 
       {serverError && (
-        <p className="mt-5 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-4 py-3 text-sm text-red-300">
+        <p
+          role="alert"
+          aria-live="assertive"
+          className="mt-5 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-4 py-3 text-sm text-red-300"
+        >
           {serverError}
         </p>
       )}
@@ -557,13 +620,12 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
         </button>
 
         {step < 3 ? (
-          <button type="button" onClick={next} className="vs-button-primary">
+          <button type="submit" className="vs-button-primary">
             Continue
           </button>
         ) : (
           <button
-            type="button"
-            onClick={submit}
+            type="submit"
             disabled={submitting}
             className="vs-button-primary disabled:opacity-60"
           >
@@ -576,6 +638,6 @@ export function ClinicBlueprintForm({ roi }: { roi?: RoiResult | null }) {
         The blueprint is free and yours either way — there is no call to sit through before you
         get it.
       </p>
-    </div>
+    </form>
   );
 }

@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   description:
     "Stop losing patients to missed calls, slow replies and no-shows. Vantage Stack connects enquiry, booking, confirmation and recall into one system — with a transparent ROI calculator and a free clinic revenue blueprint.",
   alternates: {
-    canonical: "https://clinics.vantagestack.co.za/",
+    canonical: "https://clinics.vantagestack.co.za/clinics",
   },
   openGraph: {
     title: "Your clinic doesn't need another website. It needs a revenue system.",
     description:
       "Missed calls, late replies, no-shows and patients who never came back. See what those four gaps are worth at your own numbers.",
-    url: "https://clinics.vantagestack.co.za/",
+    url: "https://clinics.vantagestack.co.za/clinics",
     siteName: "Vantage Stack",
     type: "website",
   },

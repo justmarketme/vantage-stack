@@ -69,7 +69,19 @@ export async function middleware(request: NextRequest) {
     if (host === CLINICS_HOST) {
       const url = request.nextUrl.clone();
       url.pathname = "/clinics";
-      return NextResponse.rewrite(url);
+      // REDIRECT, not rewrite — and this distinction cost a production bug.
+      //
+      // A rewrite makes the server render /clinics while the client router
+      // still believes the route is "/". App Router then hydrates the homepage
+      // component against clinics markup, React throws #418 (hydration
+      // mismatch) and the server HTML freezes: every client-side effect stops,
+      // which in practice meant the Isabel invite card could never unmount on
+      // the one origin the gating exists for.
+      //
+      // A redirect keeps server and client agreeing on the route. The cost is a
+      // visible /clinics in the address bar, which is a fair price for a page
+      // that actually hydrates. 308 so it is cached and method-preserving.
+      return NextResponse.redirect(url, 308);
     }
     // Any other host hitting "/" is the normal homepage — hand it straight back
     // untouched. Without this the admin logic below would run on every visit.

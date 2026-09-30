@@ -125,6 +125,15 @@ Recorded from Jono, 2026-09-30. These win over the directive above where they co
      consultant on the call (wrap-up "agreed to WhatsApp follow-up"), or by the landing-page
      form. Opt-outs are honoured forever.
    - Keep only business-relevant fields; no scraping of patients or personal social profiles.
+   - **Sources:** Claude scraping, Google Places, Serper.dev, Apollo, Tavily, Exa and the in-app
+     prospecting engine all feed ONE intake (`ScrapedLeadImport` with a `provider`, via the
+     manager import or the signed n8n `leads.import` action). The research tools run in n8n /
+     Claude workflows; the app validates, normalises to +27, dedupes and records provenance.
+   - **Other ways leads arrive are handled differently.** Word-of-mouth (`referral`, with
+     `referredBy`), events and consultant-added leads are *outbound*: same rule as scraped
+     (call yes, Emma only after opt-in). Social-media enquiries (`social_inbound`, with platform
+     + handle), landing-page forms and inbound calls are *inbound*: the clinic contacted us, so
+     Emma may follow up on that enquiry. Opt-outs always win.
 
 ## Supplementary directive (2026-09-30) — accepted into the plan
 

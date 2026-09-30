@@ -83,6 +83,31 @@ export type NoteKind = (typeof NOTE_KINDS)[number];
 export const DEAL_HEALTH = ["red", "yellow", "green"] as const;
 export type DealHealth = (typeof DEAL_HEALTH)[number];
 
+/**
+ * Where a Clinics lead came from. This decides what Emma may do (POPIA s.69):
+ * - OUTBOUND (we found them): `public_scrape`, `referral`, `event`, `consultant_portal`, `other`
+ *   → consultants may call; Emma needs the clinic's opt-in before any WhatsApp/SMS/email.
+ * - INBOUND (they contacted us): `landing_page`, `social_inbound`, `inbound_call`
+ *   → Emma may follow up on their enquiry; opt-outs still honoured.
+ */
+export const LEAD_SOURCES = [
+  "public_scrape",
+  "landing_page",
+  "social_inbound",
+  "inbound_call",
+  "referral",
+  "event",
+  "consultant_portal",
+  "other",
+] as const;
+export type LeadSource = (typeof LEAD_SOURCES)[number];
+
+export const INBOUND_LEAD_SOURCES: readonly LeadSource[] = ["landing_page", "social_inbound", "inbound_call"];
+export const isInboundSource = (s: LeadSource | null | undefined): boolean => !!s && INBOUND_LEAD_SOURCES.includes(s);
+
+export const SOCIAL_PLATFORMS = ["instagram", "facebook", "tiktok", "linkedin", "whatsapp", "other"] as const;
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+
 // ── Normalisers shared by client and server ─────────────────────────────────
 
 /** E.164 after normalisation; ZA local numbers (0XXXXXXXXX) are converted to +27. */
@@ -130,7 +155,13 @@ export const LeadInput = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email").max(160).optional().or(z.literal("").transform(() => undefined)),
   website: url.optional().or(z.literal("").transform(() => undefined)),
   city: optionalText(80),
-  source: optionalText(80),
+  /** How this lead reached us (see LEAD_SOURCES). Defaults to consultant_portal (outbound). */
+  source: z.enum(LEAD_SOURCES).default("consultant_portal"),
+  /** Word of mouth: who referred them (name / clinic). */
+  referredBy: optionalText(120),
+  /** Social media: platform + handle or profile link the enquiry came through. */
+  socialPlatform: z.enum(SOCIAL_PLATFORMS).optional(),
+  socialHandle: optionalText(200),
   nextAction: optionalText(200),
   nextActionAt: z.string().datetime({ offset: true }).optional(),
 });
@@ -233,7 +264,10 @@ export type Lead = {
   email: string | null;
   website: string | null;
   city: string | null;
-  source: string | null;
+  source: string | null; // a LeadSource for Clinics leads
+  referredBy?: string | null;
+  socialPlatform?: SocialPlatform | null;
+  socialHandle?: string | null;
   vertical: typeof CLINICS_VERTICAL;
   salesStage: SalesStage;
   salesStageChangedAt: string;
@@ -260,12 +294,29 @@ export type Lead = {
 
 export type MessagingConsent = "opted_in" | "opted_out" | "none";
 
-/** Where a Clinics lead came from. `public_scrape` = public business listings (e.g. Google). */
-export const LEAD_SOURCES = ["public_scrape", "landing_page", "consultant_portal", "referral", "other"] as const;
-export type LeadSource = (typeof LEAD_SOURCES)[number];
 
-/** Managers send scraper results into the Clinics pool (unassigned). */
+
+/**
+ * Every tool that finds clinics feeds ONE intake. The research tools themselves
+ * (Apollo, Serper.dev, Tavily, Exa, Claude scraping, Google Places, the in-app
+ * prospecting engine) run in n8n / Claude workflows or the CRM scraper; the app
+ * only validates, normalises (+27), dedupes and records provenance.
+ */
+export const LEAD_PROVIDERS = [
+  "google_places",
+  "serper",
+  "apollo",
+  "tavily",
+  "exa",
+  "claude_scrape",
+  "prospecting",
+  "manual",
+] as const;
+export type LeadProvider = (typeof LEAD_PROVIDERS)[number];
+
+/** Managers (UI) or n8n/Claude workflows (signed ingress) send found clinics into the Clinics pool. */
 export const ScrapedLeadImport = z.object({
+  provider: z.enum(LEAD_PROVIDERS),
   leads: z
     .array(
       z.object({
@@ -276,6 +327,10 @@ export const ScrapedLeadImport = z.object({
         address: z.string().trim().max(300).nullable(),
         placeId: z.string().trim().max(200).nullable(),
         ownerName: z.string().trim().max(120).nullable(),
+        /** A named decision-maker (e.g. from Apollo). Business role only — no personal profiling. */
+        contactName: z.string().trim().max(120).nullable().optional(),
+        contactRole: z.string().trim().max(120).nullable().optional(),
+        city: z.string().trim().max(80).nullable().optional(),
         /** Public page the details were taken from (POPIA s.18: we must be able to tell them). */
         sourceUrl: z.string().trim().max(500).nullable(),
       }),
@@ -810,6 +865,12 @@ export const N8nIngress = z.discriminatedUnion("action", [
     leadId: z.string().uuid(),
     nextAction: z.string().trim().max(200),
     nextActionAt: z.string().datetime({ offset: true }).nullable(),
+  }),
+  z.object({
+    action: z.literal("leads.import"),
+    idempotencyKey: z.string().min(8).max(120),
+    /** Same shape as the manager import: provider + leads (Apollo, Serper, Tavily, Exa, Claude…). */
+    batch: ScrapedLeadImport,
   }),
   z.object({ action: z.literal("ping"), idempotencyKey: z.string().min(8).max(120) }),
 ]);

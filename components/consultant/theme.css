@@ -4,13 +4,18 @@
  * the marketing site. Components reference these via Tailwind arbitrary values,
  * e.g. `bg-[var(--cp-surface)]`, `text-[var(--cp-coach)]`.
  *
- * Contrast (WCAG AA, text on --cp-surface #1E1E1E): text 15.3:1, muted 6.6:1,
- * coach 9.2:1, objection 10.0:1, progress 8.7:1, risk 6.0:1, accent-text 6.6:1
+ * Palette = the standard VantageStack design system (tailwind.config.ts:
+ * background #0B0B0C, surface #1A1A1D, accent #3B82F6, textPrimary #F8F9FA,
+ * textMuted #9CA3AF). No F1 / telemetry / neon styling — decided by Jono,
+ * 2026-09-30 (see docs/AGENT_ARCHITECTURE.md).
+ *
+ * Contrast (WCAG AA, text on --cp-surface #1A1A1D): text 16.5:1, muted 6.8:1,
+ * coach 6.8:1, objection 10.4:1, progress 9.0:1, risk 6.3:1, accent-text 6.8:1
  * (all still ≥ 4.8:1 on --cp-surface-3).
  * White on --cp-accent-strong 5.2:1, on --cp-risk-strong 4.8:1.
  *
  * Colour semantics (Rams: colour only where it carries meaning):
- *   coach     — Coach Alex (neon cyan)
+ *   coach     — Coach Alex (VantageStack blue, light)
  *   objection — objections + "stall" cards (amber)
  *   progress  — deal progression (emerald)
  *   risk      — high-risk cards, hang up, recording (red)
@@ -18,29 +23,29 @@
  *   accent    — navigation + primary actions (VantageStack blue)
  */
 .cp-theme {
-  --cp-bg: #121212;
-  --cp-surface: #1e1e1e;
-  --cp-surface-2: #262626;
-  --cp-surface-3: #303030;
+  --cp-bg: #0b0b0c;
+  --cp-surface: #1a1a1d;
+  --cp-surface-2: #222226;
+  --cp-surface-3: #2b2b30;
   --cp-border: rgba(255, 255, 255, 0.08);
   --cp-border-strong: rgba(255, 255, 255, 0.18);
-  --cp-text: #f5f5f5;
-  --cp-muted: #a3a3a3;
+  --cp-text: #f8f9fa;
+  --cp-muted: #9ca3af;
   --cp-on-strong: #ffffff;
-  --cp-scrim: rgba(8, 8, 8, 0.72);
+  --cp-scrim: rgba(11, 11, 12, 0.72);
 
   --cp-accent: #3b82f6;
   --cp-accent-strong: #2563eb;
   --cp-accent-text: #60a5fa;
   --cp-accent-soft: rgba(59, 130, 246, 0.14);
 
-  --cp-coach: #22d3ee;
-  --cp-coach-soft: rgba(34, 211, 238, 0.1);
-  --cp-coach-glow: rgba(34, 211, 238, 0.28);
+  --cp-coach: #60a5fa;
+  --cp-coach-soft: rgba(96, 165, 250, 0.1);
+  --cp-coach-glow: rgba(96, 165, 250, 0.18);
 
   --cp-objection: #fbbf24;
   --cp-objection-soft: rgba(251, 191, 36, 0.12);
-  --cp-objection-glow: rgba(251, 191, 36, 0.3);
+  --cp-objection-glow: rgba(251, 191, 36, 0.18);
 
   --cp-progress: #34d399;
   --cp-progress-soft: rgba(52, 211, 153, 0.12);
@@ -48,7 +53,7 @@
   --cp-risk: #f87171;
   --cp-risk-strong: #dc2626;
   --cp-risk-soft: rgba(248, 113, 113, 0.12);
-  --cp-risk-glow: rgba(248, 113, 113, 0.32);
+  --cp-risk-glow: rgba(248, 113, 113, 0.2);
 
   --cp-health-red: var(--cp-risk);
   --cp-health-yellow: var(--cp-objection);

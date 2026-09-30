@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // The root layout already sets viewportFit: "cover" (safe-area insets work);
 // this only matches the browser chrome to the portal's base colour.
 export const viewport: Viewport = {
-  themeColor: "#121212",
+  themeColor: "#0B0B0C",
 };
 
 export default function ConsultantLayout({ children }: { children: ReactNode }) {

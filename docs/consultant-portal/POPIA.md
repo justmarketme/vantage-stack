@@ -98,10 +98,11 @@ Twilio, Anthropic and Supabase all offer standard DPAs.
 | AI summaries and notes | life of the business relationship; Lost leads + 12 months |
 | Card events | 12 months (coaching analytics only) |
 
-Today the portal does **not** delete anything automatically. Until it does, recordings must be
-deleted manually on the chosen schedule (DEPLOY.md §5). Retention periods should be config
-values enforced by the existing `consultant-sweep` cron (see the contract request in the
-DevOps report).
+The `consultant-sweep` cron enforces two of these automatically (verified against a real
+Postgres in `tests/integration/consultant/`): Twilio recordings older than
+`CONSULTANT_RECORDING_RETENTION_DAYS` (default 90) are deleted on Twilio and their SID cleared,
+and transcript segments older than `CONSULTANT_TRANSCRIPT_RETENTION_DAYS` (default 365) are
+deleted; summaries and notes stay. Lost-lead and card-event retention are **not** automated yet.
 
 ## Data-subject requests, export and deletion
 

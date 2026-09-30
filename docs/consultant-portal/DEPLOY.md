@@ -70,9 +70,10 @@ The TwiML uses `<Start><Transcription>` (Real-Time Transcription) with language
 - [ ] **Leave "Voice Recording Encryption" (public-key) OFF** unless the recording proxy is
       extended to decrypt with your private key — otherwise every recording becomes
       unplayable in the portal. Twilio already encrypts stored recordings at rest.
-- [ ] Decide the retention period (see `POPIA.md` → Retention) and record it. The portal
-      does not yet delete old recordings automatically — until it does, delete them on that
-      schedule in Console → Monitor → Call recordings, or via the Recordings API.
+- [ ] Decide the retention period (see `POPIA.md` → Retention) and set
+      `CONSULTANT_RECORDING_RETENTION_DAYS` / `CONSULTANT_TRANSCRIPT_RETENTION_DAYS` (defaults
+      90 / 365). The `consultant-sweep` cron deletes older recordings (via the Recordings API)
+      and transcript segments; it needs the cron running (step 0).
 
 ## 6. Vercel environment variables
 

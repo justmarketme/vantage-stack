@@ -79,7 +79,13 @@ export async function applyCallStatus(
       update public.consultant_calls set
         status = ${forward ? input.status : cur.status},
         twilio_child_sid = coalesce(twilio_child_sid, ${input.childSid ?? null}),
-        answered_at = case when ${answered} then coalesce(answered_at, now()) else answered_at end,
+        -- A late "answered" (after the final callback) must not stamp now(): that would put
+        -- answered_at after ended_at and make talk time negative (stats, summary skip, CRM).
+        -- Back-date it from the end by Twilio's duration instead.
+        answered_at = case when ${answered} then coalesce(
+          answered_at,
+          case when ended_at is not null then ended_at - make_interval(secs => coalesce(duration_sec, 0)) else now() end
+        ) else answered_at end,
         ended_at = case when ${final} then coalesce(ended_at, now()) else ended_at end,
         duration_sec = coalesce(duration_sec, ${final ? duration : null}::int),
         summary_status = case

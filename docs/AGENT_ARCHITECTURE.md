@@ -100,5 +100,9 @@ Recorded from Jono, 2026-09-30. These win over the directive above where they co
    but on 2026-09-30 Jono also asked for the "Dark F1-telemetry command center" to be excluded
    as creep from a separate project. Until he confirms, use the existing VantageStack design
    system (Space Grotesk + Inter, dark) and do not introduce F1/telemetry styling.
-2. **Hosting.** Sub-agent 5.1 mentions Lovable.dev; this repo is Next.js on Vercel. Confirm
-   before moving anything.
+
+## Resolved
+
+- **Lovable.dev (Sub-agent 5.1).** Not a hosting move. It is a *reference* for what any
+  vibe-coding / builder-style interface section should look and feel like, if the platform ever
+  needs one. The app stays Next.js on Vercel. (Jono, 2026-09-30)

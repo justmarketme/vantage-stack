@@ -59,7 +59,7 @@ export const SummaryView = memo(function SummaryView({ summary }: { summary: Cal
                     {o.handled ? (
                       <CircleCheck size={16} className="mt-0.5 shrink-0 text-[--cp-progress]" aria-label="Handled" />
                     ) : (
-                      <CircleX size={16} className="mt-0.5 shrink-0 text-[--cp-objection]" aria-label="Missed" />
+                      <CircleX size={16} className="mt-0.5 shrink-0 text-[--cp-risk]" aria-label="Missed" />
                     )}
                     <span>
                       {o.objection}

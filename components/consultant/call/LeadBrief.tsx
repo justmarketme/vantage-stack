@@ -48,7 +48,7 @@ export const LeadBrief = memo(function LeadBrief({ lead }: { lead: Lead | undefi
         <div className="mt-4 rounded-xl bg-[--cp-surface-2] p-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[--cp-muted]">Planned for this call</p>
           <p className="mt-0.5 text-sm text-[--cp-text]">{lead.nextAction ?? "Follow up"}</p>
-          {due && <p className={cx("text-xs", due.overdue ? "text-[--cp-objection]" : "text-[--cp-muted]")}>{due.label}</p>}
+          {due && <p className={cx("text-xs", due.overdue ? "text-[--cp-risk]" : "text-[--cp-muted]")}>{due.label}</p>}
         </div>
       )}
       <Link href={`/consultant/leads/${lead.id}`} className={buttonClass("ghost", "md", "-ml-3 mt-4")}>

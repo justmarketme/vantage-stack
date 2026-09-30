@@ -219,7 +219,7 @@ const NoteItem = memo(function NoteItem({
       )}
 
       {pendingPatch && pendingPatch.status === "conflict" ? (
-        <div role="alert" className="mt-3 rounded-xl bg-[--cp-objection-soft] p-3 text-sm text-[--cp-text]">
+        <div role="alert" className="mt-3 rounded-xl bg-[--cp-risk-soft] p-3 text-sm text-[--cp-text]">
           <p>{pendingPatch.lastError ?? "Someone else edited this note."} Your version:</p>
           <p className="mt-1 whitespace-pre-wrap text-[--cp-muted]">{pendingPatch.patch.body}</p>
           <div className="mt-2 flex gap-2">

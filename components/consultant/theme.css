@@ -6,17 +6,17 @@
  *
  * Palette = the standard VantageStack design system (tailwind.config.ts:
  * background #0B0B0C, surface #1A1A1D, accent #3B82F6, textPrimary #F8F9FA,
- * textMuted #9CA3AF). No F1 / telemetry / neon styling — decided by Jono,
+ * textMuted #9CA3AF). The standard VantageStack look only, and no amber — decided by Jono,
  * 2026-09-30 (see docs/AGENT_ARCHITECTURE.md).
  *
  * Contrast (WCAG AA, text on --cp-surface #1A1A1D): text 16.5:1, muted 6.8:1,
- * coach 6.8:1, objection 10.4:1, progress 9.0:1, risk 6.3:1, accent-text 6.8:1
+ * coach 6.8:1, health-yellow 11.3:1, progress 9.0:1, risk 6.3:1, accent-text 6.8:1
  * (all still ≥ 4.8:1 on --cp-surface-3).
  * White on --cp-accent-strong 5.2:1, on --cp-risk-strong 4.8:1.
  *
  * Colour semantics (Rams: colour only where it carries meaning):
  *   coach     — Coach Alex (VantageStack blue, light)
- *   objection — objections + "stall" cards (amber)
+ *   stall     — "stall" cards (brand blue; no amber anywhere in this build)
  *   progress  — deal progression (emerald)
  *   risk      — high-risk cards, hang up, recording (red)
  *   health-*  — Red / Yellow / Green deal health, always paired with a label
@@ -43,9 +43,9 @@
   --cp-coach-soft: rgba(96, 165, 250, 0.1);
   --cp-coach-glow: rgba(96, 165, 250, 0.18);
 
-  --cp-objection: #fbbf24;
-  --cp-objection-soft: rgba(251, 191, 36, 0.12);
-  --cp-objection-glow: rgba(251, 191, 36, 0.18);
+  --cp-stall: #60a5fa;
+  --cp-stall-soft: rgba(96, 165, 250, 0.12);
+  --cp-stall-glow: rgba(96, 165, 250, 0.2);
 
   --cp-progress: #34d399;
   --cp-progress-soft: rgba(52, 211, 153, 0.12);
@@ -56,7 +56,7 @@
   --cp-risk-glow: rgba(248, 113, 113, 0.2);
 
   --cp-health-red: var(--cp-risk);
-  --cp-health-yellow: var(--cp-objection);
+  --cp-health-yellow: #facc15; /* deal health only (Red/Yellow/Green) */
   --cp-health-green: var(--cp-progress);
 
   --cp-radius: 16px;
@@ -75,10 +75,11 @@
   box-shadow: inset 3px 0 0 var(--cp-risk), 0 0 28px -8px var(--cp-risk-glow);
 }
 .cp-theme .cp-edge-stall {
-  box-shadow: inset 3px 0 0 var(--cp-objection), 0 0 28px -8px var(--cp-objection-glow);
+  box-shadow: inset 3px 0 0 var(--cp-stall), 0 0 28px -8px var(--cp-stall-glow);
 }
+/* Guide (stage) cards are calm: a neutral edge, no glow, so blue always means "stall". */
 .cp-theme .cp-edge-guide {
-  box-shadow: inset 3px 0 0 var(--cp-coach), 0 0 24px -10px var(--cp-coach-glow);
+  box-shadow: inset 3px 0 0 var(--cp-border-strong);
 }
 
 /* Coach Alex avatar: one soft ring when new advice lands. */

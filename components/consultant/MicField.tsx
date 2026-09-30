@@ -96,7 +96,7 @@ export function MicField({
         {speech.listening && <p className="mt-1 text-xs text-[--cp-muted]">Listening… say it naturally.</p>}
       </div>
       {speech.error && (
-        <p id={`${id}-mic`} className="mt-1 text-xs text-[--cp-objection]">
+        <p id={`${id}-mic`} className="mt-1 text-xs text-[--cp-risk]">
           {speech.error}
         </p>
       )}

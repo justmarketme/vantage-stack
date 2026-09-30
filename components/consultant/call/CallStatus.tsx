@@ -31,7 +31,7 @@ export const CallStatusLabel = memo(function CallStatusLabel({
         ? "bg-[--cp-risk]"
         : state === "ended" || state === "idle"
           ? "bg-[--cp-muted]"
-          : "bg-[--cp-objection]";
+          : "bg-[--cp-accent]";
   return (
     <span className={cx("inline-flex items-center gap-1.5 text-sm text-[--cp-text]", className)}>
       <span aria-hidden className={cx("h-2 w-2 rounded-full", dot)} />

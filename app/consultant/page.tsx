@@ -87,7 +87,7 @@ export default function TodayPage() {
         <SectionTitle
           aside={
             stats.data && stats.data.dueFollowUps > 0 ? (
-              <span className="text-xs text-[--cp-objection]">{stats.data.dueFollowUps} follow-ups due</span>
+              <span className="text-xs text-[--cp-accent-text]">{stats.data.dueFollowUps} follow-ups due</span>
             ) : undefined
           }
         >

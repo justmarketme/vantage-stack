@@ -10,7 +10,7 @@ import { QueueDots, SEVERITY_LABEL } from "./cardParts";
 import { StageTracker } from "./StageTracker";
 
 /**
- * Desktop Coach Alex panel ("Command Center"). Used docked in the live-call
+ * Desktop Coach Alex panel. Used docked in the live-call
  * page's right column and inside the floating widget on other pages.
  *
  * The card area is a RESERVED box (flex-1, fixed by its container): cards

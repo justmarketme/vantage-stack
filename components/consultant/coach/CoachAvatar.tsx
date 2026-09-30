@@ -18,7 +18,7 @@ export const CoachAvatar = memo(function CoachAvatar({
   severity?: "high_risk" | "stall" | "guide" | null;
 }) {
   const ring =
-    severity === "high_risk" ? "border-[--cp-risk]" : severity === "stall" ? "border-[--cp-objection]" : "border-[--cp-coach]";
+    severity === "high_risk" ? "border-[--cp-risk]" : severity === "stall" ? "border-[--cp-stall]" : "border-[--cp-coach]";
   return (
     <span className="relative inline-flex shrink-0" style={{ width: size, height: size }} aria-hidden>
       {pulseKey && <span key={pulseKey} className={cx("cp-avatar-ping absolute inset-0 rounded-full border-2", ring)} />}

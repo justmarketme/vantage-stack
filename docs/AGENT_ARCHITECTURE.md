@@ -12,15 +12,14 @@
 
 ## Agent 1 — Chief Adaptive UI/UX & Interaction Designer
 
-- **Strategic influence:** Fuselab Creative (dark-mode, high-density data visualisation and
-  telemetry dashboards) and Clay Global (sleek, frictionless B2B enterprise user journeys).
-- **Why:** the platform requires a cinematic, high-status "Formula 1 Command Center" aesthetic
-  for the internal sales team, but must also use progressive disclosure so clinic owners aren't
-  overwhelmed by data. *(See Open question 1 before applying the F1 aesthetic.)*
+- **Strategic influence:** Fuselab Creative (clear, dense data visualisation) and Clay Global
+  (sleek, frictionless B2B enterprise user journeys).
+- **Why:** consultants need a motivating, high-performance workspace that never feels like a
+  spreadsheet, with progressive disclosure so nobody is overwhelmed by data.
 
 | Sub-agent | Persona | Directives |
 |---|---|---|
-| 1.1 Visual Design Lead | Dieter Rams | Functional minimalism. Enforces the strict dark-mode palette; colour-coded deal-health metrics (Red/Yellow/Green) pop against the dark UI without causing eye strain. |
+| 1.1 Visual Design Lead | Dieter Rams | Functional minimalism. Enforces the VantageStack dark palette; colour-coded deal-health metrics (Red/Yellow/Green) read instantly without causing eye strain. |
 | 1.2 Behavioural Psychologist | Jeremy Miner & BJ Fogg | Owns the "Coach Alex" persona. Structures the NEPQ (Neuro-Emotional Persuasion Questioning) UI prompts for the Live Coaching Hub and designs the psychological triggers for the Gamified Leaderboard and "Why" board. |
 | 1.3 Interaction & Journey Analyst | Don Norman | Owns role-based views. A Sales Consultant sees a completely different, specialised view from a Clinic Owner; progressive disclosure hides complex settings until needed. |
 
@@ -96,10 +95,12 @@ Recorded from Jono, 2026-09-30. These win over the directive above where they co
 
 ## Decisions (Jono, 2026-09-30) — these override the directive text above
 
-1. **No F1 / "Formula 1 Command Center" / telemetry / neon styling anywhere.** The Consultant
-   Portal uses the standard VantageStack design system (`tailwind.config.ts` tokens; Space
-   Grotesk + Inter). Amber / emerald / red are used only where they carry meaning (card
-   severity, deal health). The palette lives in one file: `components/consultant/theme.css`.
+1. **Design system: the standard VantageStack look only** (`tailwind.config.ts` tokens; Space
+   Grotesk + Inter). Motorsport / pit-wall / telemetry / neon styling is excluded completely,
+   and **amber is not used anywhere in this build**. Colour carries meaning only: red = high-risk
+   objection or at-risk deal, brand blue = Coach Alex and stall cards, green = progress, and
+   yellow appears only as the middle Red/Yellow/Green deal-health state. The palette lives in
+   one file: `components/consultant/theme.css`.
 2. **No Lovable.dev and no Google AI Studio.** Lovable is at most a visual reference for any
    builder-style interface. Stack: Next.js on Vercel, Supabase Postgres, Twilio, Claude
    (Anthropic API) for Coach Alex analysis, n8n for multi-step orchestration.
@@ -173,8 +174,8 @@ What each influence means *in this codebase*. When in doubt, the rule on the rig
 
 | Influence | Rule it imposes here |
 |---|---|
-| Fuselab Creative / Clay Global | A daily-motivation command center, not a spreadsheet: live numbers, clear hierarchy, dense but calm. **Styling follows Decision 1** (no F1 / neon). |
-| Dieter Rams | Colour only where it carries data (card severity, deal health); nothing decorative; unobtrusive. |
+| Fuselab Creative / Clay Global | A daily-motivation workspace, not a spreadsheet: live numbers, clear hierarchy, dense but calm. **Styling follows Decision 1.** |
+| Dieter Rams | Colour only where it carries data (card severity, deal health); nothing decorative; unobtrusive; no amber. |
 | Jeremy Miner + BJ Fogg | Coach Alex = Fogg's *Prompt* (card fires the moment the objection is heard) + *Ability* (exact NEPQ wording). Motivation comes from the Why Board and leaderboard. |
 | Don Norman | Live call shows only the next action; NEPQ theory stays behind the expand icon. |
 | GetDevDone / Acquaint Softtech | Zero layout shift on every page, all devices; reserved space for anything that appears live. |

@@ -43,7 +43,7 @@ export const LeadRow = memo(function LeadRow({
         <span className="mt-1.5 flex flex-wrap items-center gap-2">
           {showStage && <StageChip stage={lead.salesStage} />}
           {due ? (
-            <span className={cx("inline-flex items-center gap-1 text-xs", due.overdue ? "text-[--cp-objection]" : "text-[--cp-muted]")}>
+            <span className={cx("inline-flex items-center gap-1 text-xs", due.overdue ? "text-[--cp-risk]" : "text-[--cp-muted]")}>
               <CalendarClock size={13} aria-hidden />
               <span className="max-w-[14rem] truncate">{lead.nextAction ? `${lead.nextAction} · ` : ""}{due.label}</span>
             </span>

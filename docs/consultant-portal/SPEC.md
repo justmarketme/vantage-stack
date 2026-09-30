@@ -6,7 +6,7 @@ pipeline, and get live NEPQ coaching from **Coach Alex**. Every record feeds the
 VantageStack CRM (`/crm`) tagged `vertical = 'clinics'`.
 
 Read `docs/AGENT_ARCHITECTURE.md` first — the agent personas and the *Current scope* rules apply.
-Out of scope: the paused Clinic Portal (`/clinic-crm`), Capital Legacy, F1/telemetry styling.
+Out of scope: the paused Clinic Portal (`/clinic-crm`), Capital Legacy, and any styling beyond the standard VantageStack design system (see Decision 1 in AGENT_ARCHITECTURE.md).
 
 ## Fixed contracts — do not change without the coordinator
 - `lib/consultant/types.ts` — zod inputs + response types. FE and BE both import it.
@@ -143,7 +143,7 @@ Invalid signature → 403, nothing written. Always respond fast (TwiML or empty 
 Design system: existing VantageStack tokens (Tailwind `background #0B0B0C`, `surface #1A1A1D`,
 `accent #3B82F6`, `textPrimary`, `textMuted`; Space Grotesk headings, Inter body). Dark. Deal
 health is the only strong colour: **Red / Yellow / Green** dots and edges (never text-only — pair
-with a label for colour-blind users). No F1/telemetry styling. WCAG AA contrast. Touch targets ≥ 44px.
+with a label for colour-blind users). No amber. WCAG AA contrast. Touch targets ≥ 44px.
 Respect `prefers-reduced-motion`. Safe-area insets on iOS.
 
 Pages:

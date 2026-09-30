@@ -13,13 +13,13 @@ export const SEVERITY_LABEL: Record<CardSeverity, string> = {
 
 export const SEVERITY_TEXT: Record<CardSeverity, string> = {
   high_risk: "text-[--cp-risk]",
-  stall: "text-[--cp-objection]",
+  stall: "text-[--cp-stall]",
   guide: "text-[--cp-coach]",
 };
 
 export const SEVERITY_SOFT: Record<CardSeverity, string> = {
   high_risk: "bg-[--cp-risk-soft]",
-  stall: "bg-[--cp-objection-soft]",
+  stall: "bg-[--cp-stall-soft]",
   guide: "bg-[--cp-coach-soft]",
 };
 

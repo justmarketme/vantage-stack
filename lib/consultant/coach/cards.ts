@@ -19,7 +19,7 @@ import type { CoachCard } from "../types";
  * Priority 1–10: higher wins when two cards match the same utterance.
  *
  * Severity drives how loudly a card arrives: `high_risk` (red edge, phone dims +
- * flashes) = deal-threatening objections; `stall` (amber edge, phone dims) = delay
+ * flashes) = deal-threatening objections; `stall` (brand-blue edge, phone dims) = delay
  * tactics; `guide` (no alert) = stage prompts. `theory` is the NEPQ psychology behind
  * the card — shown only behind an expand icon, never in the live glance.
  *

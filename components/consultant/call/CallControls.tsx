@@ -38,7 +38,7 @@ export const CallControls = memo(function CallControls({
         onClick={onMute}
         disabled={!canControl}
         aria-pressed={muted}
-        className={cx(base, muted ? "bg-[--cp-objection-soft] text-[--cp-objection]" : secondary)}
+        className={cx(base, muted ? "bg-[--cp-accent-soft] text-[--cp-accent-text]" : secondary)}
       >
         {muted ? <MicOff size={bar ? 24 : 18} aria-hidden /> : <Mic size={bar ? 24 : 18} aria-hidden />}
         {muted ? "Unmute" : "Mute"}

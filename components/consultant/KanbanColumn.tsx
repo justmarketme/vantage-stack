@@ -51,7 +51,7 @@ export const KanbanColumn = memo(function KanbanColumn({
                   {value && <span className="text-xs text-[--cp-text]">{value}/mo</span>}
                 </span>
                 {due && (
-                  <span className={cx("mt-1 block truncate text-xs", due.overdue ? "text-[--cp-objection]" : "text-[--cp-muted]")}>
+                  <span className={cx("mt-1 block truncate text-xs", due.overdue ? "text-[--cp-risk]" : "text-[--cp-muted]")}>
                     {l.nextAction ? `${l.nextAction} · ` : ""}
                     {due.label}
                   </span>

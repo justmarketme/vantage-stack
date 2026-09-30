@@ -199,7 +199,7 @@ export function NextActionCard({ lead, readOnly, onPatch }: { lead: Lead; readOn
           <p className="min-w-0 text-base text-[--cp-text]">
             {lead.nextAction || (lead.nextActionAt ? "Follow up" : <span className="text-[--cp-muted]">Nothing scheduled</span>)}
             {due && (
-              <span className={cx("mt-0.5 flex items-center gap-1 text-sm", due.overdue ? "text-[--cp-objection]" : "text-[--cp-muted]")}>
+              <span className={cx("mt-0.5 flex items-center gap-1 text-sm", due.overdue ? "text-[--cp-risk]" : "text-[--cp-muted]")}>
                 <CalendarClock size={14} aria-hidden /> {due.label}
               </span>
             )}

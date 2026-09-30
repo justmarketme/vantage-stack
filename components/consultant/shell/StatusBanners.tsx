@@ -19,7 +19,7 @@ export const OfflineBanner = memo(function OfflineBanner({ online, pending }: { 
         <div
           className={cx(
             "flex items-center gap-2 px-4 py-2 text-sm",
-            online ? "bg-[--cp-surface] text-[--cp-muted]" : "bg-[--cp-objection-soft] text-[--cp-objection]",
+            online ? "bg-[--cp-surface] text-[--cp-muted]" : "bg-[--cp-risk-soft] text-[--cp-risk]",
           )}
         >
           {online ? <CloudUpload size={16} aria-hidden /> : <WifiOff size={16} aria-hidden />}

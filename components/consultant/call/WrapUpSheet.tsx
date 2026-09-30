@@ -121,7 +121,7 @@ export function WrapUpSheet({
       footer={
         <div className="space-y-2">
           {!online && disposition && (
-            <p className="text-xs text-[--cp-objection]">Offline: the note, stage and next step are saved on this device. Log the outcome again once you're back online.</p>
+            <p className="text-xs text-[--cp-accent-text]">Offline: the note, stage and next step are saved on this device. Log the outcome again once you're back online.</p>
           )}
           {error && (
             <p role="alert" className="text-sm text-[--cp-risk]">

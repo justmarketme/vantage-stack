@@ -10,6 +10,11 @@ function env(name: string, fallback = ""): string {
   return (process.env[name] ?? fallback).trim();
 }
 
+function envFloat(name: string, fallback: number): number {
+  const n = Number.parseFloat(env(name));
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
 function envInt(name: string, fallback: number): number {
   const n = Number.parseInt(env(name), 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
@@ -99,6 +104,106 @@ export function consultantConfig() {
     },
 
     cronSecret: env("CRON_SECRET"),
+
+    // ── Wave 2 ──────────────────────────────────────────────────────────────
+
+    /** Localisation is fixed by decision: ZAR, SA +27 numbers, SAST. */
+    locale: { currency: "ZAR" as const, timeZone: "Africa/Johannesburg" as const, language: "en-ZA" as const },
+
+    commission: {
+      /** 25% of the amount actually paid (frozen onto the deal at payment time). */
+      rate: envFloat("CONSULTANT_COMMISSION_RATE", 0.25),
+    },
+
+    metrics: {
+      /** An answered call counts as a "conversation" at or above this many seconds. */
+      conversationMinSec: envInt("CONSULTANT_CONVERSATION_MIN_SEC", 120),
+      /** Editable defaults for the calculator until real data exists. */
+      defaultConnectRate: envFloat("CONSULTANT_DEFAULT_CONNECT_RATE", 0.3),
+      defaultShowRate: envFloat("CONSULTANT_DEFAULT_SHOW_RATE", 0.75),
+      defaultAvgSale: envInt("CONSULTANT_DEFAULT_AVG_SALE", 15000),
+    },
+
+    /**
+     * Gamification DEFAULTS. The live values are editable in the app by the
+     * Acquisition & Creative role and stored in `consultant_settings`
+     * (key "gamification"); these only seed it. Placeholders until Jono sets them.
+     */
+    gamificationDefaults: {
+      quarterTarget: envInt("CONSULTANT_QUARTER_TARGET", 225000),
+      tier1: { label: "Monthly Achiever", monthlyRevenue: 30000, reward: "R500 Takealot voucher" },
+      tier2: { label: "High Performer", monthlyRevenue: 75000, reward: "R1 500 Takealot voucher" },
+      tier3: { label: "Quarter Top Performer", topN: 3, minQuarterRevenue: 150000, reward: "VantageStack branded apparel" },
+      points: { dial: 1, connect: 2, meetingBooked: 10, meetingHeld: 15, proposal: 20, won: 40, paid: 100 },
+      closeTargetFromConnects: envFloat("CONSULTANT_CLOSE_TARGET", 0.3),
+    },
+
+    /** Private Supabase Storage (Why Board images, proof of payment). Signed URLs only. */
+    storage: {
+      supabaseUrl: env("SUPABASE_URL"),
+      serviceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
+      bucket: env("CONSULTANT_STORAGE_BUCKET", "consultant-private"),
+      maxBytes: envInt("CONSULTANT_UPLOAD_MAX_BYTES", 5 * 1024 * 1024),
+      signedUrlTtlSec: envInt("CONSULTANT_SIGNED_URL_TTL_SEC", 600),
+    },
+
+    /** Supabase Realtime is used for NUDGES only ("something changed, refetch"), never data. */
+    realtime: {
+      supabaseUrl: env("NEXT_PUBLIC_SUPABASE_URL") || env("SUPABASE_URL"),
+      anonKey: env("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+      serviceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
+      channelPrefix: env("CONSULTANT_REALTIME_PREFIX", "vs-consultant"),
+    },
+
+    calendar: {
+      google: { clientId: env("GOOGLE_CALENDAR_CLIENT_ID"), clientSecret: env("GOOGLE_CALENDAR_CLIENT_SECRET") },
+      microsoft: {
+        clientId: env("MS_CALENDAR_CLIENT_ID"),
+        clientSecret: env("MS_CALENDAR_CLIENT_SECRET"),
+        tenant: env("MS_CALENDAR_TENANT", "common"),
+      },
+      /** 32-byte key (base64) for AES-256-GCM encryption of stored OAuth tokens. */
+      tokenEncKey: env("CONSULTANT_TOKEN_ENC_KEY"),
+      maxSyncAttempts: envInt("CONSULTANT_CALENDAR_MAX_ATTEMPTS", 5),
+    },
+
+    emma: {
+      /** The existing VantageStack WhatsApp sender (already used for Emma). */
+      whatsappFrom: env("TWILIO_WHATSAPP_FROM"),
+      smsFrom: env("CONSULTANT_CALLER_ID"),
+      maxAttempts: envInt("EMMA_MAX_ATTEMPTS", 5),
+      /** Retry backoff base; attempt n waits base × 2^(n-1), capped. */
+      retryBaseSec: envInt("EMMA_RETRY_BASE_SEC", 30),
+      retryMaxSec: envInt("EMMA_RETRY_MAX_SEC", 3600),
+      /** Local development only. */
+      dryRun: env("EMMA_DRY_RUN") === "true" && process.env.NODE_ENV !== "production",
+    },
+
+    n8n: {
+      /** App → n8n: every platform event is POSTed here, signed. */
+      eventsUrl: env("N8N_EVENTS_WEBHOOK_URL"),
+      /** Shared HMAC secret for both directions (app ↔ n8n). */
+      signingSecret: env("N8N_SIGNING_SECRET"),
+      toleranceSec: envInt("N8N_SIGNATURE_TOLERANCE_SEC", 300),
+    },
+
+    /** Jono's personal EMMA assistant: receives business events, signed. */
+    emmaOwner: {
+      eventsUrl: env("EMMA_EVENTS_URL"),
+      signingSecret: env("EMMA_EVENTS_SECRET"),
+    },
+
+    delivery: {
+      maxAttempts: envInt("CONSULTANT_EVENT_MAX_ATTEMPTS", 8),
+      retryBaseSec: envInt("CONSULTANT_EVENT_RETRY_BASE_SEC", 15),
+      retryMaxSec: envInt("CONSULTANT_EVENT_RETRY_MAX_SEC", 3600),
+      batchSize: envInt("CONSULTANT_EVENT_BATCH", 50),
+    },
+
+    seed: {
+      /** Seeding refuses to run unless DATABASE_URL contains this marker (a staging branch ref). */
+      allowedDbMarker: env("CONSULTANT_SEED_ALLOWED_DB_MARKER"),
+    },
   };
 }
 
@@ -112,6 +217,6 @@ export function portalStatusValues(cfg: ConsultantConfig = consultantConfig()): 
 /** Maps a sales stage to the CRM status it implies, or null to leave status alone. */
 export function crmStatusForStage(stage: SalesStage, cfg: ConsultantConfig = consultantConfig()): string | null {
   if (stage === "proposal") return cfg.pipeline.statusOnProposal;
-  if (stage === "won") return cfg.pipeline.statusOnWon;
+  if (stage === "won" || stage === "paid") return cfg.pipeline.statusOnWon;
   return null;
 }

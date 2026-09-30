@@ -94,13 +94,14 @@ export function normalizeE164(input: string): string | null {
   return /^\+\d{8,15}$/.test(s) ? s : null;
 }
 
+/** South African numbers only (decision: +27 everywhere). Local 0XX… is converted. */
 const phone = z
   .string()
   .trim()
   .max(32)
   .transform((v, ctx) => {
-    const n = normalizeE164(v);
-    if (!n) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a valid phone number" });
+    const n = normalizeZaPhone(v);
+    if (!n) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Enter a South African number (+27 or 0…)" });
     return n ?? v;
   });
 
@@ -214,6 +215,8 @@ export type Me = {
   role: string;
   isManager: boolean;
   canCall: boolean;
+  /** Wave 2: permission keys (e.g. "confirm_payments", "manage_gamification") for UI gating. */
+  permissions: string[];
 };
 
 export type Lead = {

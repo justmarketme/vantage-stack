@@ -168,6 +168,11 @@ export const CallPatch = z
     nextActionAt: z.string().datetime({ offset: true }).nullable(),
     /** Convenience: moves the lead's stage in the same request as the wrap-up. */
     salesStage: z.enum(SALES_STAGES),
+    /**
+     * The clinic agreed ON THIS CALL to receive WhatsApp/SMS follow-ups.
+     * Required before Emma may message a scraped (public-domain) lead — POPIA s.69.
+     */
+    whatsappConsent: z.boolean(),
   })
   .partial()
   .refine((p) => Object.keys(p).length > 0, "Nothing to update");
@@ -246,7 +251,40 @@ export type Lead = {
   score?: DealScore;
   /** Wave 2: the lead's Clinics deal, if any. */
   deal?: Deal | null;
+  /**
+   * Electronic-messaging consent. Scraped public-domain leads start at "none":
+   * consultants may call them, but Emma may not WhatsApp/SMS them until they opt in.
+   */
+  messagingConsent?: MessagingConsent;
 };
+
+export type MessagingConsent = "opted_in" | "opted_out" | "none";
+
+/** Where a Clinics lead came from. `public_scrape` = public business listings (e.g. Google). */
+export const LEAD_SOURCES = ["public_scrape", "landing_page", "consultant_portal", "referral", "other"] as const;
+export type LeadSource = (typeof LEAD_SOURCES)[number];
+
+/** Managers send scraper results into the Clinics pool (unassigned). */
+export const ScrapedLeadImport = z.object({
+  leads: z
+    .array(
+      z.object({
+        businessName: z.string().trim().min(1).max(160),
+        phone: z.string().trim().max(32).nullable(),
+        email: z.string().trim().max(160).nullable(),
+        website: z.string().trim().max(300).nullable(),
+        address: z.string().trim().max(300).nullable(),
+        placeId: z.string().trim().max(200).nullable(),
+        ownerName: z.string().trim().max(120).nullable(),
+        /** Public page the details were taken from (POPIA s.18: we must be able to tell them). */
+        sourceUrl: z.string().trim().max(500).nullable(),
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+export type ScrapedLeadImport = z.infer<typeof ScrapedLeadImport>;
+export type ScrapedImportResult = { imported: number; duplicates: number; rejectedNonZaPhone: number };
 
 export type TranscriptSegment = {
   seq: number;

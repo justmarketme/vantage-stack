@@ -114,6 +114,18 @@ Recorded from Jono, 2026-09-30. These win over the directive above where they co
    deliberate, narrow exception to the Current-scope rule 4 above: business events only
    (e.g. deal won, payment received, consultant milestones), never clinic patient data.
 
+8. **Leads are scraped from the public domain** (public business listings such as Google
+   Places, via the existing CRM lead scraper). Consequences, binding on every agent:
+   - Scraped clinics enter the Clinics pool unassigned, deduped on +27 phone / place id, with
+     `lead_source = 'public_scrape'`, the `source_url` and `sourced_at` recorded.
+   - Consultants **may call** them (a live human call is not "electronic communication" under
+     POPIA s.69). The call opener must say where we found the clinic's details (s.18).
+   - **Emma may not WhatsApp/SMS/email a scraped lead** until it opts in (s.69 needs prior
+     consent for unsolicited electronic direct marketing). Consent is captured by the
+     consultant on the call (wrap-up "agreed to WhatsApp follow-up"), or by the landing-page
+     form. Opt-outs are honoured forever.
+   - Keep only business-relevant fields; no scraping of patients or personal social profiles.
+
 ## Supplementary directive (2026-09-30) — accepted into the plan
 
 - Supabase (Postgres + Realtime) and Vercel; n8n for multi-step webhook orchestration

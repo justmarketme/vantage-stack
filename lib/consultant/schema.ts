@@ -286,6 +286,11 @@ export const CONSULTANT_DDL_V2 = /* sql */ `
   );
   alter table public.consultant_contact_consent enable row level security;
 
+  -- Where a scraped lead's details came from (POPIA s.18 — tell them on request).
+  alter table public.clients add column if not exists source_url text;
+  alter table public.clients add column if not exists sourced_at timestamptz;
+  alter table public.consultant_contact_consent add column if not exists opted_in_call_id uuid;
+
   -- ── Audit log (POPIA): access to pipeline data + every Emma interaction ───
   create table if not exists public.consultant_audit_log (
     id bigserial primary key,

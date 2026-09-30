@@ -34,6 +34,12 @@ export const CONSULTANT_DDL = /* sql */ `
   alter table public.deals add column if not exists vertical text;
   alter table public.deals add column if not exists consultant_id uuid references public.team_members(id) on delete set null;
   create index if not exists deals_vertical_idx on public.deals (vertical);
+  -- One Clinics deal per lead, so concurrent stage changes can never create two.
+  create unique index if not exists deals_clinics_client_uq on public.deals (client_id) where vertical = 'clinics';
+  -- One CRM communication row per consultant call (the feed upserts it).
+  create unique index if not exists client_communications_consultant_call_uq
+    on public.client_communications ((metadata->>'consultant_call_id'))
+    where channel = 'call' and metadata ? 'consultant_call_id';
 
   -- ── Calls ─────────────────────────────────────────────────────────────────
   create table if not exists public.consultant_calls (
@@ -74,6 +80,8 @@ export const CONSULTANT_DDL = /* sql */ `
     at timestamptz not null default now(),
     primary key (call_id, seq)
   );
+  -- Supports the duplicate-retry check when Twilio re-delivers a transcription event.
+  create index if not exists consultant_call_segments_at_idx on public.consultant_call_segments (call_id, at);
   alter table public.consultant_call_segments enable row level security;
 
   -- ── Notes (lead- or call-level) with full edit history ────────────────────

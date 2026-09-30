@@ -16,6 +16,7 @@ type Row = {
   next_action: string | null;
   email?: string;
   monthly_budget?: number;
+  vertical?: string | null;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -76,6 +77,22 @@ const STATUSES = [
   "churned",
 ];
 
+// Vertical filter (additive): Consultant Portal leads are tagged vertical = 'clinics'.
+const VERTICAL_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "clinics", label: "Clinics" },
+  { value: "none", label: "Other" },
+] as const;
+type VerticalFilter = (typeof VERTICAL_OPTIONS)[number]["value"];
+
+function ClinicsBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+      Clinics
+    </span>
+  );
+}
+
 function CrmClientsListPageInner() {
   const searchParams = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
@@ -86,6 +103,7 @@ function CrmClientsListPageInner() {
   // Pre-populate from ?status= URL param (e.g. when clicking a pipeline stage on dashboard)
   const [status, setStatus] = useState(() => searchParams.get("status") ?? "");
   const [view, setView] = useState<"cards" | "table">("cards");
+  const [vertical, setVertical] = useState<VerticalFilter>("");
 
   // Keep filter in sync if URL changes (browser back/forward)
   useEffect(() => {
@@ -99,8 +117,9 @@ function CrmClientsListPageInner() {
     p.set("sort", "last_activity");
     if (search.trim()) p.set("search", search.trim());
     if (status) p.set("status", status);
+    if (vertical) p.set("vertical", vertical);
     return p.toString();
-  }, [search, status]);
+  }, [search, status, vertical]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -251,6 +270,21 @@ function CrmClientsListPageInner() {
         </div>
       </div>
 
+      {/* Vertical filter */}
+      <div role="group" aria-label="Vertical" className="inline-flex rounded-lg border border-white/[0.08] bg-[#16161A] p-1">
+        {VERTICAL_OPTIONS.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={vertical === o.value}
+            onClick={() => setVertical(o.value)}
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${vertical === o.value ? "bg-white/10 text-textPrimary" : "text-textMuted hover:text-textPrimary"}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
       {/* Mobile status filter — shown only on xs, below search row */}
       <div className="sm:hidden">
         <select
@@ -290,6 +324,7 @@ function CrmClientsListPageInner() {
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(r.status)}`}>
                       {r.status.replace(/-/g, " ")}
                     </span>
+                    {r.vertical === "clinics" && <ClinicsBadge />}
                   </div>
                   <div className="text-xs text-textMuted mt-0.5 truncate">{r.company || r.industry || "—"}</div>
                 </div>
@@ -379,6 +414,7 @@ function CrmClientsListPageInner() {
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(r.status)}`}>
                       {r.status.replace(/-/g, " ")}
                     </span>
+                    {r.vertical === "clinics" && <ClinicsBadge />}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-textMuted truncate">{r.company || r.industry || "—"}</span>
@@ -421,7 +457,10 @@ function CrmClientsListPageInner() {
                           {initials(r.name)}
                         </div>
                         <div>
-                          <div className="font-medium text-textPrimary">{r.name}</div>
+                          <div className="flex items-center gap-2 font-medium text-textPrimary">
+                            {r.name}
+                            {r.vertical === "clinics" && <ClinicsBadge />}
+                          </div>
                           <div className="text-xs text-textMuted">{r.company || "—"}</div>
                         </div>
                       </div>

@@ -45,7 +45,8 @@
     "briefing:run": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/run-morning-briefing.ts",
     "telegram:bot": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/telegram-bot.ts",
     "clinic-crm:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-migrate.ts",
-    "clinic-crm:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-seed.ts"
+    "clinic-crm:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-seed.ts",
+    "consultant:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-migrate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

@@ -1,0 +1,134 @@
+/*
+ * Consultant Portal — design tokens. THE one place the portal's look is defined.
+ * Scoped to `.cp-theme` (the consultant shell root) so nothing leaks into /crm or
+ * the marketing site. Components reference these via Tailwind arbitrary values,
+ * e.g. `bg-[var(--cp-surface)]`, `text-[var(--cp-coach)]`.
+ *
+ * Contrast (WCAG AA, text on --cp-surface #1E1E1E): text 15.3:1, muted 6.6:1,
+ * coach 9.2:1, objection 10.0:1, progress 8.7:1, risk 6.0:1, accent-text 6.6:1
+ * (all still ≥ 4.8:1 on --cp-surface-3).
+ * White on --cp-accent-strong 5.2:1, on --cp-risk-strong 4.8:1.
+ *
+ * Colour semantics (Rams: colour only where it carries meaning):
+ *   coach     — Coach Alex (neon cyan)
+ *   objection — objections + "stall" cards (amber)
+ *   progress  — deal progression (emerald)
+ *   risk      — high-risk cards, hang up, recording (red)
+ *   health-*  — Red / Yellow / Green deal health, always paired with a label
+ *   accent    — navigation + primary actions (VantageStack blue)
+ */
+.cp-theme {
+  --cp-bg: #121212;
+  --cp-surface: #1e1e1e;
+  --cp-surface-2: #262626;
+  --cp-surface-3: #303030;
+  --cp-border: rgba(255, 255, 255, 0.08);
+  --cp-border-strong: rgba(255, 255, 255, 0.18);
+  --cp-text: #f5f5f5;
+  --cp-muted: #a3a3a3;
+  --cp-on-strong: #ffffff;
+  --cp-scrim: rgba(8, 8, 8, 0.72);
+
+  --cp-accent: #3b82f6;
+  --cp-accent-strong: #2563eb;
+  --cp-accent-text: #60a5fa;
+  --cp-accent-soft: rgba(59, 130, 246, 0.14);
+
+  --cp-coach: #22d3ee;
+  --cp-coach-soft: rgba(34, 211, 238, 0.1);
+  --cp-coach-glow: rgba(34, 211, 238, 0.28);
+
+  --cp-objection: #fbbf24;
+  --cp-objection-soft: rgba(251, 191, 36, 0.12);
+  --cp-objection-glow: rgba(251, 191, 36, 0.3);
+
+  --cp-progress: #34d399;
+  --cp-progress-soft: rgba(52, 211, 153, 0.12);
+
+  --cp-risk: #f87171;
+  --cp-risk-strong: #dc2626;
+  --cp-risk-soft: rgba(248, 113, 113, 0.12);
+  --cp-risk-glow: rgba(248, 113, 113, 0.32);
+
+  --cp-health-red: var(--cp-risk);
+  --cp-health-yellow: var(--cp-objection);
+  --cp-health-green: var(--cp-progress);
+
+  --cp-radius: 16px;
+  --cp-safe-top: env(safe-area-inset-top, 0px);
+  --cp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cp-safe-left: env(safe-area-inset-left, 0px);
+  --cp-safe-right: env(safe-area-inset-right, 0px);
+
+  background-color: var(--cp-bg);
+  color: var(--cp-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Severity edges — a thin coloured edge plus a soft glow. Subtle by design. */
+.cp-theme .cp-edge-high_risk {
+  box-shadow: inset 3px 0 0 var(--cp-risk), 0 0 28px -8px var(--cp-risk-glow);
+}
+.cp-theme .cp-edge-stall {
+  box-shadow: inset 3px 0 0 var(--cp-objection), 0 0 28px -8px var(--cp-objection-glow);
+}
+.cp-theme .cp-edge-guide {
+  box-shadow: inset 3px 0 0 var(--cp-coach), 0 0 24px -10px var(--cp-coach-glow);
+}
+
+/* Coach Alex avatar: one soft ring when new advice lands. */
+@keyframes cp-ping {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.cp-theme .cp-avatar-ping {
+  animation: cp-ping 900ms ease-out 2;
+}
+
+/* Critical card: a single low-opacity flash standing in for haptics. */
+@keyframes cp-flash {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.cp-theme .cp-flash {
+  animation: cp-flash 520ms ease-out 1 both;
+}
+
+/* Recording dot. */
+@keyframes cp-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.cp-theme .cp-rec {
+  animation: cp-rec 1.6s ease-in-out infinite;
+}
+
+/* Skeleton shimmer — static under reduced motion. */
+@keyframes cp-shimmer {
+  0% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+.cp-theme .cp-skeleton {
+  background: var(--cp-surface-2);
+  animation: cp-shimmer 1.4s ease-in-out infinite;
+}
+
+.cp-theme .cp-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-theme .cp-avatar-ping,
+  .cp-theme .cp-flash,
+  .cp-theme .cp-rec,
+  .cp-theme .cp-skeleton {
+    animation: none;
+  }
+  .cp-theme .cp-flash {
+    opacity: 0;
+  }
+}

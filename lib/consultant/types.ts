@@ -315,6 +315,8 @@ export type LiveCallState = {
   segments: TranscriptSegment[]; // only seq > `after`
   lastSeq: number;
   ended: boolean;
+  /** Server-configured poll interval, so the client never imports config. */
+  pollMs: number;
 };
 
 export type VoiceToken = { token: string; identity: string; expiresAt: string };
@@ -330,10 +332,19 @@ export type TodayStats = {
 
 // ── Coach Alex live cards ───────────────────────────────────────────────────
 
+/**
+ * How urgent a card is. Drives the glowing edge colour on desktop and whether
+ * the phone dims + flashes: high_risk = red (deal-threatening objection),
+ * stall = yellow (delay tactic), guide = no alert (stage prompts).
+ */
+export const CARD_SEVERITIES = ["high_risk", "stall", "guide"] as const;
+export type CardSeverity = (typeof CARD_SEVERITIES)[number];
+
 export type CoachCard = {
   id: string;
   kind: "objection" | "stage";
   stage: NepqStage;
+  severity: CardSeverity;
   title: string;
   /**
    * Lower-case phrases matched against what the PROSPECT says. Word-boundary
@@ -345,6 +356,11 @@ export type CoachCard = {
   ask: string[];
   reframe: string;
   confirm: string;
+  /**
+   * The deeper NEPQ psychology behind this card, hidden behind an "expand"
+   * icon (progressive disclosure) so the live view stays strictly actionable.
+   */
+  theory: string;
   /** Higher wins when two cards match the same utterance. 1–10. */
   priority: number;
 };

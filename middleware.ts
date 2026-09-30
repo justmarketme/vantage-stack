@@ -6,6 +6,11 @@ import type { TeamRole } from "./lib/admin/roles";
 import { can } from "./lib/admin/roles";
 import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
 import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/middleware";
+import {
+  consultantApiHeaders,
+  consultantPageHeaders,
+  isCrossOriginWrite,
+} from "./lib/consultant/auth/securityHeaders";
 
 const ADMIN_COOKIE = "vs_admin_session";
 
@@ -20,11 +25,24 @@ export const config = {
     "/api/admin/:path*",
     "/clinic-crm/:path*",
     "/api/clinic-crm/:path*",
+    // Consultant Portal. /api/consultant-voice/** is deliberately NOT here: those are
+    // Twilio webhooks with no session — the X-Twilio-Signature check is their auth.
+    "/consultant/:path*",
+    "/api/consultant/:path*",
   ],
 };
 
 /** Host that should serve the clinics landing page at its root. */
 const CLINICS_HOST = "clinics.vantagestack.co.za";
+
+function under(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+function withHeaders<T extends NextResponse>(res: T, headers: Record<string, string>): T {
+  for (const [k, v] of Object.entries(headers)) res.headers.set(k, v);
+  return res;
+}
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("x-robots-tag", "noindex, nofollow");
@@ -124,6 +142,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const isConsultantPage = under(path, "/consultant");
+  const isConsultantApi = under(path, "/api/consultant");
+  const isProd = process.env.NODE_ENV === "production";
+  const isDev = process.env.NODE_ENV === "development";
+  const apiHeaders = isConsultantApi ? consultantApiHeaders({ isProd }) : {};
+
+  if (isConsultantApi && isCrossOriginWrite(method, request.headers.get("origin"), request.headers.get("host"))) {
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
+  }
+
   const secret = crmAuthSecretRaw();
   const cookie = request.cookies.get(ADMIN_COOKIE)?.value;
   let session = secret ? await parseSessionEdge(cookie, secret) : null;
@@ -133,6 +161,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session) {
+    if (isConsultantApi) {
+      return withHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), apiHeaders);
+    }
     if (path.startsWith("/api/")) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -148,6 +179,16 @@ export async function middleware(request: NextRequest) {
     if (!can(role, "manage_users") && !can(role, "invite_team")) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
+  }
+
+  // The CRM API returns every client; only roles that may view the CRM get it. Closes the
+  // gap where any valid session (e.g. a sales_consultant) could read /api/crm/** directly.
+  if (under(path, "/api/crm") && !can(role, "view_clients")) {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isConsultantApi && !can(role, "use_consultant_portal")) {
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
   }
 
   if (!path.startsWith("/api/") && !roleMayAccessPage(role, path)) {
@@ -169,5 +210,7 @@ export async function middleware(request: NextRequest) {
   if (!path.startsWith("/api/")) {
     withNoIndex(res);
   }
+  if (isConsultantPage) withHeaders(res, consultantPageHeaders({ isDev, isProd }));
+  if (isConsultantApi) withHeaders(res, apiHeaders);
   return res;
 }

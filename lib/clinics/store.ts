@@ -1,4 +1,6 @@
 import type { Sql } from "postgres";
+import { upsertClinicLeadFromEnquiry } from "../consultant/server/clinicLeads";
+import { errorTag } from "../consultant/server/http";
 import type { ClinicBlueprint } from "./schema";
 
 /**
@@ -91,5 +93,33 @@ export async function insertClinicBlueprint(
     RETURNING id
   `;
 
-  return { id: rows[0].id };
+  const id = rows[0].id;
+  await feedClinicLeadToCrm(db, payload, id, opts.source ?? "clinics_landing");
+  return { id };
+}
+
+/**
+ * Every landing-page enquiry also becomes an UNASSIGNED Clinics lead in the VantageStack CRM
+ * (`public.clients`, `vertical = 'clinics'`) so consultants can claim it from the pool.
+ * Best-effort by design: the enquiry is already saved above, so a CRM failure is logged
+ * (error class only — no contact details) and never fails the landing form.
+ */
+async function feedClinicLeadToCrm(db: Sql, payload: ClinicBlueprint, blueprintId: number, source: string): Promise<void> {
+  try {
+    const result = await upsertClinicLeadFromEnquiry(db, {
+      practiceName: payload.practiceName,
+      contactName: payload.contactName,
+      role: payload.role,
+      email: payload.email,
+      whatsapp: payload.whatsapp,
+      websiteUrl: payload.websiteUrl,
+      source,
+      blueprintId,
+    });
+    if (result.outcome !== "created" && result.outcome !== "exists") {
+      console.warn("[clinics/blueprint] CRM lead not created", result.outcome);
+    }
+  } catch (err) {
+    console.error("[clinics/blueprint] CRM lead feed failed", errorTag(err));
+  }
 }

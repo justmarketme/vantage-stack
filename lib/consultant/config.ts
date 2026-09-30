@@ -67,6 +67,13 @@ export function consultantConfig() {
       maxSummaryAttempts: envInt("CONSULTANT_MAX_SUMMARY_ATTEMPTS", 3),
     },
 
+    retention: {
+      /** Twilio recordings older than this are deleted by the sweep. */
+      recordingDays: envInt("CONSULTANT_RECORDING_RETENTION_DAYS", 90),
+      /** Transcript segments older than this are deleted (summaries and notes stay). */
+      transcriptDays: envInt("CONSULTANT_TRANSCRIPT_RETENTION_DAYS", 365),
+    },
+
     live: {
       /** Browser poll interval for live transcript during a call. */
       pollMs: envInt("CONSULTANT_LIVE_POLL_MS", 1000),

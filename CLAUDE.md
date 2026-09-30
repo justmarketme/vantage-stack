@@ -7,6 +7,10 @@ Standing engineering rules for this project. These apply to **every** task — r
 > dashboard, or analytics delivery, read **`COWORK_INTERFACE.md`** — it defines who owns what and the
 > shared handoff queue. Rule of thumb: **Claude Code owns the machine; Cowork owns the operation.**
 
+> **Core agent architecture (standing directive):** before any work on the Consultant Portal or the
+> Clinic Portal, read **`docs/AGENT_ARCHITECTURE.md`** — the 5 Core Agents, their 15 Sub-Agents, and
+> the *Current scope* / *Open questions* sections, which override the directive where they conflict.
+
 ---
 
 ## Project

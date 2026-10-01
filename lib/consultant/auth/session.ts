@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { actorUsernameFromSession, getSessionFromCookies, memberIdFromSession } from "../../admin/api-auth";
-import { can, type TeamRole } from "../../admin/roles";
+import { can, isReadOnlyPortalRole, permissionsFor, type Permission, type TeamRole } from "../../admin/roles";
 import { sessionRole } from "../../admin/session";
 import { connectCrmDb } from "../../crm/db";
 import type { ApiError } from "../types";
@@ -8,10 +8,14 @@ import type { ApiError } from "../types";
 /**
  * Who is using the Consultant Portal, resolved server-side from the admin session cookie.
  *
- * - `canCall`   — a *member* session whose role has `use_consultant_portal`. The legacy
- *                 single-password admin has no member id, so it can never own a call or a
- *                 Twilio identity: it is a read-only manager.
- * - `isManager` — the role has `view_clients` (sees every Clinics lead, may reassign).
+ * - `canCall`   — a *member* session whose role has `use_consultant_portal` and is not a
+ *                 read-only portal role. The legacy single-password admin has no member id, so
+ *                 it can never own a call or a Twilio identity: it is a read-only manager.
+ * - `isManager` — the role has `view_clients` (sees every Clinics lead, may reassign), or is a
+ *                 read-only oversight role (systems_ops, acquisition_creative): they see the
+ *                 whole team but middleware blocks their pipeline writes
+ *                 (`readOnlyPortalWriteAllowed`).
+ * - `permissions` — every permission the role holds (UI gating; handlers use `opts.permission`).
  *
  * `consultant_id` for anything written must come from `memberId` here — never a request body.
  */
@@ -22,7 +26,11 @@ export type ConsultantSession = {
   role: TeamRole;
   isManager: boolean;
   canCall: boolean;
+  permissions: Permission[];
 };
+
+/** Options for `requireConsultant` (and route wrappers that forward to it). */
+export type ConsultantGuard = { manager?: boolean; call?: boolean; permission?: Permission };
 
 function deny(status: 401 | 403, error: string): NextResponse<ApiError> {
   return NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -30,9 +38,10 @@ function deny(status: 401 | 403, error: string): NextResponse<ApiError> {
 
 /** Pure: the permission flags for a role / member combination (unit-tested). */
 export function consultantFlags(role: TeamRole, memberId: string | null): Pick<ConsultantSession, "isManager" | "canCall"> {
+  const readOnly = isReadOnlyPortalRole(role);
   return {
-    isManager: can(role, "view_clients"),
-    canCall: memberId !== null && can(role, "use_consultant_portal"),
+    isManager: can(role, "view_clients") || readOnly,
+    canCall: memberId !== null && can(role, "use_consultant_portal") && !readOnly,
   };
 }
 
@@ -63,9 +72,10 @@ async function displayNameFor(memberId: string | null, username: string): Promis
  *
  * The portal requires `use_consultant_portal` (the same rule middleware enforces — this is
  * the defence-in-depth copy). `opts.call` additionally requires `canCall`; `opts.manager`
- * requires `isManager`.
+ * requires `isManager`; `opts.permission` requires that exact permission (e.g.
+ * `confirm_payments` on the payment route).
  */
-export async function requireConsultant(opts?: { manager?: boolean; call?: boolean }): Promise<ConsultantSession | NextResponse> {
+export async function requireConsultant(opts?: ConsultantGuard): Promise<ConsultantSession | NextResponse> {
   const session = await getSessionFromCookies();
   const role = sessionRole(session);
   if (!session || !role) return deny(401, "Unauthorized");
@@ -76,6 +86,7 @@ export async function requireConsultant(opts?: { manager?: boolean; call?: boole
   const flags = consultantFlags(role, memberId);
   if (opts?.call && !flags.canCall) return deny(403, "Calling requires a consultant account");
   if (opts?.manager && !flags.isManager) return deny(403, "Managers only");
+  if (opts?.permission && !can(role, opts.permission)) return deny(403, "Forbidden");
 
   const username = actorUsernameFromSession(session);
   return {
@@ -84,5 +95,6 @@ export async function requireConsultant(opts?: { manager?: boolean; call?: boole
     displayName: await displayNameFor(memberId, username),
     role,
     ...flags,
+    permissions: permissionsFor(role),
   };
 }

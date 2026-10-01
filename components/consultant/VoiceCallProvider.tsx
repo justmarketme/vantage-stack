@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from "next/navigation";
 import { useVoiceCall } from "../../hooks/consultant/useVoiceCall";
 import { useLiveTranscript } from "../../hooks/consultant/useLiveTranscript";
+import { useCoachAudio } from "../../hooks/consultant/useCoachAudio";
 import { useCoachCards } from "../../hooks/consultant/useCoachCards";
 import type { TranscriptSegment, CallStatus } from "../../lib/consultant/types";
 
@@ -78,6 +79,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const needsWrapUp =
     !!voice.call && (voice.state === "ended" || voice.state === "error") && !wrapped.has(voice.call.id);
   const coach = useCoachCards(callId, transcript.segments);
+  // Optional spoken cue for new high-risk / stall cards — off by default, headset only (Settings).
+  useCoachAudio(live ? coach.active : null, live ? callId : null);
 
   // Open the live-call screen as soon as the call row exists.
   const openOnStart = useRef(false);

@@ -20,10 +20,23 @@
  *   note.patch on one note merge (keeping the ORIGINAL baseVersion); a note.patch
  *   on a note that is itself still a queued note.create (keyed by clientId) folds
  *   into the create.
+ *
+ * Storage (wave 2): the queue is a Zustand vanilla store with the `persist`
+ * middleware under `vs:consultant:v2:outbox` (`OUTBOX_PERSIST_NAME`).
+ * `partialize` writes ONLY `ops` — runtime flags such as `flushing` never touch
+ * disk. The outbox is the one place (with drafts) where a note body the rep
+ * TYPED is kept on the device: that is its whole purpose (offline-first), and
+ * it is removed the moment the server confirms the write. Transcripts,
+ * summaries and objections are never enqueued. A wave-1 queue
+ * (`vs:consultant:v1:outbox`) is imported once and its key deleted, so nothing
+ * queued before the upgrade is lost.
  */
 
+import { createStore } from "zustand/vanilla";
+import { persist } from "zustand/middleware";
 import { ApiClientError, api as defaultApi } from "./api";
-import { readJSON, writeJSON } from "./storage";
+import { kvPersistStorage, persistName, type PersistedStoreApi, takeLegacy } from "./persist";
+import { storageKey as legacyStorageKey } from "./storage";
 import type { Lead, LeadPatch, Note, NoteInput, NotePatch } from "../types";
 
 export type OutboxOpInput =
@@ -59,10 +72,14 @@ export type OutboxDeps = {
   now?: () => number;
   random?: () => number;
   uuid?: () => string;
+  /** Store name suffix (tests / multiple queues). Default "outbox". */
   storageKey?: string;
 };
 
 export const OUTBOX_KEY = "outbox";
+/** Full localStorage key of the persisted queue (for cross-tab `storage` events). */
+export const OUTBOX_PERSIST_NAME = persistName(OUTBOX_KEY);
+export const OUTBOX_PERSIST_VERSION = 1;
 export const BACKOFF_BASE_MS = 1_000;
 export const BACKOFF_CAP_MS = 60_000;
 export const CONFLICT_MESSAGE = "Someone else edited this note while you were offline.";
@@ -88,29 +105,71 @@ function defaultUuid(): string {
 
 export type FlushOutcome = { synced: { op: OutboxOp; result: OutboxResult }[]; stoppedBy?: "transient" | "unauthorized" };
 
+/** In-memory shape of the Zustand store. Only `ops` is persisted. */
+export type OutboxState = { ops: OutboxOp[]; flushing: boolean };
+type PersistedOutbox = { ops: OutboxOp[] };
+
+function sanitiseOps(raw: unknown): OutboxOp[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw.filter((o): o is OutboxOp => !!o && typeof o.id === "string" && typeof o.kind === "string");
+}
+
 export class Outbox {
-  private ops: OutboxOp[] = [];
-  private listeners = new Set<() => void>();
+  /** The Zustand store (exposed so hooks can use `useStore` selectors). */
+  readonly store: PersistedStoreApi<OutboxState, PersistedOutbox>;
   private syncedListeners = new Set<(op: OutboxOp, result: OutboxResult) => void>();
-  private flushing: Promise<FlushOutcome> | null = null;
+  private flushRun: Promise<FlushOutcome> | null = null;
   /** The op whose request is on the wire — never coalesce into it. */
   private inFlight: string | null = null;
+  /** False after a write that didn't reach storage — then memory is the only truth. */
+  private diskInSync = true;
   private readonly api: OutboxApi;
   private readonly now: () => number;
   private readonly random: () => number;
   private readonly uuid: () => string;
-  private readonly key: string;
 
   constructor(deps: OutboxDeps = {}) {
     this.api = deps.api ?? (defaultApi as unknown as OutboxApi);
     this.now = deps.now ?? Date.now;
     this.random = deps.random ?? Math.random;
     this.uuid = deps.uuid ?? defaultUuid;
-    this.key = deps.storageKey ?? OUTBOX_KEY;
-    this.load();
+    const key = deps.storageKey ?? OUTBOX_KEY;
+
+    this.store = createStore<OutboxState>()(
+      persist<OutboxState, [], [], PersistedOutbox>(() => ({ ops: [], flushing: false }), {
+        name: persistName(key),
+        version: OUTBOX_PERSIST_VERSION,
+        storage: kvPersistStorage<PersistedOutbox>({ onWrite: (ok) => (this.diskInSync = ok) }),
+        partialize: (s) => ({ ops: s.ops }),
+        // Keep the current array identity when disk says the same thing, so a
+        // reload from another tab doesn't re-render every subscriber for nothing.
+        merge: (persisted, current) => {
+          const ops = sanitiseOps((persisted as PersistedOutbox | undefined)?.ops);
+          if (!ops) return current;
+          return JSON.stringify(ops) === JSON.stringify(current.ops) ? current : { ...current, ops };
+        },
+        migrate: (state) => ({ ops: sanitiseOps((state as PersistedOutbox | undefined)?.ops) ?? [] }),
+      }),
+    );
+
+    // One-time import of a wave-1 queue.
+    const legacy = sanitiseOps(takeLegacy<unknown>(legacyStorageKey(key)));
+    if (legacy && legacy.length) {
+      const have = new Set(this.ops.map((o) => o.id));
+      this.commit([...this.ops, ...legacy.filter((o) => !have.has(o.id))]);
+    }
   }
 
   // ── State ────────────────────────────────────────────────────────────────
+
+  private get ops(): OutboxOp[] {
+    return this.store.getState().ops;
+  }
+
+  /** Replace the queue (new array identity → subscribers + disk). */
+  private commit(ops: OutboxOp[]): void {
+    this.store.setState({ ops: [...ops] });
+  }
 
   list(): OutboxOp[] {
     return this.ops;
@@ -121,12 +180,11 @@ export class Outbox {
   }
 
   get isFlushing(): boolean {
-    return this.flushing !== null;
+    return this.store.getState().flushing;
   }
 
   subscribe(cb: () => void): () => void {
-    this.listeners.add(cb);
-    return () => this.listeners.delete(cb);
+    return this.store.subscribe(() => cb());
   }
 
   onSynced(cb: (op: OutboxOp, result: OutboxResult) => void): () => void {
@@ -134,11 +192,14 @@ export class Outbox {
     return () => this.syncedListeners.delete(cb);
   }
 
-  /** Reload from storage (another tab changed it). */
+  /**
+   * Reload from storage (another tab changed it). Skipped while our own last
+   * write failed (quota / private mode): disk would be OLDER than memory and
+   * reloading it would silently drop queued notes.
+   */
   load(): void {
-    const raw = readJSON<OutboxOp[]>(this.key);
-    this.ops = Array.isArray(raw) ? raw.filter((o) => o && typeof o.id === "string" && typeof o.kind === "string") : [];
-    this.emit();
+    if (!this.diskInSync) return;
+    void this.store.persist.rehydrate();
   }
 
   /** Earliest time a queued op becomes eligible, or null. */
@@ -152,27 +213,22 @@ export class Outbox {
 
   enqueue(input: OutboxOpInput): OutboxOp {
     const now = this.now();
+    const ops = this.ops;
     // Coalesce with a still-queued op for the same entity.
     if (input.kind === "lead.patch") {
-      const prev = this.ops.find((o) => o.kind === "lead.patch" && o.leadId === input.leadId && o.status === "queued" && o.id !== this.inFlight);
+      const prev = ops.find((o) => o.kind === "lead.patch" && o.leadId === input.leadId && o.status === "queued" && o.id !== this.inFlight);
       if (prev && prev.kind === "lead.patch") {
-        prev.patch = { ...prev.patch, ...input.patch };
-        this.save();
-        return prev;
+        return this.replace(prev, { ...prev, patch: { ...prev.patch, ...input.patch } });
       }
     }
     if (input.kind === "note.patch") {
-      const create = this.ops.find((o) => o.kind === "note.create" && o.input.clientId === input.noteId && o.status !== "conflict" && o.id !== this.inFlight);
+      const create = ops.find((o) => o.kind === "note.create" && o.input.clientId === input.noteId && o.status !== "conflict" && o.id !== this.inFlight);
       if (create && create.kind === "note.create") {
-        create.input = { ...create.input, body: input.patch.body };
-        this.save();
-        return create;
+        return this.replace(create, { ...create, input: { ...create.input, body: input.patch.body } });
       }
-      const prev = this.ops.find((o) => o.kind === "note.patch" && o.noteId === input.noteId && o.status === "queued" && o.id !== this.inFlight);
+      const prev = ops.find((o) => o.kind === "note.patch" && o.noteId === input.noteId && o.status === "queued" && o.id !== this.inFlight);
       if (prev && prev.kind === "note.patch") {
-        prev.patch = { body: input.patch.body, baseVersion: prev.patch.baseVersion };
-        this.save();
-        return prev;
+        return this.replace(prev, { ...prev, patch: { body: input.patch.body, baseVersion: prev.patch.baseVersion } });
       }
     }
     const op = {
@@ -185,15 +241,18 @@ export class Outbox {
       nextAttemptAt: now,
       status: "queued" as const,
     } as OutboxOp;
-    this.ops = [...this.ops, op];
-    this.save();
+    this.commit([...ops, op]);
     return op;
   }
 
+  private replace(prev: OutboxOp, next: OutboxOp): OutboxOp {
+    this.commit(this.ops.map((o) => (o.id === prev.id ? next : o)));
+    return next;
+  }
+
   remove(opId: string): void {
-    const before = this.ops.length;
-    this.ops = this.ops.filter((o) => o.id !== opId);
-    if (this.ops.length !== before) this.save();
+    const next = this.ops.filter((o) => o.id !== opId);
+    if (next.length !== this.ops.length) this.commit(next);
   }
 
   /**
@@ -209,32 +268,32 @@ export class Outbox {
       this.remove(opId);
       return;
     }
+    let next: OutboxOp = op;
     if (op.kind === "note.patch") {
-      op.patch = {
-        body: resolution.body ?? op.patch.body,
-        baseVersion: resolution.baseVersion ?? op.patch.baseVersion,
+      next = {
+        ...op,
+        patch: {
+          body: resolution.body ?? op.patch.body,
+          baseVersion: resolution.baseVersion ?? op.patch.baseVersion,
+        },
       };
     } else if (op.kind === "note.create" && resolution.body) {
-      op.input = { ...op.input, body: resolution.body };
+      next = { ...op, input: { ...op.input, body: resolution.body } };
     }
-    op.status = "queued";
-    op.attempts = 0;
-    op.nextAttemptAt = this.now();
-    op.lastError = undefined;
-    this.save();
+    this.replace(op, { ...next, status: "queued", attempts: 0, nextAttemptAt: this.now(), lastError: undefined });
   }
 
   // ── Replay ───────────────────────────────────────────────────────────────
 
   /** Replay eligible ops in order. Concurrent calls share one run. */
   flush(): Promise<FlushOutcome> {
-    if (this.flushing) return this.flushing;
+    if (this.flushRun) return this.flushRun;
     const run = this.run().finally(() => {
-      this.flushing = null;
-      this.emit();
+      this.flushRun = null;
+      this.store.setState({ flushing: false });
     });
-    this.flushing = run;
-    this.emit();
+    this.flushRun = run;
+    this.store.setState({ flushing: true });
     return run;
   }
 
@@ -249,9 +308,9 @@ export class Outbox {
       try {
         const result = await this.exec(op);
         this.inFlight = null;
-        this.ops = this.ops.filter((o) => o.id !== op.id);
-        if (op.kind === "note.create" && op.input.clientId) this.remapClientId(op.input.clientId, result as Note);
-        this.save();
+        let next = this.ops.filter((o) => o.id !== op.id);
+        if (op.kind === "note.create" && op.input.clientId) next = this.remapClientId(next, op.input.clientId, result as Note);
+        this.commit(next);
         synced.push({ op, result });
         this.syncedListeners.forEach((l) => {
           try {
@@ -266,8 +325,7 @@ export class Outbox {
         if (e.status === 401) return { synced, stoppedBy: "unauthorized" };
         if (e.status === 409 && op.kind === "note.patch") {
           if (await this.alreadyApplied(op)) {
-            this.ops = this.ops.filter((o) => o.id !== op.id);
-            this.save();
+            this.remove(op.id);
             continue;
           }
           this.mark(op, { status: "conflict", lastError: CONFLICT_MESSAGE });
@@ -289,9 +347,9 @@ export class Outbox {
   }
 
   /** Edits queued against an offline-created note (keyed by clientId) now target the real id. */
-  private remapClientId(clientId: string, note: Note): void {
-    if (!note || typeof note.id !== "string") return;
-    this.ops = this.ops.map((o) =>
+  private remapClientId(ops: OutboxOp[], clientId: string, note: Note): OutboxOp[] {
+    if (!note || typeof note.id !== "string") return ops;
+    return ops.map((o) =>
       o.kind === "note.patch" && o.noteId === clientId
         ? { ...o, noteId: note.id, patch: { ...o.patch, baseVersion: note.version ?? o.patch.baseVersion } }
         : o,
@@ -320,17 +378,6 @@ export class Outbox {
   }
 
   private mark(op: OutboxOp, patch: Partial<OutboxOp>): void {
-    this.ops = this.ops.map((o) => (o.id === op.id ? ({ ...o, ...patch } as OutboxOp) : o));
-    this.save();
-  }
-
-  private save(): void {
-    this.ops = [...this.ops]; // new identity for useSyncExternalStore
-    writeJSON(this.key, this.ops);
-    this.emit();
-  }
-
-  private emit(): void {
-    this.listeners.forEach((l) => l());
+    this.commit(this.ops.map((o) => (o.id === op.id ? ({ ...o, ...patch } as OutboxOp) : o)));
   }
 }

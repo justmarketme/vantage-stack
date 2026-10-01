@@ -16,5 +16,6 @@ export async function GET() {
     role: s.role,
     isManager: s.isManager,
     canCall: s.canCall,
+    permissions: s.permissions,
   });
 }

@@ -8,12 +8,15 @@
  * passes the server.
  *
  * Tuned for South African English: "at the rate", "co dot za", "oh" for zero,
- * "double seven", "plus two seven".
+ * "double seven", "plus two seven" — and South African names (see
+ * `normaliseSpokenName` + saNames.ts). Phones are SA +27 ONLY: a foreign
+ * number is rejected with a clear message rather than silently accepted.
  */
 
-import { LeadInput, normalizeE164 } from "../types";
+import { LeadInput, normalizeE164, normalizeZaPhone } from "../types";
+import { SA_HONORIFICS, SA_NAMES, SA_NAME_PARTICLES, type SaNameEntry } from "./saNames";
 
-export type SpokenKind = "email" | "url" | "phone" | "text";
+export type SpokenKind = "email" | "url" | "phone" | "name" | "text";
 export type SpokenValidation = { ok: boolean; value: string; error?: string };
 
 // ── Shared lexical tables ───────────────────────────────────────────────────
@@ -283,9 +286,12 @@ export function normaliseSpokenUrl(text: string): string {
 // ── Phone ───────────────────────────────────────────────────────────────────
 
 /**
- * Spoken or typed phone → E.164 when valid ("oh eight two five five five one
+ * Spoken or typed phone → SA E.164 when valid ("oh eight two five five five one
  * two three four" → "+27825551234"; "plus two seven double seven…"),
  * otherwise the best-effort digits so the field can show what was heard.
+ * Only +27 numbers are ever converted: "+44 20…" comes back as "+4420…" (not a
+ * valid SA number) and `validateSpoken("phone")` rejects it with
+ * a "South African numbers only" message.
  */
 export function normaliseSpokenPhone(text: string): string {
   const raw = stripLeadIn(String(text ?? "").toLowerCase().trim());
@@ -313,7 +319,144 @@ export function normaliseSpokenPhone(text: string): string {
     .join("");
   if (!digits) return "";
   const candidate = (plus ? "+" : "") + digits;
-  return normalizeE164(candidate) ?? candidate;
+  // SA habit: the trunk "0" is often dropped when reading a number aloud
+  // ("eight two five five five…") — nine digits not starting with 0 is a local SA number.
+  const local = !plus && /^[1-9]\d{8}$/.test(digits) ? `0${digits}` : candidate;
+  return normalizeZaPhone(local) ?? candidate;
+}
+
+// ── South African names ─────────────────────────────────────────────────────
+
+/** Compare names ignoring case, spaces, hyphens, apostrophes and accents. */
+function nameKey(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+}
+
+let nameIndex: Map<string, SaNameEntry> | null = null;
+/** Lookup: canonical + misheard keys → entry. Canonical wins on a clash. */
+function names(): Map<string, SaNameEntry> {
+  if (!nameIndex) {
+    const m = new Map<string, SaNameEntry>();
+    for (const e of SA_NAMES) {
+      for (const heard of e.misheard ?? []) {
+        const k = nameKey(heard);
+        if (k && !m.has(k)) m.set(k, e);
+      }
+    }
+    for (const e of SA_NAMES) m.set(nameKey(e.canonical), e);
+    nameIndex = m;
+  }
+  return nameIndex;
+}
+
+const NAME_LEAD_IN =
+  /^(?:(?:so|okay|ok|yes|yeah|right|um|uh)\s+)*(?:(?:(?:my|his|her|their|the|our|your|contact(?:'s)?|owner(?:'s)?)\s+)?(?:(?:full|first|last|given|sur)\s*)?name(?:\s+is|'s)|this is|it is|it's|i am|i'm|(?:you're |you are )?speaking (?:to|with))\s+/;
+
+/** Capitalise a single unknown name word: "o'brien" → "O'Brien", "mcdonald" → "McDonald", "smith-jones" → "Smith-Jones". */
+function capitaliseWord(w: string): string {
+  return w
+    .split("-")
+    .map((part) => {
+      if (!part) return part;
+      const apos = /^([a-z])'([a-z].*)$/.exec(part);
+      if (apos) return `${apos[1].toUpperCase()}'${apos[2][0].toUpperCase()}${apos[2].slice(1)}`;
+      const mc = /^mc([a-z])(.*)$/.exec(part);
+      if (mc) return `Mc${mc[1].toUpperCase()}${mc[2]}`;
+      return part[0].toUpperCase() + part.slice(1);
+    })
+    .join("-");
+}
+
+/**
+ * Spoken name → correctly spelt and cased South African name.
+ *
+ *   "tandeka mokwena"             → "Thandeka Mokoena"
+ *   "nkosi nathi dlamini"         → "Nkosinathi Dlamini"   (split word re-joined)
+ *   "pieter vandermerwe"          → "Pieter van der Merwe"  (merged word split)
+ *   "van der merwe"               → "Van der Merwe"         (surname alone: capital particle)
+ *   "doctor priya naidu"          → "Dr Priya Naidoo"
+ *   "my name is t h a n d e k a"  → "Thandeka"               (spelled out)
+ *
+ * How it works: after removing a lead-in ("my name is…") and joining spelled
+ * letters, it scans left to right and, at each position, tries the longest run
+ * of up to 4 words whose letters (spaces/hyphens ignored) match a name in the
+ * table — canonical spelling or a known mis-hearing. Unmatched words are
+ * title-cased, with surname particles (van, der, du, de, le…) kept lower-case
+ * inside a name and capitalised when they start it.
+ */
+export function normaliseSpokenName(text: string): string {
+  let s = String(text ?? "")
+    .toLowerCase()
+    .replace(/[‘’`]/g, "'")
+    .trim()
+    .replace(/[.,;:!?"()[\]{}]/g, " ")
+    .replace(/\s+/g, " ");
+  s = s.replace(NAME_LEAD_IN, "");
+  const raw = s
+    .replace(/[^\p{L}\s'-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // Join spelled-out letters: three or more single letters in a row form one word
+  // ("t h a n d e k a"); one or two stay as initials ("j p").
+  const tokens: string[] = [];
+  for (let i = 0; i < raw.length; ) {
+    let j = i;
+    while (j < raw.length && /^\p{L}$/u.test(raw[j])) j++;
+    if (j - i >= 3) {
+      tokens.push(raw.slice(i, j).join(""));
+      i = j;
+    } else {
+      tokens.push(raw[i]);
+      i += 1;
+    }
+  }
+  if (tokens.length === 0) return "";
+
+  const index = names();
+  type Part = { text: string; known: boolean; honorific?: boolean };
+  const parts: Part[] = [];
+  let i = 0;
+  if (Object.prototype.hasOwnProperty.call(SA_HONORIFICS, tokens[0]) && tokens.length > 1) {
+    parts.push({ text: SA_HONORIFICS[tokens[0]], known: true, honorific: true });
+    i = 1;
+  }
+  while (i < tokens.length) {
+    let matched = false;
+    for (let w = Math.min(4, tokens.length - i); w >= 1; w--) {
+      const hit = index.get(nameKey(tokens.slice(i, i + w).join("")));
+      if (hit) {
+        parts.push({ text: hit.canonical, known: true });
+        i += w;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const t = tokens[i];
+      // A particle only stays lower-case when another word follows it.
+      const particle = SA_NAME_PARTICLES.has(t) && i < tokens.length - 1;
+      parts.push({ text: particle ? t : /^\p{L}$/u.test(t) ? t.toUpperCase() : capitaliseWord(t), known: false });
+      i += 1;
+    }
+  }
+
+  // The first real name word always starts with a capital ("Van der Merwe",
+  // "Du Toit" when the surname stands alone; "Dr Van Wyk" is also correct SA usage).
+  const firstName = parts.findIndex((p) => !p.honorific);
+  if (firstName >= 0) {
+    const p = parts[firstName];
+    p.text = p.text.charAt(0).toUpperCase() + p.text.slice(1);
+  }
+  return parts
+    .map((p) => p.text)
+    .join(" ")
+    .slice(0, 120)
+    .trim();
 }
 
 // ── Medical-aesthetic vocabulary ────────────────────────────────────────────
@@ -432,6 +575,9 @@ const MESSAGES = {
   badUrl: "That doesn't sound like a valid website. Try again, saying \"dot\" between the parts.",
   emptyPhone: "We didn't catch a number. Try again or type it.",
   badPhone: "That doesn't sound like a valid phone number. Say every digit, for example \"oh eight two…\".",
+  foreignPhone: "Only South African numbers (+27) can be used. Say a number starting with \"oh\" or \"plus two seven\".",
+  emptyName: "We didn't catch a name. Try again or type it.",
+  badName: "That doesn't sound like a name. Try again, or spell it out letter by letter.",
   emptyText: "We didn't catch anything. Try again.",
 } as const;
 
@@ -460,9 +606,21 @@ export function validateSpoken(kind: SpokenKind, text: string): SpokenValidation
     case "phone": {
       const value = normaliseSpokenPhone(text);
       if (!value) return { ok: false, value, error: MESSAGES.emptyPhone };
-      const r = LeadInput.shape.phone.safeParse(value);
-      const e164 = r.success ? normalizeE164(r.data) : null;
-      return e164 ? { ok: true, value: e164 } : { ok: false, value, error: MESSAGES.badPhone };
+      const za = normalizeZaPhone(value);
+      const r = za ? LeadInput.shape.phone.safeParse(za) : null;
+      if (za && r?.success) return { ok: true, value: za };
+      // A valid international number that isn't +27 gets its own, clearer message.
+      // (An over-long local number like "0825…" + extra digit is NOT foreign — just wrong.)
+      const e164 = normalizeE164(value);
+      const foreign = e164 !== null && !/^\+(?:0|27)/.test(e164);
+      return { ok: false, value, error: foreign ? MESSAGES.foreignPhone : MESSAGES.badPhone };
+    }
+    case "name": {
+      const value = normaliseSpokenName(text);
+      if (!value) return { ok: false, value, error: MESSAGES.emptyName };
+      // Contract: contactName is ≤ 80 chars; a name needs at least two letters.
+      const letters = value.replace(/[^\p{L}]/gu, "").length;
+      return letters >= 2 && value.length <= 80 ? { ok: true, value } : { ok: false, value, error: MESSAGES.badName };
     }
     case "text":
     default: {
@@ -481,6 +639,8 @@ export function normaliseForKind(kind: SpokenKind, text: string): string {
       return normaliseSpokenUrl(text);
     case "phone":
       return normaliseSpokenPhone(text);
+    case "name":
+      return normaliseSpokenName(text);
     default:
       return normaliseDictation(text);
   }

@@ -14,14 +14,17 @@ import {
   type CallDetail,
   type CallDisposition,
   type CallPatch,
+  isInboundSource,
   type Lead,
   type SalesStage,
 } from "../../../lib/consultant/types";
+import { asLeadSource } from "../lead/sources";
 import { INPUT_CLASS } from "../MicField";
 import { NoteEditor } from "../notes/NoteEditor";
 import { Sheet } from "../Sheet";
 import { Button, Skeleton } from "../ui";
-import { cx, describeError, DISPOSITION_LABELS, fmtClock, FOCUS, fromLocalInput } from "../utils";
+import { cx, describeError, DISPOSITION_LABELS, fmtClock, FOCUS } from "../utils";
+import { SastDateTimeField, sastToIso, type SastParts } from "../wave2/SastDateTime";
 
 /** Draft key shared with the in-call "Note" button, so a mid-call note carries into wrap-up. */
 export function callNoteKey(callId: string): string {
@@ -57,9 +60,16 @@ export function WrapUpSheet({
   const [disposition, setDisposition] = useState<CallDisposition | null>(null);
   const [stage, setStage] = useState<SalesStage | null>(null);
   const [nextAction, setNextAction] = useState("");
-  const [nextAt, setNextAt] = useState("");
+  const [nextAt, setNextAt] = useState<SastParts>({ date: "", time: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // POPIA s.69: Emma may only WhatsApp a clinic that agreed. Captured here, on the call.
+  const alreadyOptedIn = lead?.messagingConsent === "opted_in";
+  const optedOut = lead?.messagingConsent === "opted_out";
+  // Inbound leads (they contacted us) are already covered for follow-ups on their enquiry.
+  const inbound = isInboundSource(asLeadSource(lead?.source));
+  const [whatsappConsent, setWhatsappConsent] = useState(false);
+  useEffect(() => setWhatsappConsent(false), [callId]);
 
   // Summary polling while the sheet is open and Coach Alex is still writing.
   const [pollMs, setPollMs] = useState(3000);
@@ -78,8 +88,9 @@ export function WrapUpSheet({
     if (disposition) patch.disposition = disposition;
     if (stage && stage !== lead?.salesStage) patch.salesStage = stage;
     if (nextAction.trim()) patch.nextAction = nextAction.trim();
-    const at = fromLocalInput(nextAt);
+    const at = sastToIso(nextAt);
     if (at) patch.nextActionAt = at;
+    if (whatsappConsent && !alreadyOptedIn && !optedOut && !inbound) patch.whatsappConsent = true;
 
     // The note always goes through the outbox (offline-safe, idempotent).
     const body = note.draft.trim();
@@ -120,8 +131,11 @@ export function WrapUpSheet({
       onClose={onClose}
       footer={
         <div className="space-y-2">
-          {!online && disposition && (
-            <p className="text-xs text-[--cp-accent-text]">Offline: the note, stage and next step are saved on this device. Log the outcome again once you're back online.</p>
+          {!online && (disposition || whatsappConsent) && (
+            <p className="text-xs text-[--cp-accent-text]">
+              Offline: the note, stage and next step are saved on this device. Log the outcome
+              {whatsappConsent ? " and WhatsApp consent" : ""} again once you&apos;re back online.
+            </p>
           )}
           {error && (
             <p role="alert" className="text-sm text-[--cp-risk]">
@@ -199,18 +213,7 @@ export function WrapUpSheet({
             </button>
           )}
         </div>
-        <div>
-          <label htmlFor={`${ids}-when`} className="mb-1.5 block text-sm font-medium text-[--cp-text]">
-            Next step — when
-          </label>
-          <input
-            id={`${ids}-when`}
-            type="datetime-local"
-            value={nextAt}
-            onChange={(e) => setNextAt(e.target.value)}
-            className={cx(INPUT_CLASS, "border-[--cp-border] [color-scheme:dark]")}
-          />
-        </div>
+        <SastDateTimeField label="Next step — when" value={nextAt} onChange={setNextAt} />
       </div>
       <div className="mb-5">
         <label htmlFor={`${ids}-next`} className="mb-1.5 block text-sm font-medium text-[--cp-text]">
@@ -223,6 +226,37 @@ export function WrapUpSheet({
           placeholder={summary?.nextSteps[0] ?? "Send demo invite"}
           className={cx(INPUT_CLASS, "border-[--cp-border]")}
         />
+      </div>
+
+      <div className="mb-5 rounded-2xl border border-[--cp-border] bg-[--cp-surface] p-3">
+        {optedOut ? (
+          <p className="text-sm text-[--cp-muted]">
+            This clinic opted out of WhatsApp messages. Emma won&apos;t message them — that can&apos;t be changed here.
+          </p>
+        ) : alreadyOptedIn ? (
+          <p className="text-sm text-[--cp-muted]">The clinic has already agreed to WhatsApp follow-ups from VantageStack.</p>
+        ) : inbound ? (
+          <p className="text-sm text-[--cp-muted]">
+            WhatsApp follow-ups are covered — this clinic contacted us first, so Emma can follow up on their enquiry.
+          </p>
+        ) : (
+          <label htmlFor={`${ids}-consent`} className="flex min-h-11 cursor-pointer items-start gap-3">
+            <input
+              id={`${ids}-consent`}
+              type="checkbox"
+              checked={whatsappConsent}
+              onChange={(e) => setWhatsappConsent(e.target.checked)}
+              aria-describedby={`${ids}-consent-help`}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[--cp-accent]"
+            />
+            <span>
+              <span className="block text-sm font-medium text-[--cp-text]">Clinic agreed to WhatsApp follow-ups from VantageStack</span>
+              <span id={`${ids}-consent-help`} className="mt-0.5 block text-xs text-[--cp-muted]">
+                Only tick this if they said yes on the call. Emma can only message clinics that agreed.
+              </span>
+            </span>
+          </label>
+        )}
       </div>
 
       <div className="mb-5">

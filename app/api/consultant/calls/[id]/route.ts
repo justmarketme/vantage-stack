@@ -1,4 +1,5 @@
 import { MESSAGES } from "@/lib/consultant/server/constants";
+import { recordCallConsent } from "@/lib/consultant/server/emma/consent";
 import { json, parseBody, requireUuid } from "@/lib/consultant/server/http";
 import { getCallDetail, patchCall } from "@/lib/consultant/server/repo/calls";
 import { consultantRoute, type IdContext } from "@/lib/consultant/server/route";
@@ -14,12 +15,18 @@ export async function GET(_req: Request, ctx: IdContext) {
   );
 }
 
-/** Wrap-up: disposition, next action (mirrored onto the lead) and optional stage move. */
+/** Wrap-up: disposition, next action (mirrored onto the lead), optional stage move and WhatsApp consent. */
 export async function PATCH(req: Request, ctx: IdContext) {
   const id = (await ctx.params).id;
   return consultantRoute("calls.patch", undefined, async (s, db) => {
     const callId = requireUuid(id, MESSAGES.callNotFound);
     const patch = await parseBody(req, CallPatch);
-    return json<Call>(await patchCall(db, s, callId, patch));
+    const call = await patchCall(db, s, callId, patch); // ownership + scope enforced here
+    // Decision 8 (POPIA s.69): the clinic agreed on this call to WhatsApp/SMS follow-ups.
+    // `false` is "not asked / declined" — never an opt-out, and never reverses one.
+    if (patch.whatsappConsent === true) {
+      await recordCallConsent(db, { leadId: call.leadId, callId: call.id, memberId: s.memberId });
+    }
+    return json<Call>(call);
   });
 }

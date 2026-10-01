@@ -66,7 +66,8 @@ export function callCommunication(call: {
 
 /** `deals.proposal_status` that mirrors a Clinics sales stage. */
 export function dealStatusForStage(stage: SalesStage): string {
-  if (stage === "won") return CRM_FEED.dealStatus.won;
+  // A paid deal is still an accepted proposal (payment itself lives in deals.paid_at).
+  if (stage === "won" || stage === "paid") return CRM_FEED.dealStatus.won;
   if (stage === "proposal") return CRM_FEED.dealStatus.proposal;
   if (stage === "lost") return CRM_FEED.dealStatus.lost;
   return CRM_FEED.dealStatus.open;

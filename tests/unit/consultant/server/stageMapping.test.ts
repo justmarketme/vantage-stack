@@ -5,13 +5,18 @@ import { SALES_STAGES } from "../../../../lib/consultant/types";
 describe("sales stage → CRM status", () => {
   const cfg = consultantConfig();
 
-  test("only proposal and won move the CRM delivery status", () => {
+  test("only proposal, won and paid move the CRM delivery status", () => {
     for (const stage of SALES_STAGES) {
       const status = crmStatusForStage(stage, cfg);
       if (stage === "proposal") expect(status).toBe(cfg.pipeline.statusOnProposal);
-      else if (stage === "won") expect(status).toBe(cfg.pipeline.statusOnWon);
+      else if (stage === "won" || stage === "paid") expect(status).toBe(cfg.pipeline.statusOnWon);
       else expect(status).toBeNull();
     }
+  });
+
+  test("paid is a won client in the CRM; no_show leaves the CRM status alone", () => {
+    expect(crmStatusForStage("paid", cfg)).toBe(cfg.pipeline.statusOnWon);
+    expect(crmStatusForStage("no_show", cfg)).toBeNull();
   });
 
   test("every status the portal can write is ensured on the enum", () => {
@@ -25,10 +30,11 @@ describe("sales stage → CRM status", () => {
 });
 
 describe("sales stage → deals.proposal_status", () => {
-  test("won is accepted, proposal is sent, lost is lost, everything else draft", () => {
+  test("won and paid are accepted, proposal is sent, lost is lost, everything else draft", () => {
     expect(dealStatusForStage("won")).toBe("accepted");
+    expect(dealStatusForStage("paid")).toBe("accepted");
     expect(dealStatusForStage("proposal")).toBe("sent");
     expect(dealStatusForStage("lost")).toBe("lost");
-    for (const s of ["new", "contacted", "discovery_booked", "demo_done"] as const) expect(dealStatusForStage(s)).toBe("draft");
+    for (const s of ["new", "contacted", "discovery_booked", "no_show", "demo_done"] as const) expect(dealStatusForStage(s)).toBe("draft");
   });
 });

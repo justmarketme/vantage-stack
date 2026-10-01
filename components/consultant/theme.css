@@ -127,11 +127,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Leaderboard: a single, subtle lift when a tier is newly achieved. No confetti. */
+@keyframes cp-celebrate {
+  0% { transform: scale(0.96); opacity: 0; box-shadow: 0 0 0 0 var(--cp-progress-soft); }
+  40% { transform: scale(1.01); opacity: 1; box-shadow: 0 0 0 10px var(--cp-progress-soft); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 transparent; }
+}
+.cp-theme .cp-celebrate {
+  animation: cp-celebrate 900ms ease-out 1 both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cp-theme .cp-avatar-ping,
   .cp-theme .cp-flash,
   .cp-theme .cp-rec,
-  .cp-theme .cp-skeleton {
+  .cp-theme .cp-skeleton,
+  .cp-theme .cp-celebrate {
     animation: none;
   }
   .cp-theme .cp-flash {

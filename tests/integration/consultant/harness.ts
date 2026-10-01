@@ -16,6 +16,7 @@ import { join } from "node:path";
 import postgres, { type Sql } from "postgres";
 import twilio from "twilio";
 import type { ConsultantSession } from "../../../lib/consultant/auth/session";
+import { permissionsFor } from "../../../lib/admin/roles";
 
 export const IT_PG_URL = (process.env.CONSULTANT_IT_PG_URL ?? "").trim();
 export const describeDb: jest.Describe = IT_PG_URL ? describe : describe.skip;
@@ -105,14 +106,14 @@ export function runAs<T>(s: ConsultantSession | null, fn: () => Promise<T>): Pro
 export type Member = { id: string; username: string; displayName: string };
 
 export function consultantSession(m: Member): ConsultantSession {
-  return { memberId: m.id, username: m.username, displayName: m.displayName, role: "sales_consultant", isManager: false, canCall: true };
+  return { memberId: m.id, username: m.username, displayName: m.displayName, role: "sales_consultant", isManager: false, canCall: true, permissions: permissionsFor("sales_consultant") };
 }
 export function managerSession(m: Member): ConsultantSession {
-  return { memberId: m.id, username: m.username, displayName: m.displayName, role: "agent_manager", isManager: true, canCall: true };
+  return { memberId: m.id, username: m.username, displayName: m.displayName, role: "agent_manager", isManager: true, canCall: true, permissions: permissionsFor("agent_manager") };
 }
 /** The legacy single-password admin: a manager with no member id (read-only). */
 export function legacySession(): ConsultantSession {
-  return { memberId: null, username: "admin", displayName: "admin", role: "super_admin", isManager: true, canCall: false };
+  return { memberId: null, username: "admin", displayName: "admin", role: "super_admin", isManager: true, canCall: false, permissions: permissionsFor("super_admin") };
 }
 
 export async function insertMember(sql: Sql, username: string, role: string, fullName: string): Promise<Member> {

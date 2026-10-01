@@ -20,4 +20,8 @@ describe("consultantFlags", () => {
   it("viewer: has view_clients but cannot call (requireConsultant still 403s it)", () => {
     expect(consultantFlags("viewer", ID)).toEqual({ canCall: false, isManager: true });
   });
+  it("systems_ops / acquisition_creative members: read-only managers (never call)", () => {
+    expect(consultantFlags("systems_ops", ID)).toEqual({ canCall: false, isManager: true });
+    expect(consultantFlags("acquisition_creative", ID)).toEqual({ canCall: false, isManager: true });
+  });
 });

@@ -1,5 +1,18 @@
-import { QueryStore, canPersistKey, redactForStorage } from "../../../../lib/consultant/client/queryStore";
+import {
+  PERSIST_MAX_AGE_MS,
+  QUERY_CACHE_PERSIST_NAME,
+  QueryStore,
+  canPersistKey,
+  partializeQueryCache,
+  redactForStorage,
+} from "../../../../lib/consultant/client/queryStore";
 import { MemoryStorage, STORAGE_PREFIX, setStorageForTests } from "../../../../lib/consultant/client/storage";
+
+/** Wave 2: the persisted cache is one Zustand `persist` blob `{ state: { entries }, version }`. */
+function diskEntries(mem: MemoryStorage): Record<string, { t: number; v: unknown }> {
+  const raw = mem.getItem(QUERY_CACHE_PERSIST_NAME);
+  return raw ? JSON.parse(raw).state.entries : {};
+}
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -56,9 +69,9 @@ describe("QueryStore", () => {
     };
     s.setFetcher("lead:l1", async () => detail, true);
     await s.revalidate("lead:l1");
-    const raw = mem.getItem(`${STORAGE_PREFIX}q:lead:l1`)!;
+    const raw = mem.getItem(QUERY_CACHE_PERSIST_NAME)!;
     expect(raw).not.toMatch(/secret|private|"hi"/);
-    const stored = JSON.parse(raw).v;
+    const stored = diskEntries(mem)["lead:l1"].v as typeof detail;
     expect(stored.notes).toEqual([]);
     expect(stored.calls[0].summary).toBeNull();
     expect(stored.lead.clinicName).toBe("Glow");
@@ -70,7 +83,39 @@ describe("QueryStore", () => {
 
     s.setFetcher("leads:mine", async () => [1], false);
     await s.revalidate("leads:mine");
-    expect(mem.getItem(`${STORAGE_PREFIX}q:leads:mine`)).toBeNull();
+    expect(diskEntries(mem)["leads:mine"]).toBeUndefined();
+  });
+
+  it("partialize drops never-persist keys and expired entries, and redacts", () => {
+    const now = 10 * PERSIST_MAX_AGE_MS;
+    const out = partializeQueryCache(
+      {
+        entries: {
+          "call:1": { t: now, v: { transcript: ["x"] } },
+          "leads:old": { t: now - PERSIST_MAX_AGE_MS - 1, v: [1] },
+          "leads:mine": { t: now, v: [{ id: "l1", notes: [{ body: "private" }], objections: ["price"] }] },
+        },
+      },
+      now,
+    );
+    expect(Object.keys(out.entries)).toEqual(["leads:mine"]);
+    expect(out.entries["leads:mine"].v).toEqual([{ id: "l1", notes: [], objections: [] }]);
+  });
+
+  it("drops wave-1 per-key cache entries on start", () => {
+    mem.setItem(`${STORAGE_PREFIX}q:leads:mine`, JSON.stringify({ t: Date.now(), v: [1] }));
+    new QueryStore();
+    expect(mem.length).toBe(0);
+  });
+
+  it("invalidate(prefix) forgets unmounted keys on disk too", async () => {
+    const s = new QueryStore();
+    s.setFetcher("leads:mine", async () => [1], true);
+    s.setFetcher("stats:today", async () => ({ dials: 1 }), true);
+    await s.revalidate("leads:mine");
+    await s.revalidate("stats:today");
+    await s.invalidate("leads:");
+    expect(Object.keys(diskEntries(mem))).toEqual(["stats:today"]);
   });
 
   it("never persists call / live / note keys even with persist:true", async () => {

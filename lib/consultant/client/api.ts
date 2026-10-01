@@ -10,24 +10,48 @@
  *   user-safe) or a generic message — never raw response bodies.
  */
 
+import type { z } from "zod";
 import type {
   ApiError,
+  CalendarConnection,
+  CalendarProvider,
   Call,
   CallDetail,
   CallPatch,
   CardEventInput,
+  Deal,
+  EmmaMessage,
+  FunnelMetrics,
+  GamificationSettings,
+  Goal,
+  GoalInput,
+  GoalPatch,
   Lead,
   LeadDetail,
   LeadInput,
   LeadPatch,
+  LeadSearchInput,
+  Leaderboard,
   LiveCallState,
   Me,
+  Meeting,
+  MeetingInput,
+  MeetingPatch,
   Note,
   NoteInput,
   NotePatch,
   NoteRevision,
+  PaymentConfirmInput,
+  Period,
+  Reward,
   SalesStage,
+  ScrapedImportResult,
+  ScrapedLeadImport,
+  SystemHealth,
   TodayStats,
+  TrainingModule,
+  UploadRequest,
+  UploadTicket,
   VoiceToken,
 } from "../types";
 
@@ -97,7 +121,7 @@ export interface RequestOptions {
 const DEFAULT_TIMEOUT_MS = 20_000;
 
 export async function request<T>(
-  method: "GET" | "POST" | "PATCH" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
   opts: RequestOptions = {},
@@ -180,9 +204,49 @@ function qs(params: Record<string, string | number | undefined | null>): string 
 
 export type LeadListParams = {
   stage?: SalesStage;
+  /**
+   * @deprecated Wave 2: search text never goes in a URL (phone numbers would
+   * land in access logs). Use `api.leads.search`. Kept so wave-1 callers still
+   * compile: a non-empty `q` is transparently sent as `POST leads/search`.
+   */
   q?: string;
   scope?: "mine" | "pool" | "all";
 };
+
+/** Body of `POST leads/search` (defaults: q "", scope "mine"). */
+export type LeadSearchParams = z.input<typeof LeadSearchInput>;
+
+export type LeaderboardRankBy = Leaderboard["rankedBy"];
+
+/** `GET metrics?consultantId=team` (managers). */
+export type TeamFunnelMetrics = {
+  team: FunnelMetrics;
+  byConsultant: (FunnelMetrics & { consultantId: string; name: string })[];
+};
+
+export type RewardStatusFilter = "pending" | "all";
+export type DeadLetterKind = "event" | "message";
+
+/**
+ * A dead-lettered event delivery or Emma message (admin Systems view).
+ * NOT in the frozen contract yet — shape proposed by Agent 2; fields beyond
+ * `kind` + `id` are optional so a different server shape still renders.
+ */
+export type DeadLetter = {
+  kind: DeadLetterKind;
+  id: string;
+  type?: string;
+  target?: string | null;
+  attempts?: number;
+  lastError?: string | null;
+  createdAt?: string;
+  updatedAt?: string | null;
+};
+
+export type MeetingListParams = { from?: string; to?: string; leadId?: string };
+
+const search = (input: LeadSearchParams, o?: RequestOptions) =>
+  request<Lead[]>("POST", "/leads/search", { ...input, q: (input.q ?? "").trim() }, o);
 
 export const api = {
   me: (o?: RequestOptions) => request<Me>("GET", "/me", undefined, o),
@@ -193,12 +257,21 @@ export const api = {
   },
 
   leads: {
-    list: (params: LeadListParams = {}, o?: RequestOptions) =>
-      request<Lead[]>("GET", `/leads${qs({ stage: params.stage, q: params.q?.trim(), scope: params.scope })}`, undefined, o),
+    /** GET carries only `stage` + `scope` (the server 400s on `q`). */
+    list: (params: LeadListParams = {}, o?: RequestOptions) => {
+      const q = params.q?.trim();
+      if (q) return search({ q, stage: params.stage, scope: params.scope }, o);
+      return request<Lead[]>("GET", `/leads${qs({ stage: params.stage, scope: params.scope })}`, undefined, o);
+    },
+    /** Free-text search (name, clinic, phone, email) — POST so nothing sensitive is in the URL. */
+    search,
     create: (input: LeadInput, o?: RequestOptions) => request<Lead>("POST", "/leads", input, o),
     get: (id: string, o?: RequestOptions) => request<LeadDetail>("GET", `/leads/${enc(id)}`, undefined, o),
     patch: (id: string, patch: LeadPatch, o?: RequestOptions) => request<Lead>("PATCH", `/leads/${enc(id)}`, patch, o),
     claim: (id: string, o?: RequestOptions) => request<Lead>("POST", `/leads/${enc(id)}/claim`, undefined, o),
+    /** Managers: send scraper results into the Clinics pool (≤500 per call). */
+    importScraped: (input: ScrapedLeadImport, o?: RequestOptions) =>
+      request<ScrapedImportResult>("POST", "/leads/import", input, o),
   },
 
   voice: {
@@ -210,6 +283,7 @@ export const api = {
     get: (id: string, o?: RequestOptions) => request<CallDetail>("GET", `/calls/${enc(id)}`, undefined, o),
     live: (id: string, after: number, o?: RequestOptions) =>
       request<LiveCallState>("GET", `/calls/${enc(id)}/live${qs({ after: Math.max(0, Math.floor(after)) })}`, undefined, o),
+    /** Sent as-is (incl. `whatsappConsent` from the wrap-up sheet) — no field filtering here. */
     patch: (id: string, patch: CallPatch, o?: RequestOptions) => request<Call>("PATCH", `/calls/${enc(id)}`, patch, o),
     summarise: (id: string, o?: RequestOptions) => request<Call>("POST", `/calls/${enc(id)}/summarise`, undefined, o),
     cards: (id: string, input: CardEventInput, o?: RequestOptions) =>
@@ -225,6 +299,97 @@ export const api = {
     patch: (id: string, patch: NotePatch, o?: RequestOptions) => request<Note>("PATCH", `/notes/${enc(id)}`, patch, o),
     revisions: (id: string, o?: RequestOptions) =>
       request<NoteRevision[]>("GET", `/notes/${enc(id)}/revisions`, undefined, o),
+  },
+
+  // ── Wave 2 ────────────────────────────────────────────────────────────────
+
+  meetings: {
+    /** `from`/`to` are ISO instants (build them with `sastWallClockToIso`). */
+    list: (params: MeetingListParams = {}, o?: RequestOptions) =>
+      request<Meeting[]>("GET", `/meetings${qs({ from: params.from, to: params.to, leadId: params.leadId })}`, undefined, o),
+    create: (input: z.input<typeof MeetingInput>, o?: RequestOptions) => request<Meeting>("POST", "/meetings", input, o),
+    patch: (id: string, patch: MeetingPatch, o?: RequestOptions) =>
+      request<Meeting>("PATCH", `/meetings/${enc(id)}`, patch, o),
+  },
+
+  calendar: {
+    list: (o?: RequestOptions) => request<CalendarConnection[]>("GET", "/calendar", undefined, o),
+    /** Full-page navigation target that starts the provider's OAuth flow. */
+    connectUrl: (provider: CalendarProvider): string => `${API_BASE}/calendar/${enc(provider)}/connect`,
+    disconnect: (provider: CalendarProvider, o?: RequestOptions) =>
+      request<void>("DELETE", `/calendar/${enc(provider)}`, undefined, o),
+  },
+
+  uploads: {
+    /** Ask for a short-lived signed upload URL (private bucket). Use `useUpload` to send the file. */
+    ticket: (input: UploadRequest, o?: RequestOptions) => request<UploadTicket>("POST", "/uploads", input, o),
+  },
+
+  goals: {
+    list: (params: { consultantId?: string } = {}, o?: RequestOptions) =>
+      request<Goal[]>("GET", `/goals${qs({ consultantId: params.consultantId })}`, undefined, o),
+    create: (input: z.input<typeof GoalInput>, o?: RequestOptions) => request<Goal>("POST", "/goals", input, o),
+    patch: (id: string, patch: GoalPatch, o?: RequestOptions) => request<Goal>("PATCH", `/goals/${enc(id)}`, patch, o),
+    remove: (id: string, o?: RequestOptions) => request<void>("DELETE", `/goals/${enc(id)}`, undefined, o),
+  },
+
+  metrics: {
+    /** Own funnel, or any consultant's for managers. */
+    get: (period: Period, consultantId?: string, o?: RequestOptions) =>
+      request<FunnelMetrics>("GET", `/metrics${qs({ period, consultantId })}`, undefined, o),
+    /** Team totals + per-consultant rows (needs `view_team_performance` or manager). */
+    team: (period: Period, o?: RequestOptions) =>
+      request<TeamFunnelMetrics>("GET", `/metrics${qs({ period, consultantId: "team" })}`, undefined, o),
+  },
+
+  leaderboard: {
+    get: (period: Period, rankBy: LeaderboardRankBy = "points", o?: RequestOptions) =>
+      request<Leaderboard>("GET", `/leaderboard${qs({ period, rankBy })}`, undefined, o),
+  },
+
+  settings: {
+    gamification: {
+      get: (o?: RequestOptions) => request<GamificationSettings>("GET", "/settings/gamification", undefined, o),
+      /** Needs `manage_gamification`. */
+      put: (input: GamificationSettings, o?: RequestOptions) =>
+        request<GamificationSettings>("PUT", "/settings/gamification", input, o),
+    },
+  },
+
+  rewards: {
+    list: (status: RewardStatusFilter = "pending", o?: RequestOptions) =>
+      request<Reward[]>("GET", `/rewards${qs({ status })}`, undefined, o),
+    /** Needs `manage_gamification`. */
+    fulfil: (id: string, o?: RequestOptions) => request<Reward>("POST", `/rewards/${enc(id)}/fulfil`, undefined, o),
+  },
+
+  deals: {
+    /** Manager confirms payment (needs `confirm_payments`); sets the lead to `paid`. */
+    confirmPayment: (leadId: string, input: PaymentConfirmInput, o?: RequestOptions) =>
+      request<Deal>("POST", `/deals/${enc(leadId)}/payment`, input, o),
+    /** Same-origin path that 302s to a short-lived signed URL — open it, never store the target. */
+    proofUrl: (leadId: string): string => `${API_BASE}/deals/${enc(leadId)}/proof`,
+  },
+
+  training: {
+    list: (o?: RequestOptions) => request<TrainingModule[]>("GET", "/training", undefined, o),
+    /** Returns the refreshed module list (the next one unlocks server-side). */
+    complete: (moduleId: string, o?: RequestOptions) =>
+      request<TrainingModule[]>("POST", `/training/${enc(moduleId)}/complete`, undefined, o),
+  },
+
+  messages: {
+    /** Emma WhatsApp/SMS history for a lead (lead owner or manager). */
+    list: (leadId: string, o?: RequestOptions) =>
+      request<EmmaMessage[]>("GET", `/messages${qs({ leadId })}`, undefined, o),
+  },
+
+  admin: {
+    /** Needs `view_system_health`. */
+    health: (o?: RequestOptions) => request<SystemHealth>("GET", "/admin/health", undefined, o),
+    deadLetters: (o?: RequestOptions) => request<DeadLetter[]>("GET", "/admin/dead-letters", undefined, o),
+    retryDeadLetter: (kind: DeadLetterKind, id: string, o?: RequestOptions) =>
+      request<void>("POST", `/admin/dead-letters/${enc(kind)}/${enc(id)}/retry`, undefined, o),
   },
 } as const;
 

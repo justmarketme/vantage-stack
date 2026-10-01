@@ -11,6 +11,7 @@
 
 /** Every user-facing error / spoken message the backend emits. Generic by design (no PII, no internals). */
 export const MESSAGES = {
+  paidStageLocked: "A deal becomes Paid only when a manager confirms the payment, and a paid deal can't change stage here.",
   badRequest: "Please check the highlighted fields.",
   invalidJson: "The request body is not valid JSON.",
   unauthorized: "Unauthorized",

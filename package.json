@@ -46,7 +46,9 @@
     "telegram:bot": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/telegram-bot.ts",
     "clinic-crm:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-migrate.ts",
     "clinic-crm:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-seed.ts",
-    "consultant:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-migrate.ts"
+    "consultant:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-migrate.ts",
+    "consultant:storage": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-storage-setup.ts",
+    "consultant:seed-staging": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-seed-staging.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -81,7 +83,8 @@
     "ultravox-client": "^0.5.0",
     "xstate": "^5.32.2",
     "zod": "^3.24.0",
-    "zod-to-json-schema": "^3.24.6"
+    "zod-to-json-schema": "^3.24.6",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

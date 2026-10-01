@@ -1,14 +1,30 @@
 import { SALES_STAGE_LABELS, type NepqStage, type SalesStage } from "../../lib/consultant/types";
 import { cx, NEPQ_LABELS } from "./utils";
 
-/** Sales stage. Neutral except won (progress) and lost (muted) — colour only where it carries meaning. */
+/** Stages that carry colour (Rams: colour only where it carries meaning). */
+export const STAGE_TONE: Record<SalesStage, "progress" | "risk" | "muted" | "neutral"> = {
+  new: "neutral",
+  contacted: "neutral",
+  discovery_booked: "neutral",
+  no_show: "risk", // needs rebooking
+  demo_done: "neutral",
+  proposal: "neutral",
+  won: "progress",
+  paid: "progress", // a sale counts when it is paid
+  lost: "muted",
+};
+
+/** Sales stage. Neutral except won/paid (progress), no-show (risk) and lost (muted). */
 export function StageChip({ stage, className }: { stage: SalesStage; className?: string }) {
+  const t = STAGE_TONE[stage];
   const tone =
-    stage === "won"
+    t === "progress"
       ? "bg-[--cp-progress-soft] text-[--cp-progress]"
-      : stage === "lost"
-        ? "bg-[--cp-surface-2] text-[--cp-muted] line-through decoration-1"
-        : "bg-[--cp-surface-2] text-[--cp-text]";
+      : t === "risk"
+        ? "bg-[--cp-risk-soft] text-[--cp-risk]"
+        : t === "muted"
+          ? "bg-[--cp-surface-2] text-[--cp-muted] line-through decoration-1"
+          : "bg-[--cp-surface-2] text-[--cp-text]";
   return (
     <span className={cx("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium", tone, className)}>
       {SALES_STAGE_LABELS[stage]}

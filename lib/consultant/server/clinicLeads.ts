@@ -1,10 +1,17 @@
 import type { Sql } from "postgres";
 import { consultantConfig } from "../config";
-import { CLINICS_VERTICAL, normalizeE164 } from "../types";
+import { CLINICS_VERTICAL, normalizeE164, type LeadSource } from "../types";
 import { CRM_FEED } from "./constants";
 import { logActivity } from "./crmFeed";
 import { txSql } from "./http";
 import { clientIdByEmail, lockPhone, placeholderEmail } from "./repo/leads";
+
+/**
+ * `clients.lead_source` for every landing-page enquiry (an INBOUND source: the clinic contacted
+ * us through the form). The form's own campaign/source tag is kept in `created_by` and the
+ * activity log.
+ */
+export const LANDING_PAGE_SOURCE: LeadSource = "landing_page";
 
 /** What a clinic landing-page enquiry contributes to an unassigned Clinics lead. */
 export type ClinicEnquiry = {
@@ -59,7 +66,7 @@ export async function upsertClinicLeadFromEnquiry(db: Sql, e: ClinicEnquiry): Pr
         vertical, sales_stage, sales_stage_changed_at, status, created_by
       ) values (
         ${name}, ${name}, ${email ?? placeholderEmail()}, ${e.websiteUrl.trim() || null},
-        ${e.contactName.trim() || null}, ${e.role.trim() || null}, ${phone}, ${e.source || CRM_FEED.landingLeadSource},
+        ${e.contactName.trim() || null}, ${e.role.trim() || null}, ${phone}, ${LANDING_PAGE_SOURCE},
         ${CLINICS_VERTICAL}, 'new', now(), ${cfg.pipeline.newLeadStatus}, ${e.source || CRM_FEED.landingLeadSource}
       )
       returning id::text

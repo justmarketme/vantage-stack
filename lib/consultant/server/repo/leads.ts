@@ -7,6 +7,7 @@ import { CRM_FEED, MESSAGES } from "../constants";
 import { logActivity, syncClinicsDeal } from "../crmFeed";
 import { fail, isUniqueViolation, txSql } from "../http";
 import { isPlaceholderEmail, toLead, type LeadRow } from "../mappers";
+import { attachLeadInsights } from "../scoring/leadInsights";
 import { leadVisible, writerId, type Scope } from "./scope";
 
 /**
@@ -25,6 +26,7 @@ function leadSelect(db: Sql) {
       coalesce(nullif(c.company, ''), c.name)::text as clinic_name,
       c.contact_name, c.contact_role, c.phone, c.email::text as email, c.website_url, c.city,
       c.lead_source, c.sales_stage, c.sales_stage_changed_at, c.lost_reason,
+      c.referred_by, c.social_platform, c.social_handle, c.source_url, c.sourced_at,
       c.next_action, c.next_action_at, c.consultant_id::text as consultant_id,
       coalesce(nullif(m.full_name, ''), m.username)::text as consultant_name,
       c.created_at, k.last_call_at, coalesce(k.call_count, 0)::int as call_count, d.deal_value
@@ -47,7 +49,9 @@ export async function getLead(db: Sql, s: Scope, id: string): Promise<Lead | nul
     ${leadSelect(db)}
     where c.id = ${id}::uuid and c.vertical = ${CLINICS_VERTICAL} and ${leadVisible(db, s)}
   `;
-  return rows[0] ? toLead(rows[0], consultantConfig().pipeline) : null;
+  if (!rows[0]) return null;
+  // Wave 2 (3A, additive): score + deal + messaging consent on single-lead reads.
+  return attachLeadInsights(db, toLead(rows[0], consultantConfig().pipeline));
 }
 
 export async function requireLead(db: Sql, s: Scope, id: string): Promise<Lead> {
@@ -150,13 +154,15 @@ export async function createLead(db: Sql, s: Session, input: LeadInput): Promise
         insert into public.clients (
           name, company, email, website_url, city, contact_name, contact_role, phone, lead_source,
           vertical, sales_stage, sales_stage_changed_at, status, consultant_id, assigned_to, created_by,
-          next_action, next_action_at
+          next_action, next_action_at,
+          referred_by, social_platform, social_handle
         ) values (
           ${input.clinicName}, ${input.clinicName}, ${input.email ?? placeholderEmail()}, ${input.website ?? null},
           ${input.city ?? null}, ${input.contactName ?? null}, ${input.contactRole ?? null}, ${input.phone},
           ${input.source ?? CRM_FEED.defaultLeadSource}, ${CLINICS_VERTICAL}, 'new', now(),
           ${cfg.pipeline.newLeadStatus}, ${memberId}::uuid, ${s.username}, ${s.username},
-          ${input.nextAction ?? null}, ${input.nextActionAt ?? null}::timestamptz
+          ${input.nextAction ?? null}, ${input.nextActionAt ?? null}::timestamptz,
+          ${input.referredBy ?? null}, ${input.socialPlatform ?? null}, ${input.socialHandle ?? null}
         )
         returning id::text
       `;
@@ -257,6 +263,11 @@ export async function applyLeadPatch(
   if (patch.lostReason !== undefined) updates.lost_reason = patch.lostReason || null;
 
   const fromStage = (lead.sales_stage ?? "new") as SalesStage;
+  // "Paid" drives commission, so it is set ONLY by a manager's payment confirmation
+  // (POST deals/[leadId]/payment) and a paid deal cannot be moved back from here.
+  if (patch.salesStage !== undefined && patch.salesStage !== fromStage && (patch.salesStage === "paid" || fromStage === "paid")) {
+    fail(409, MESSAGES.paidStageLocked, { salesStage: MESSAGES.paidStageLocked });
+  }
   const stageChanged = patch.salesStage !== undefined && patch.salesStage !== fromStage;
   const stage = patch.salesStage ?? fromStage;
   if (stageChanged) {

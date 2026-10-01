@@ -1,6 +1,7 @@
 /**
  * Response hardening for the Consultant Portal (`/consultant/**` pages and
- * `/api/consultant/**`). Edge-safe and pure — called from `middleware.ts`.
+ * `/api/consultant/**`). Edge-safe (config.ts only reads process.env) — called from
+ * `middleware.ts`.
  *
  * Why a non-nonce CSP: Next.js only stamps a per-request nonce onto its inline bootstrap
  * scripts when a page is dynamically rendered. The portal's pages are owned by another
@@ -18,7 +19,22 @@
  *   https://sdk.twilio.com/js/client/sounds  ringtone/DTMF sounds, fetched by XHR (connect-src)
  *                                            and played via <audio> (media-src)
  * Media itself flows over WebRTC (DTLS-SRTP), which CSP does not govern.
+ *
+ * Supabase (wave 2), pinned to THIS project's host only — never `*.supabase.co`, which would
+ * let injected script post data to any Supabase project an attacker owns:
+ *   https://<ref>.supabase.co   Storage signed upload (fetch PUT → connect-src) and signed
+ *                               view URLs for Why Board images / proof of payment (img-src,
+ *                               media-src), Realtime REST
+ *   wss://<ref>.supabase.co     Realtime broadcast websocket (nudges only, no data)
+ * The host is derived at runtime from NEXT_PUBLIC_SUPABASE_URL / SUPABASE_URL (config.ts), so
+ * a staging branch (its own ref) gets its own host automatically.
+ *
+ * Service worker: `/consultant-sw.js` registers with scope `/consultant/`. A worker's maximum
+ * scope is its script's directory (`/`), so no `Service-Worker-Allowed` header is needed;
+ * `worker-src 'self'` covers the registration.
  */
+
+import { consultantConfig, type ConsultantConfig } from "../config";
 
 /** Hosts the Twilio Voice JS SDK talks to. CSP `*.` matches subdomains at any depth. */
 export const TWILIO_CONNECT_SOURCES = ["https://*.twilio.com", "wss://*.twilio.com"] as const;
@@ -31,17 +47,55 @@ const FONT_FILE_SOURCE = "https://fonts.gstatic.com";
 export const CONSULTANT_PERMISSIONS_POLICY =
   "microphone=(self), screen-wake-lock=(self), camera=(), geolocation=(), payment=(), usb=(), display-capture=()";
 
-export function consultantContentSecurityPolicy(isDev: boolean): string {
+/** The Supabase URLs the browser talks to: Realtime (public URL) and Storage (server URL). */
+export function consultantSupabaseUrls(cfg: ConsultantConfig = consultantConfig()): string[] {
+  return [cfg.realtime.supabaseUrl, cfg.storage.supabaseUrl];
+}
+
+/**
+ * Exact https + wss origins for the configured Supabase host(s). Invalid or non-https URLs
+ * are dropped (plain http is allowed in development only, for a local Supabase stack).
+ */
+export function supabaseCspSources(urls: readonly string[], isDev = false): { http: string[]; ws: string[] } {
+  const http = new Set<string>();
+  const ws = new Set<string>();
+  for (const raw of urls) {
+    if (!raw) continue;
+    let u: URL;
+    try {
+      u = new URL(raw);
+    } catch {
+      continue;
+    }
+    if (u.protocol === "https:") {
+      http.add(`https://${u.host}`);
+      ws.add(`wss://${u.host}`);
+    } else if (isDev && u.protocol === "http:") {
+      http.add(`http://${u.host}`);
+      ws.add(`ws://${u.host}`);
+    }
+  }
+  return { http: [...http], ws: [...ws] };
+}
+
+function withSources(base: string, sources: readonly string[]): string {
+  return sources.length ? `${base} ${sources.join(" ")}` : base;
+}
+
+export function consultantContentSecurityPolicy(isDev: boolean, supabaseUrls: readonly string[] = []): string {
+  const supa = supabaseCspSources(supabaseUrls, isDev);
   return [
     "default-src 'self'",
     // 'unsafe-eval' only in dev (React Fast Refresh). See the header comment for 'unsafe-inline'.
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'unsafe-inline' ${FONT_STYLE_SOURCE}`,
     `font-src 'self' data: ${FONT_FILE_SOURCE}`,
-    "img-src 'self' data: blob:",
+    // Signed Storage URLs (Why Board images, proof of payment) come from the Supabase host.
+    withSources("img-src 'self' data: blob:", supa.http),
     // Recordings are streamed through our own authenticated proxy ('self'), never from Twilio.
-    `media-src 'self' blob: ${TWILIO_MEDIA_SOURCES.join(" ")}`,
-    `connect-src 'self' ${TWILIO_CONNECT_SOURCES.join(" ")}${isDev ? " ws:" : ""}`,
+    withSources(`media-src 'self' blob: ${TWILIO_MEDIA_SOURCES.join(" ")}`, supa.http),
+    withSources(`connect-src 'self' ${TWILIO_CONNECT_SOURCES.join(" ")}`, [...supa.http, ...supa.ws, ...(isDev ? ["ws:"] : [])]),
+    // 'self' covers /consultant-sw.js; blob: is kept for SDK-internal workers.
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",
@@ -63,10 +117,14 @@ function baseHeaders(isProd: boolean): Record<string, string> {
   };
 }
 
-export function consultantPageHeaders(env: { isDev: boolean; isProd: boolean }): Record<string, string> {
+export function consultantPageHeaders(env: {
+  isDev: boolean;
+  isProd: boolean;
+  supabaseUrls?: readonly string[];
+}): Record<string, string> {
   return {
     ...baseHeaders(env.isProd),
-    "Content-Security-Policy": consultantContentSecurityPolicy(env.isDev),
+    "Content-Security-Policy": consultantContentSecurityPolicy(env.isDev, env.supabaseUrls ?? []),
     "Permissions-Policy": CONSULTANT_PERMISSIONS_POLICY,
     "X-Frame-Options": "DENY",
   };

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, type ReactNode } from "react";
 import { SALES_STAGE_LABELS, type Lead, type SalesStage } from "../../lib/consultant/types";
 import { HealthDot, healthEdge } from "./HealthDot";
+import { STAGE_TONE } from "./StageChip";
 import { cx, fmtDue, fmtZar, FOCUS } from "./utils";
 
 /** Desktop pipeline column. Cards carry health on the left edge + labelled dot. */
@@ -22,7 +23,11 @@ export const KanbanColumn = memo(function KanbanColumn({
   return (
     <section aria-labelledby={headingId} className="flex w-[264px] shrink-0 flex-col ">
       <header className="flex items-center justify-between px-1 pb-2">
-        <h2 id={headingId} className={cx("font-heading text-sm font-medium", stage === "won" ? "text-[--cp-progress]" : "text-[--cp-text]")}>
+        <h2 id={headingId} className={cx("font-heading text-sm font-medium", STAGE_TONE[stage] === "progress"
+              ? "text-[--cp-progress]"
+              : STAGE_TONE[stage] === "risk"
+                ? "text-[--cp-risk]"
+                : "text-[--cp-text]")}>
           {SALES_STAGE_LABELS[stage]}
         </h2>
         <span className="rounded-full bg-[--cp-surface-2] px-2 py-0.5 text-xs text-[--cp-muted]">{leads.length}</span>

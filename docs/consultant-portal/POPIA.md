@@ -73,7 +73,8 @@ Twilio, Anthropic and Supabase all offer standard DPAs.
   `GET /api/consultant/calls/[id]/recording`, which applies the same scope rules as the call.
 - The browser never supplies the number to dial; voice tokens are outgoing-only, short-lived
   (`CONSULTANT_VOICE_TOKEN_TTL_SEC`) and bound to the consultant's identity.
-- `/consultant` pages send a restrictive CSP (network only to this origin and Twilio),
+- `/consultant` pages send a restrictive CSP (network only to this origin, Twilio and this
+  project's own Supabase host — never `*.supabase.co`),
   `Permissions-Policy: microphone=(self)`, `X-Frame-Options: DENY`, `Cache-Control: no-store`.
 - Transcripts, summaries and note bodies are never cached in browser storage for offline use
   (only lead lists and unsent drafts are).
@@ -85,9 +86,14 @@ Twilio, Anthropic and Supabase all offer standard DPAs.
 | **Sales Consultant (Clinics)** | own leads + the unassigned pool; calls, transcripts, recordings and notes on those leads only | call, create/edit own leads and notes, claim pool leads. **No** `/crm` or `/api/crm` access. |
 | **Agent Manager / Admin / Super Admin** | all Clinics leads and calls | everything a consultant can, plus reassign leads |
 | **Legacy single-password admin** | all (read-only manager) | cannot place calls (no member identity) |
+| **Systems & Operations** | all Clinics leads (read-only) + system health, dead letters | retry dead letters only. No calls, no pipeline edits, no `/crm` |
+| **Acquisition & Creative Direction** | all Clinics leads (read-only) + team performance | edit gamification settings, fulfil rewards. No calls, no pipeline edits, no `/crm` |
 | Report Generator / CSM / Viewer | nothing in the portal | — (CRM access unchanged) |
 
 `consultant_id` on every write comes from the session, never from the request body.
+Payments are confirmed only by roles with `confirm_payments` (Super Admin, Admin, Agent Manager).
+The read-only roles are enforced twice: middleware refuses their pipeline writes, and each
+admin route checks its own permission.
 
 ## Retention (recommendation — make it configurable)
 
@@ -116,3 +122,113 @@ deleted; summaries and notes stay. Lost-lead and card-event retention are **not*
   request and the date completed.
 - Consultants cannot delete calls, transcripts or recordings; they can only edit notes, and
   every edit is kept as a revision.
+
+---
+
+# Wave 2 additions
+
+## Public-domain (scraped) leads
+
+Clinics are found in **public business listings** and research tools. A clinic is a juristic
+person, but its owner / named contact is still a **data subject** (a natural person), so POPIA
+applies even though the details were published.
+
+**Sources and one intake.** Claude scraping, Google Places, Serper.dev, Apollo, Tavily, Exa and
+the in-app prospecting engine all feed ONE intake: the manager import
+(`POST /api/consultant/leads/import`) or the signed n8n `leads.import` action on
+`/api/webhooks/n8n-ingress`. Every record carries its `provider`; the app validates it,
+normalises phones to +27, dedupes and records provenance. The research tools themselves run in
+n8n / Claude workflows, not in this app.
+
+**Apollo is different:** it supplies *named* business contacts from a data broker, not
+details the clinic published itself. Record `provider = apollo` on every such lead, keep
+business-role data only (name, role, business phone / e-mail — no personal numbers, social
+profiles or anything else Apollo offers), and **Jono should confirm Apollo's own POPIA/GDPR
+terms (its lawful basis and notice to data subjects) cover South African use** before relying on it.
+
+- **Lawful basis — legitimate interest (s11(1)(f)).** B2B contact with a business, about its
+  business, using contact details the business itself published for enquiries. The balancing
+  test holds because the contact is expected, low-intrusion and easy to refuse. Record the
+  assessment (one page) with the Information Officer.
+- **Minimisation (s10).** Business fields only: clinic name, business phone, business e-mail,
+  website, address/city, listing URL. **Never** patients, personal social-media profiles,
+  reviews' authors, or private numbers. Deduped on +27 phone / place id.
+- **Openness (s18).** Every scraped lead stores `lead_source = 'public_scrape'`, `source_url`
+  and `sourced_at`. The call opener tells the clinic where we found their details
+  ("We found your clinic on Google…"), and the source is given on request.
+- **Direct marketing (s69).** A live human call is not "electronic communication", so
+  consultants may call. **Emma must not WhatsApp / SMS / e-mail a scraped lead** until it has
+  opted in — consent is captured by the consultant on the call (wrap-up "agreed to WhatsApp
+  follow-up", stored with the call id in `consultant_contact_consent`) or by the landing-page
+  form. **Opt-outs are permanent** and override any later opt-in attempt by staff.
+- **Objection (s11(3)).** "Don't call us again" → mark the lead Lost with that reason; it is
+  never re-imported (dedupe keeps the record).
+- **Inbound vs outbound (Decision 8).** *Outbound* — scraped, referral / word of mouth,
+  event, consultant-added: consultants may call; **Emma only after opt-in**. *Inbound* — website
+  / landing-page form, social-media enquiry, inbound call: the clinic contacted us, so Emma may
+  follow up **on that enquiry**. In every case **opt-outs always win**.
+- **Retention (recommendation, not automated).** Scraped leads that never engaged (no answered
+  call, no consent) should be reviewed and deleted after **12 months**.
+- Respect each source's terms of use and robots rules (DEPLOY.md → Operational notes).
+
+## Emma messaging (WhatsApp / SMS)
+
+- Sent from the existing VantageStack WhatsApp sender through Twilio, only via the outbox
+  (`consultant_messages`) with retries and a dead-letter state — nothing is dropped silently,
+  and nothing is sent twice (idempotency key).
+- **Consent gate:** a lead is messaged only with a recorded opt-in and no opt-out
+  (`consultant_contact_consent`). Replying **STOP** (or equivalent) sets `opted_out_at`
+  immediately via `/api/webhooks/emma-inbound`; **START** re-subscribes only when the clinic
+  itself sends it. Messages to consultants/owner (internal) are not direct marketing.
+- Message bodies are rendered from templates in `/ai-configs/emma`; the row stores the template
+  key and variables, never free text. Bodies, numbers and replies are never logged.
+- Inbound replies are relayed to the owning consultant as a notification and audited.
+- Twilio is an operator here too (USA); covered by the same DPA as voice.
+
+## Audit log
+
+`consultant_audit_log` records every Emma interaction (queued, sent, failed, delivered,
+inbound, opt-out/in), every payment confirmation, reward fulfilment, settings change, lead
+import, calendar connect/disconnect and access to pipeline data (s19, accountability). Each
+row is actor id + kind (member / system / n8n / twilio), action, entity and id, and a `meta`
+of **ids and counts only — never PII**. RLS on, no policies: server-only. Recommended
+retention: 3 years (then delete), so disputes and data-subject requests can be answered.
+
+## Calendar connections (encrypted tokens)
+
+- A consultant connects their **own** Google or Microsoft calendar (explicit OAuth consent;
+  scopes limited to calendar events + identity). Meetings are written with the clinic's
+  business contact details only when `invite_clinic` is set.
+- Access and refresh tokens are stored **encrypted at rest** with AES-256-GCM
+  (`lib/consultant/auth/crypto.ts`, key `CONSULTANT_TOKEN_ENC_KEY`, random IV per value,
+  tamper-evident). A database dump alone gives no calendar access.
+- Disconnect deletes the stored tokens (and should revoke them at the provider). Google and
+  Microsoft are operators for the calendar data (USA / EU).
+
+## Why Board images and proof of payment (Supabase Storage)
+
+- One **private** bucket (`CONSULTANT_STORAGE_BUCKET`), created by `npm run consultant:storage`:
+  not public, size-limited, JPEG/PNG/WebP/PDF only, and **no** anon/authenticated policies on
+  `storage.objects` — only the server's service-role key can read or write.
+- The app does not use Supabase Auth, so `auth.uid()` policies cannot identify consultants.
+  Instead the API checks the session and ownership, then issues a **short-lived signed URL**
+  (`CONSULTANT_SIGNED_URL_TTL_SEC`, default 10 min) for exactly one object.
+- **Why Board images** are personal (they can show family, homes, goals). Visible to the
+  consultant and managers only; deleted when the goal is deleted, and with the member's account.
+- **Proof of payment** can contain bank details and names. Visible to the owning consultant and
+  managers only. Keep it as long as the financial record requires (SARS / Tax Administration
+  Act: **5 years** from the payment), then delete the object and clear `payment_proof_path`.
+  Not automated yet — a recommendation for the Information Officer.
+
+## Events to n8n and to Jono's EMMA
+
+The outbox payloads carry **business facts only** (ids, stage, amounts, consultant name) — no
+phone numbers, e-mails, transcripts or message bodies. Every delivery is HMAC-signed
+(`X-VS-Signature`) and time-bound. EMMA (Jono's personal assistant) receives business events
+only; clinic contact and patient data never flow to it (AGENT_ARCHITECTURE Decision 7).
+n8n is an operator: host it in a region covered by a DPA and keep its execution logs short.
+
+> **Final legal sign-off is Jono's** (with the Information Officer / counsel): the
+> legitimate-interest assessment for scraped leads, the call opener wording, Emma consent
+> capture, and every retention period above.
+

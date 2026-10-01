@@ -268,6 +268,9 @@ export type Lead = {
   referredBy?: string | null;
   socialPlatform?: SocialPlatform | null;
   socialHandle?: string | null;
+  /** Public listing a scraped lead's details came from (POPIA s.18), and when. */
+  sourceUrl?: string | null;
+  sourcedAt?: string | null;
   vertical: typeof CLINICS_VERTICAL;
   salesStage: SalesStage;
   salesStageChangedAt: string;
@@ -671,6 +674,8 @@ export type FunnelMetrics = {
   weightedPipeline: number; // Σ value × win probability
   /** Pipeline velocity (ZAR/day) = open opps × win rate × avg sale / cycle days. */
   velocityPerDay: number | null;
+  /** Wave 2: defaults for the calculator when the consultant has no data yet. */
+  defaults?: CalculatorDefaults;
 };
 
 export const CalculatorInput = z.object({
@@ -726,6 +731,9 @@ export type LeaderboardRow = {
   quarterProgress: number; // 0..1
   tiers: TierStatus[];
 };
+
+/** Server-side calculator defaults, so the UI never hard-codes them. */
+export type CalculatorDefaults = { connectRate: number; avgSale: number; commissionRate: number; closeTargetFromConnects: number };
 
 export type Leaderboard = { period: Period; rankedBy: "points" | "revenue"; rows: LeaderboardRow[]; generatedAt: string };
 

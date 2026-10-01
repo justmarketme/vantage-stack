@@ -5,6 +5,7 @@ import {
   CLINICS_VERTICAL,
   NOTE_KINDS,
   SALES_STAGES,
+  SOCIAL_PLATFORMS,
   SPEAKERS,
   SUMMARY_STATUSES,
   type Call,
@@ -16,6 +17,7 @@ import {
   type NoteKind,
   type NoteRevision,
   type SalesStage,
+  type SocialPlatform,
   type Speaker,
   type SummaryStatus,
   type TranscriptSegment,
@@ -51,6 +53,13 @@ export type LeadRow = {
   website_url: string | null;
   city: string | null;
   lead_source: string | null;
+  /** Wave 2 lead provenance (referral / social inbound). Optional so older SELECTs still map. */
+  referred_by?: string | null;
+  social_platform?: string | null;
+  social_handle?: string | null;
+  /** Public-domain provenance (POPIA s.18: where we found the clinic's details). */
+  source_url?: string | null;
+  sourced_at?: Date | string | null;
   sales_stage: string | null;
   sales_stage_changed_at: Date | string | null;
   lost_reason: string | null;
@@ -83,6 +92,11 @@ export function toLead(r: LeadRow, pipeline: ConsultantConfig["pipeline"], now: 
     website: str(r.website_url),
     city: str(r.city),
     source: str(r.lead_source),
+    referredBy: str(r.referred_by),
+    socialPlatform: oneOfOrNull<SocialPlatform>(SOCIAL_PLATFORMS, r.social_platform),
+    socialHandle: str(r.social_handle),
+    sourceUrl: str(r.source_url),
+    sourcedAt: iso(r.sourced_at),
     vertical: CLINICS_VERTICAL,
     salesStage: stage,
     salesStageChangedAt: stageChangedAt,

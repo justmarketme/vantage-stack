@@ -8,9 +8,21 @@
  * - Persistence (localStorage) is opt-in per key and always goes through
  *   `redactForStorage`, which blanks transcripts, summaries and note bodies —
  *   those never touch disk no matter what a caller passes.
+ *
+ * Wave 2: the persisted part is a Zustand `persist` store named
+ * `vs:consultant:v2:query-cache` (`QUERY_CACHE_PERSIST_NAME`) holding
+ * `{ entries: { [key]: { t, v } } }`. Its `partialize` is the single choke
+ * point to disk and re-applies every rule on each write: never-persist keys
+ * are dropped, entries past PERSIST_MAX_AGE_MS are dropped, and every value is
+ * passed through `redactForStorage`. Live records (errors, fetching flags,
+ * de-duplication) stay in memory only. Wave-1 `vs:consultant:v1:q:*` keys are
+ * deleted on start (they're only a cache — the next fetch refills it).
  */
 
-import { readJSON, removePrefix, writeJSON } from "./storage";
+import { createStore } from "zustand/vanilla";
+import { persist } from "zustand/middleware";
+import { kvPersistStorage, persistName, type PersistedStoreApi } from "./persist";
+import { removePrefix } from "./storage";
 
 export type QueryRecord = {
   data: unknown;
@@ -32,7 +44,9 @@ export const EMPTY_RECORD: QueryRecord = Object.freeze({
   stale: false,
 }) as QueryRecord;
 
-const PERSIST_NS = "q:";
+const LEGACY_PERSIST_NS = "q:";
+export const QUERY_CACHE_PERSIST_NAME = persistName("query-cache");
+export const QUERY_CACHE_PERSIST_VERSION = 1;
 /** Persisted entries older than this are ignored (a week-old pipeline is misleading). */
 export const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -63,6 +77,32 @@ export function redactForStorage(value: unknown, depth = 0): unknown {
 
 type Fetcher = { fn: () => Promise<unknown>; persist: boolean };
 
+type DiskEntry = { t: number; v: unknown };
+export type PersistedQueryCache = { entries: Record<string, DiskEntry> };
+
+/**
+ * The on-disk projection of the cache. Pure, exported for tests: whatever the
+ * in-memory state holds, only this ever reaches localStorage.
+ */
+export function partializeQueryCache(state: PersistedQueryCache, now: number = Date.now()): PersistedQueryCache {
+  const entries: Record<string, DiskEntry> = {};
+  for (const [key, e] of Object.entries(state.entries ?? {})) {
+    if (!canPersistKey(key) || !e || typeof e.t !== "number" || now - e.t > PERSIST_MAX_AGE_MS) continue;
+    entries[key] = { t: e.t, v: redactForStorage(e.v) };
+  }
+  return { entries };
+}
+
+function sanitiseEntries(raw: unknown): Record<string, DiskEntry> {
+  const out: Record<string, DiskEntry> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, e] of Object.entries(raw as Record<string, unknown>)) {
+    const d = e as Partial<DiskEntry> | null;
+    if (d && typeof d.t === "number" && canPersistKey(k)) out[k] = { t: d.t, v: d.v };
+  }
+  return out;
+}
+
 export class QueryStore {
   private records = new Map<string, QueryRecord>();
   private listeners = new Map<string, Set<() => void>>();
@@ -73,7 +113,25 @@ export class QueryStore {
   /** Bumped by clear() so a fetch started before logout can't repopulate. */
   private generation = 0;
 
-  constructor(private readonly now: () => number = Date.now) {}
+  /** Persisted projection (Zustand + persist). Holds only keys fetched with `persist: true`. */
+  private readonly disk: PersistedStoreApi<PersistedQueryCache, PersistedQueryCache>;
+
+  constructor(private readonly now: () => number = Date.now) {
+    removePrefix(LEGACY_PERSIST_NS);
+    this.disk = createStore<PersistedQueryCache>()(
+      persist<PersistedQueryCache>(() => ({ entries: {} }), {
+        name: QUERY_CACHE_PERSIST_NAME,
+        version: QUERY_CACHE_PERSIST_VERSION,
+        storage: kvPersistStorage<PersistedQueryCache>({ isEmpty: (st) => Object.keys(st.entries).length === 0 }),
+        partialize: (st) => partializeQueryCache(st, this.now()),
+        merge: (persisted, current) => ({
+          ...current,
+          entries: sanitiseEntries((persisted as PersistedQueryCache | undefined)?.entries),
+        }),
+        migrate: (st) => ({ entries: sanitiseEntries((st as PersistedQueryCache | undefined)?.entries) }),
+      }),
+    );
+  }
 
   subscribe(key: string, cb: () => void): () => void {
     let set = this.listeners.get(key);
@@ -173,7 +231,7 @@ export class QueryStore {
       if (this.hasSubscribers(key)) jobs.push(this.revalidate(key));
       else this.records.delete(key);
     }
-    removePrefix(PERSIST_NS + prefix);
+    this.dropDisk((k) => k.startsWith(prefix));
     return Promise.all(jobs).then(() => undefined);
   }
 
@@ -181,7 +239,7 @@ export class QueryStore {
   clear(): void {
     this.generation += 1;
     this.inflight.clear();
-    removePrefix(PERSIST_NS);
+    this.disk.setState({ entries: {} });
     const keys = Array.from(this.records.keys());
     this.records.clear();
     this.writeSeq.clear();
@@ -199,13 +257,23 @@ export class QueryStore {
 
   private readDisk(key: string): QueryRecord | null {
     if (!canPersistKey(key)) return null;
-    const hit = readJSON<{ t: number; v: unknown }>(PERSIST_NS + key);
+    const hit = this.disk.getState().entries[key];
     if (!hit || typeof hit.t !== "number" || this.now() - hit.t > PERSIST_MAX_AGE_MS) return null;
     return { data: hit.v, hasData: true, updatedAt: hit.t, error: null, fetching: false, stale: true };
   }
 
   private writeDisk(key: string, data: unknown, t: number): void {
     if (!canPersistKey(key)) return;
-    writeJSON(PERSIST_NS + key, { t, v: redactForStorage(data) });
+    // Raw in memory; `partializeQueryCache` redacts on the way to disk.
+    this.disk.setState((st) => ({ entries: { ...st.entries, [key]: { t, v: data } } }));
+  }
+
+  private dropDisk(match: (key: string) => boolean): void {
+    const entries = this.disk.getState().entries;
+    const keys = Object.keys(entries).filter(match);
+    if (keys.length === 0) return;
+    const next = { ...entries };
+    for (const k of keys) delete next[k];
+    this.disk.setState({ entries: next });
   }
 }

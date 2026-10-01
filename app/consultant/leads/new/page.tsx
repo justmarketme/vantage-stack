@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../lib/consultant/client/api";
 import { useOnline } from "../../../../hooks/consultant/useOnline";
 import { invalidateQueries } from "../../../../hooks/consultant/useQuery";
-import { LeadInput } from "../../../../lib/consultant/types";
+import { LEAD_SOURCES, LeadInput, SOCIAL_PLATFORMS, type LeadSource, type SocialPlatform } from "../../../../lib/consultant/types";
+import { LEAD_SOURCE_LABELS, SOCIAL_PLATFORM_LABELS, sourceHint } from "../../../../components/consultant/lead/sources";
+import { SastDateTimeField, sastToIso, type SastParts } from "../../../../components/consultant/wave2/SastDateTime";
 import { useMe } from "../../../../components/consultant/MeProvider";
 import { INPUT_CLASS, MicField } from "../../../../components/consultant/MicField";
 import { Button, PageHeader } from "../../../../components/consultant/ui";
-import { cx, describeError, errorFields, fromLocalInput } from "../../../../components/consultant/utils";
+import { cx, describeError, errorFields } from "../../../../components/consultant/utils";
 
 type Values = {
   clinicName: string;
@@ -19,9 +21,12 @@ type Values = {
   email: string;
   website: string;
   city: string;
-  source: string;
+  source: LeadSource;
+  referredBy: string;
+  socialPlatform: SocialPlatform | "";
+  socialHandle: string;
   nextAction: string;
-  nextActionAt: string; // datetime-local
+  nextActionAt: SastParts; // SAST wall clock
 };
 
 const EMPTY: Values = {
@@ -32,13 +37,23 @@ const EMPTY: Values = {
   email: "",
   website: "",
   city: "",
-  source: "",
+  source: "consultant_portal",
+  referredBy: "",
+  socialPlatform: "",
+  socialHandle: "",
   nextAction: "",
-  nextActionAt: "",
+  nextActionAt: { date: "", time: "" },
 };
 
+/** Only send the follow-up fields that belong to the chosen source (progressive disclosure). */
 function toInput(v: Values) {
-  return { ...v, nextActionAt: fromLocalInput(v.nextActionAt) ?? undefined };
+  const { referredBy, socialPlatform, socialHandle, nextActionAt, ...rest } = v;
+  return {
+    ...rest,
+    ...(v.source === "referral" ? { referredBy } : {}),
+    ...(v.source === "social_inbound" ? { socialPlatform: socialPlatform || undefined, socialHandle } : {}),
+    nextActionAt: sastToIso(nextActionAt) ?? undefined,
+  };
 }
 
 /** Field → first validation message, from the same zod schema the server uses. */
@@ -67,7 +82,8 @@ export default function NewLeadPage() {
   const errors = useMemo(() => validate(values), [values]);
   const shown = (k: keyof Values) => serverErrors[k] ?? ((touched[k] || submitted) ? errors[k] : undefined);
 
-  const set = (k: keyof Values) => (v: string) => {
+  const ids = useId();
+  const set = (k: keyof Values) => (v: Values[typeof k]) => {
     setValues((prev) => ({ ...prev, [k]: v }));
     if (serverErrors[k]) {
       setServerErrors((prev) => {
@@ -127,31 +143,69 @@ export default function NewLeadPage() {
           hint="SA numbers like 082 123 4567 are fine."
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <MicField label="Contact name" value={values.contactName} onChange={set("contactName")} onBlur={touch("contactName")} error={shown("contactName")} autoComplete="name" />
+          <MicField label="Contact name" kind="name" mic value={values.contactName} onChange={set("contactName")} onBlur={touch("contactName")} error={shown("contactName")} autoComplete="name" />
           <MicField label="Role" value={values.contactRole} onChange={set("contactRole")} onBlur={touch("contactRole")} error={shown("contactRole")} placeholder="Owner, practice manager…" />
         </div>
         <MicField label="Email" kind="email" mic value={values.email} onChange={set("email")} onBlur={touch("email")} error={shown("email")} />
         <MicField label="Website" kind="url" mic value={values.website} onChange={set("website")} onBlur={touch("website")} error={shown("website")} placeholder="glowclinic.co.za" />
         <div className="grid gap-4 sm:grid-cols-2">
           <MicField label="City" value={values.city} onChange={set("city")} onBlur={touch("city")} error={shown("city")} autoComplete="address-level2" />
-          <MicField label="Source" value={values.source} onChange={set("source")} onBlur={touch("source")} error={shown("source")} placeholder="Instagram, referral…" />
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-[--cp-border] p-4">
+          <div>
+            <label htmlFor={`${ids}-src`} className="mb-1.5 block text-sm font-medium text-[--cp-text]">
+              How did this lead reach us?
+            </label>
+            <select
+              id={`${ids}-src`}
+              value={values.source}
+              onChange={(e) => set("source")(e.target.value as LeadSource)}
+              aria-describedby={`${ids}-src-hint`}
+              className={cx(INPUT_CLASS, "border-[--cp-border]")}
+            >
+              {LEAD_SOURCES.map((s) => (
+                <option key={s} value={s}>
+                  {LEAD_SOURCE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+            <p id={`${ids}-src-hint`} className="mt-1 text-xs text-[--cp-muted]" aria-live="polite">
+              {sourceHint(values.source)}
+            </p>
+          </div>
+          {values.source === "referral" && (
+            <MicField label="Referred by" value={values.referredBy} onChange={set("referredBy")} onBlur={touch("referredBy")} error={shown("referredBy")} placeholder="Name or clinic" />
+          )}
+          {values.source === "social_inbound" && (
+            <div className="grid gap-3 sm:grid-cols-[2fr_3fr]">
+              <div>
+                <label htmlFor={`${ids}-plat`} className="mb-1.5 block text-sm font-medium text-[--cp-text]">
+                  Platform
+                </label>
+                <select
+                  id={`${ids}-plat`}
+                  value={values.socialPlatform}
+                  onChange={(e) => set("socialPlatform")(e.target.value as SocialPlatform | "")}
+                  className={cx(INPUT_CLASS, "border-[--cp-border]")}
+                >
+                  <option value="">Choose…</option>
+                  {SOCIAL_PLATFORMS.map((p) => (
+                    <option key={p} value={p}>
+                      {SOCIAL_PLATFORM_LABELS[p]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <MicField label="Handle or profile link" value={values.socialHandle} onChange={set("socialHandle")} onBlur={touch("socialHandle")} error={shown("socialHandle")} placeholder="@glowclinic" />
+            </div>
+          )}
         </div>
 
         <fieldset className="space-y-4 rounded-2xl border border-[--cp-border] p-4">
           <legend className="px-1 text-sm text-[--cp-muted]">Next action (optional)</legend>
           <MicField label="What" value={values.nextAction} onChange={set("nextAction")} onBlur={touch("nextAction")} error={shown("nextAction")} placeholder="First call" />
-          <div>
-            <label htmlFor="nl-when" className="mb-1.5 block text-sm font-medium text-[--cp-text]">
-              When
-            </label>
-            <input
-              id="nl-when"
-              type="datetime-local"
-              value={values.nextActionAt}
-              onChange={(e) => set("nextActionAt")(e.target.value)}
-              className={cx(INPUT_CLASS, "border-[--cp-border] [color-scheme:dark]")}
-            />
-          </div>
+          <SastDateTimeField label="When" value={values.nextActionAt} onChange={(v) => set("nextActionAt")(v)} />
         </fieldset>
 
         <div aria-live="assertive">

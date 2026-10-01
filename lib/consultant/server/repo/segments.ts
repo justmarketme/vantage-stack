@@ -3,6 +3,7 @@ import { consultantConfig } from "../../config";
 import type { Speaker, TranscriptSegment } from "../../types";
 import { txSql } from "../http";
 import { toSegment, type SegmentRow } from "../mappers";
+import { nudgeLater } from "../realtime";
 
 export async function listSegments(db: Sql, callId: string, after: number): Promise<TranscriptSegment[]> {
   const rows = await db<SegmentRow[]>`
@@ -36,7 +37,7 @@ export async function appendSegment(
   callSid: string,
   seg: { speaker: Speaker; text: string; at: Date },
 ): Promise<number | null> {
-  return db.begin(async (tx) => {
+  const seq = await db.begin(async (tx) => {
     const t = txSql(tx);
     const locked = await t`
       select 1 from public.consultant_calls
@@ -57,6 +58,9 @@ export async function appendSegment(
     `;
     return rows[0]?.seq ?? null;
   });
+  // Wave 2 (3A): tell the live-call view a new segment exists (a nudge only — no text).
+  if (seq !== null) nudgeLater({ callId });
+  return seq;
 }
 
 export async function countSegments(db: Sql, callId: string): Promise<number> {

@@ -290,6 +290,13 @@ export const CONSULTANT_DDL_V2 = /* sql */ `
   alter table public.clients add column if not exists source_url text;
   alter table public.clients add column if not exists sourced_at timestamptz;
   alter table public.consultant_contact_consent add column if not exists opted_in_call_id uuid;
+  -- Columns the CRM lead scraper creates ad hoc; declared here so imports never depend on it.
+  alter table public.clients add column if not exists place_id text;
+  alter table public.clients add column if not exists source text;
+  alter table public.clients add column if not exists address text;
+  create unique index if not exists clients_place_id_uidx on public.clients (place_id) where place_id is not null;
+  -- Consultant mobile for Emma's internal alerts (new lead assigned, follow-up due).
+  alter table public.team_members add column if not exists phone text;
   -- Word-of-mouth and social-media leads.
   alter table public.clients add column if not exists referred_by text;
   alter table public.clients add column if not exists social_platform text;

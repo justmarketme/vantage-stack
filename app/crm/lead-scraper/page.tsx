@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { api } from "../../../lib/consultant/client/api";
+import type { ScrapedImportResult, ScrapedLeadImport } from "../../../lib/consultant/types";
 
 const INDUSTRIES: Array<{ label: string; icon: string }> = [
   { label: "Plumbing & Trades",   icon: "🔧" },
@@ -304,6 +306,10 @@ export default function LeadScraperPage() {
   const [moveSuccess, setMoveSuccess] = useState<number | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(DEFAULT_VISIBLE);
+  // Consultant Portal: send selected results into the unassigned Clinics pool.
+  const [poolSending, setPoolSending] = useState(false);
+  const [poolResult, setPoolResult] = useState<ScrapedImportResult | null>(null);
+  const [poolError, setPoolError] = useState<string | null>(null);
   const [showColPicker, setShowColPicker] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -412,6 +418,41 @@ export default function LeadScraperPage() {
       setLeads((prev) => prev.map((l) => ids.includes(l.id) ? { ...l, status: "new" } : l));
       setMoveError(e.message ?? "Import failed");
     } finally { setMoving(false); }
+  }
+
+  /**
+   * Send the selected results to the Consultant Portal's Clinics pool
+   * (manager-only; the API re-checks). The server dedupes on +27 phone / place
+   * id and rejects non-SA numbers; we show its counts in a toast. `sourceUrl`
+   * is the public listing the details came from (POPIA s.18 — consultants must
+   * be able to tell the clinic where we found them).
+   */
+  async function sendToClinicsPool() {
+    if (selected.length === 0 || poolSending) return;
+    setPoolSending(true); setPoolError(null); setPoolResult(null);
+    const input: ScrapedLeadImport = {
+      provider: "google_places", // this page is the Google Places scraper
+      leads: selected.slice(0, 500).map((l) => ({
+        businessName: l.businessName,
+        phone: l.phone,
+        email: l.email,
+        website: l.website,
+        address: l.address && l.address !== "—" ? l.address : null,
+        placeId: l.placeId ?? null,
+        ownerName: l.ownerName,
+        sourceUrl: l.placeId
+          ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(l.placeId)}`
+          : l.website,
+      })),
+    };
+    try {
+      const result = await api.leads.importScraped(input);
+      setPoolResult(result);
+    } catch (e: unknown) {
+      setPoolError(e instanceof Error && e.message ? e.message : "Couldn't send to the Clinics pool. Try again.");
+    } finally {
+      setPoolSending(false);
+    }
   }
 
   const canMove = industry && selected.length > 0 && !moving;
@@ -759,6 +800,12 @@ export default function LeadScraperPage() {
                 : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Move {selected.length > 0 ? `${selected.length} ` : ""}to Contacts</>
               }
             </button>
+
+            <button type="button" onClick={() => void sendToClinicsPool()} disabled={selected.length === 0 || poolSending}
+              title="Adds the selected clinics to the Consultant Portal pool, unassigned"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-6 py-2.5 text-sm font-semibold whitespace-nowrap text-accent transition hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-40">
+              {poolSending ? "Sending…" : `Send ${selected.length > 0 ? `${selected.length} ` : ""}to Clinics pool`}
+            </button>
           </div>
 
           {!industry && selected.length > 0 && (
@@ -775,8 +822,29 @@ export default function LeadScraperPage() {
             </div>
           )}
           {moveError && <div className="mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-300">{moveError}</div>}
+          <p className="mt-3 text-xs text-textMuted/70">
+            Clinics pool leads are public-listing leads: consultants may call them, but Emma won&apos;t message them until the clinic agrees on a call.
+          </p>
         </div>
       )}
+
+      {/* ── Clinics pool toast ─────────────────────────────────────────────── */}
+      <div aria-live="polite" role="status" className="fixed bottom-4 right-4 z-50 max-w-sm">
+        {(poolResult || poolError) && (
+          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-2xl ${poolError ? "border-rose-500/25 bg-[#1a1a1e] text-rose-300" : "border-white/[0.1] bg-[#1a1a1e] text-textPrimary"}`}>
+            <span className="flex-1">
+              {poolError ?? (
+                <>
+                  <strong>{poolResult!.imported}</strong> sent to the Clinics pool
+                  {poolResult!.duplicates > 0 && <> · {poolResult!.duplicates} already there</>}
+                  {poolResult!.rejectedNonZaPhone > 0 && <> · {poolResult!.rejectedNonZaPhone} skipped (not a +27 number)</>}
+                </>
+              )}
+            </span>
+            <button type="button" onClick={() => { setPoolResult(null); setPoolError(null); }} aria-label="Dismiss" className="-m-1 min-h-8 min-w-8 text-textMuted hover:text-textPrimary">×</button>
+          </div>
+        )}
+      </div>
 
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {scrapeStatus === "idle" && leads.length === 0 && (

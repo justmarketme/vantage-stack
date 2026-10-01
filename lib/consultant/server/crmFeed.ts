@@ -45,7 +45,8 @@ export async function syncClinicsDeal(
 ): Promise<void> {
   const cfg = consultantConfig();
   const status = dealStatusForStage(input.stage);
-  const won = input.stage === "won";
+  // `paid` is past `won`: keep accepted_at (clearing it would un-win a paid deal).
+  const won = input.stage === "won" || input.stage === "paid";
   const sent = input.stage === "proposal" || won;
   const existing = await db<{ id: string }[]>`
     select id::text from public.deals
@@ -62,18 +63,20 @@ export async function syncClinicsDeal(
         deal_value = case when ${valueGiven} then ${value}::int else deal_value end,
         consultant_id = ${input.consultantId}::uuid,
         sent_at = case when ${sent} then coalesce(sent_at, now()) else sent_at end,
-        accepted_at = case when ${won} then coalesce(accepted_at, now()) else null end
+        accepted_at = case when ${won} then coalesce(accepted_at, now()) else null end,
+        -- won_at feeds the deal.won event (outbox trigger) and the "won" metric.
+        won_at = case when ${won} then coalesce(won_at, now()) else null end
       where id = ${existing[0].id}::uuid
     `;
     return;
   }
   if (!sent && !(valueGiven && input.dealValue != null)) return;
   await db`
-    insert into public.deals (client_id, proposal_status, deal_value, service_type, vertical, consultant_id, sent_at, accepted_at)
+    insert into public.deals (client_id, proposal_status, deal_value, service_type, vertical, consultant_id, sent_at, accepted_at, won_at)
     values (
       ${input.clientId}::uuid, ${status}, ${value}::int, ${cfg.pipeline.dealServiceType}, ${CLINICS_VERTICAL},
       ${input.consultantId}::uuid,
-      ${sent ? new Date() : null}, ${won ? new Date() : null}
+      ${sent ? new Date() : null}, ${won ? new Date() : null}, ${won ? new Date() : null}
     )
   `;
 }

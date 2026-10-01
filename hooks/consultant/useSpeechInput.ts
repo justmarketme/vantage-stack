@@ -7,6 +7,12 @@ import { normaliseForKind, validateSpoken, type SpokenKind } from "../../lib/con
  * Dictation for a single field via the Web Speech API.
  *
  *   const mic = useSpeechInput({ kind: "email", onResult: (v) => setEmail(v) });
+ *   const nameMic = useSpeechInput({ kind: "name", onResult: setContactName }); // SA names fixed
+ *
+ * Kinds: "email" | "url" | "phone" (SA +27 only — foreign numbers are
+ * rejected with a clear message) | "name" (South African first names and
+ * surnames: spelling + casing, e.g. "tandeka van der merwe" → "Thandeka van
+ * der Merwe") | "text" (free dictation).
  *   {mic.supported && <MicButton onClick={mic.listening ? mic.stop : mic.start} />}
  *
  * - `SpeechRecognition || webkitSpeechRecognition`; `supported` is false

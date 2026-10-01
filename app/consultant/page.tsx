@@ -16,16 +16,19 @@ import { describeError } from "../../components/consultant/utils";
 
 const CALL_NEXT_MAX = 8;
 
+const SAST_OFFSET_MS = 2 * 60 * 60 * 1000; // SAST = UTC+2, no DST
+
 function greeting(d = new Date()): string {
-  const h = d.getHours();
+  const h = new Date(d.getTime() + SAST_OFFSET_MS).getUTCHours(); // SAST hour
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
 /** Due follow-ups first (oldest due first), then new leads (oldest first). */
 function callNext(leads: Lead[]): Lead[] {
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-  const open = leads.filter((l) => l.salesStage !== "won" && l.salesStage !== "lost");
+  // End of today in SAST, whatever the device timezone.
+  const sastNow = Date.now() + SAST_OFFSET_MS;
+  const endOfDay = new Date(Math.floor(sastNow / 86_400_000) * 86_400_000 + 86_400_000 - 1 - SAST_OFFSET_MS);
+  const open = leads.filter((l) => l.salesStage !== "won" && l.salesStage !== "paid" && l.salesStage !== "lost");
   const due = open
     .filter((l) => l.nextActionAt && new Date(l.nextActionAt).getTime() <= endOfDay.getTime())
     .sort((a, b) => new Date(a.nextActionAt!).getTime() - new Date(b.nextActionAt!).getTime());

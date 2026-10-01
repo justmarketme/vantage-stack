@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { parseSessionEdge } from "./lib/admin/session-edge";
-import { roleMayAccessPage } from "./lib/admin/rbac-paths";
+import { readOnlyPortalWriteAllowed, roleMayAccessPage } from "./lib/admin/rbac-paths";
 import type { TeamRole } from "./lib/admin/roles";
 import { can } from "./lib/admin/roles";
 import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
@@ -9,6 +9,7 @@ import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/midd
 import {
   consultantApiHeaders,
   consultantPageHeaders,
+  consultantSupabaseUrls,
   isCrossOriginWrite,
 } from "./lib/consultant/auth/securityHeaders";
 
@@ -25,8 +26,12 @@ export const config = {
     "/api/admin/:path*",
     "/clinic-crm/:path*",
     "/api/clinic-crm/:path*",
-    // Consultant Portal. /api/consultant-voice/** is deliberately NOT here: those are
-    // Twilio webhooks with no session — the X-Twilio-Signature check is their auth.
+    // Consultant Portal. Deliberately NOT here (no session; each route authenticates itself):
+    //   /api/consultant-voice/**                Twilio voice webhooks — X-Twilio-Signature
+    //   /api/webhooks/n8n-ingress               n8n → app — X-VS-Signature (auth/signing.ts)
+    //   /api/webhooks/emma-inbound, emma-status Twilio WhatsApp/SMS — X-Twilio-Signature
+    //   /api/cron/consultant-dispatch           Vercel Cron — Bearer CRON_SECRET
+    // tests/unit/consultant/auth/middleware.test.ts pins that none of them match.
     "/consultant/:path*",
     "/api/consultant/:path*",
   ],
@@ -148,6 +153,9 @@ export async function middleware(request: NextRequest) {
   const isDev = process.env.NODE_ENV === "development";
   const apiHeaders = isConsultantApi ? consultantApiHeaders({ isProd }) : {};
 
+  // GET is never a "write", so the calendar OAuth callback (a top-level GET navigation back
+  // from Google / Microsoft, Origin absent or theirs) passes here, and the SameSite=Lax session
+  // cookie IS sent on top-level cross-site GET navigations, so it is authenticated normally.
   if (isConsultantApi && isCrossOriginWrite(method, request.headers.get("origin"), request.headers.get("host"))) {
     return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
   }
@@ -191,6 +199,12 @@ export async function middleware(request: NextRequest) {
     return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
   }
 
+  // Read-only oversight roles (systems_ops, acquisition_creative) may only send the few
+  // permissioned admin writes — never pipeline writes. The handler still checks the permission.
+  if (isConsultantApi && !readOnlyPortalWriteAllowed(role, method, path)) {
+    return withHeaders(NextResponse.json({ error: "Read-only access" }, { status: 403 }), apiHeaders);
+  }
+
   if (!path.startsWith("/api/") && !roleMayAccessPage(role, path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/unauthorized";
@@ -210,7 +224,7 @@ export async function middleware(request: NextRequest) {
   if (!path.startsWith("/api/")) {
     withNoIndex(res);
   }
-  if (isConsultantPage) withHeaders(res, consultantPageHeaders({ isDev, isProd }));
+  if (isConsultantPage) withHeaders(res, consultantPageHeaders({ isDev, isProd, supabaseUrls: consultantSupabaseUrls() }));
   if (isConsultantApi) withHeaders(res, apiHeaders);
   return res;
 }

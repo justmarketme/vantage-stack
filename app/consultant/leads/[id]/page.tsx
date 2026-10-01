@@ -11,6 +11,10 @@ import { CallTimeline } from "../../../../components/consultant/CallTimeline";
 import { LeadHeader, NextActionCard } from "../../../../components/consultant/LeadPanels";
 import { useMe } from "../../../../components/consultant/MeProvider";
 import { NoteList } from "../../../../components/consultant/notes/NoteList";
+import { DealPanel } from "../../../../components/consultant/lead/DealPanel";
+import { DealScorePanel } from "../../../../components/consultant/lead/DealScorePanel";
+import { MeetingsPanel } from "../../../../components/consultant/lead/MeetingsPanel";
+import { MessagesPanel } from "../../../../components/consultant/lead/MessagesPanel";
 import { useOutboxSynced } from "../../../../components/consultant/hooks";
 import { ErrorState, SectionTitle, Skeleton, buttonClass } from "../../../../components/consultant/ui";
 import { describeError, errorStatus } from "../../../../components/consultant/utils";
@@ -74,6 +78,8 @@ export default function LeadWorkspacePage({ params }: { params: Promise<{ id: st
   const canCall = !!me?.canCall;
   const unassigned = !lead.consultantId;
   const readOnly = !canCall || (unassigned && !me?.isManager);
+  // Emma history is visible to the lead's owner and managers only (the API enforces it too).
+  const seesMessages = !!me && (me.isManager || (!!me.memberId && lead.consultantId === me.memberId));
 
   return (
     <div>
@@ -83,8 +89,11 @@ export default function LeadWorkspacePage({ params }: { params: Promise<{ id: st
         <div className="space-y-4 lg:col-span-2">
           <LeadHeader lead={lead} readOnly={readOnly} canClaim={canCall && unassigned} onPatch={patch} />
           <NextActionCard lead={lead} readOnly={readOnly} onPatch={patch} />
+          <DealPanel lead={lead} />
+          <DealScorePanel score={lead.score} />
         </div>
         <div className="space-y-6 lg:col-span-3">
+          {!unassigned && <MeetingsPanel lead={lead} readOnly={readOnly} />}
           <section aria-labelledby="calls-h">
             <SectionTitle>
               <span id="calls-h">Calls</span>
@@ -97,6 +106,7 @@ export default function LeadWorkspacePage({ params }: { params: Promise<{ id: st
             </SectionTitle>
             <NoteList leadId={lead.id} notes={notes} readOnly={readOnly} />
           </section>
+          {seesMessages && <MessagesPanel lead={lead} />}
         </div>
       </div>
     </div>

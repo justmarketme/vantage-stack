@@ -1,0 +1,11 @@
+# VantageStack — Cursor rules
+# Source of truth: CLAUDE.md (+ AGENTS.md). Read it before any change; it wins on conflict.
+# Consultant Portal work: also docs/AGENT_ARCHITECTURE.md (Decisions are binding) and
+# docs/consultant-portal/SPEC.md + SPEC-WAVE2.md. Path-specific rules: .cursor/rules/*.mdc.
+
+- Strict TypeScript, small single-purpose modules, plain-English comments on complex logic.
+- Never hardcode numbers, keys, endpoints, prompts or toggles: config/env only.
+- Never run migrations or SQL for VantageStack through the Supabase MCP (wrong project).
+- Capital Legacy code/data is never referenced or reused.
+- No PII (phones, e-mails, transcripts, message bodies) in logs, URLs, error bodies or events.
+- Done means tested: type-check, lint and jest on what you changed.

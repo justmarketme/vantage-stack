@@ -5,7 +5,7 @@ import { Mic, MicOff } from "lucide-react";
 import { useSpeechInput } from "../../hooks/consultant/useSpeechInput";
 import { cx, FOCUS } from "./utils";
 
-type Kind = "email" | "url" | "phone" | "text";
+type Kind = "email" | "url" | "phone" | "name" | "text";
 
 export const INPUT_CLASS =
   "min-h-12 w-full rounded-xl border bg-[--cp-surface] px-3 text-base text-[--cp-text] placeholder:text-[--cp-muted] " +

@@ -1,4 +1,5 @@
-import type { CallDisposition, NepqStage } from "../../lib/consultant/types";
+import { formatZar } from "../../lib/consultant/client/format";
+import { SAST_TIME_ZONE, type CallDisposition, type NepqStage } from "../../lib/consultant/types";
 
 /** Join truthy class names. */
 export function cx(...parts: Array<string | false | null | undefined>): string {
@@ -49,9 +50,11 @@ export function fmtTalkTime(totalSec: number): string {
   return h ? `${h}h ${m % 60}m` : `${m}m`;
 }
 
-const dtf = () => new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-const df = () => new Intl.DateTimeFormat("en-ZA", { day: "numeric", month: "short" });
-const tf = () => new Intl.DateTimeFormat("en-ZA", { hour: "2-digit", minute: "2-digit" });
+// Every date/time in the portal is SAST, whatever timezone the device is set to.
+const dtf = () =>
+  new Intl.DateTimeFormat("en-ZA", { timeZone: SAST_TIME_ZONE, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const df = () => new Intl.DateTimeFormat("en-ZA", { timeZone: SAST_TIME_ZONE, day: "numeric", month: "short" });
+const tf = () => new Intl.DateTimeFormat("en-ZA", { timeZone: SAST_TIME_ZONE, hour: "2-digit", minute: "2-digit" });
 
 export function fmtDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -59,8 +62,10 @@ export function fmtDateTime(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "—" : dtf().format(d);
 }
 
+/** Start of the SAST calendar day containing `d` (SAST is UTC+2 all year — no DST). */
+const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
 function startOfDay(d: Date): number {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.floor((d.getTime() + SAST_OFFSET_MS) / 86_400_000) * 86_400_000 - SAST_OFFSET_MS;
 }
 
 /** "Just now", "12m ago", "3h ago", "Yesterday", "4d ago", then a date. */
@@ -110,9 +115,10 @@ export function fromLocalInput(v: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/** Null-preserving wrapper over Agent 2's `formatZar` (`R12 500`). */
 export function fmtZar(n: number | null | undefined): string | null {
   if (n == null) return null;
-  return `R${n.toLocaleString("en-ZA")}`;
+  return formatZar(n);
 }
 
 /** Status + message of anything thrown by the API client, without importing it. */

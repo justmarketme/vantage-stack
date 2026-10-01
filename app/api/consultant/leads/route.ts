@@ -1,4 +1,5 @@
-import { json, parseBody } from "@/lib/consultant/server/http";
+import { MESSAGES } from "@/lib/consultant/server/constants";
+import { apiError, json, parseBody } from "@/lib/consultant/server/http";
 import { createLead, listLeads, parseLeadListQuery } from "@/lib/consultant/server/repo/leads";
 import { consultantRoute } from "@/lib/consultant/server/route";
 import { LeadInput, type Lead } from "@/lib/consultant/types";
@@ -6,9 +7,15 @@ import { LeadInput, type Lead } from "@/lib/consultant/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * List by `stage` / `scope` only. Free-text search moved to POST /api/consultant/leads/search so a
+ * phone number or name can never land in a URL or access log (POPIA): a `q` here is a 400.
+ */
 export async function GET(req: Request) {
+  const sp = new URL(req.url).searchParams;
+  if (sp.has("q")) return apiError(400, MESSAGES.badRequest, { q: "Search with POST /api/consultant/leads/search." });
   return consultantRoute("leads.list", undefined, async (s, db) => {
-    const query = parseLeadListQuery(new URL(req.url).searchParams);
+    const query = parseLeadListQuery(sp);
     return json<Lead[]>(await listLeads(db, s, query));
   });
 }

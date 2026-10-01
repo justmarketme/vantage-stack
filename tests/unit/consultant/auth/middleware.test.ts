@@ -3,7 +3,7 @@ jest.mock("jose/jwt/sign", () => process.getBuiltinModule("node:module").createR
 jest.mock("jose/jwt/verify", () => process.getBuiltinModule("node:module").createRequire(__filename)("jose/jwt/verify"));
 
 import { NextRequest } from "next/server";
-import { middleware } from "../../../../middleware";
+import { config, middleware } from "../../../../middleware";
 import { signCrmMemberJwt } from "../../../../lib/auth/crm-jwt";
 import type { TeamRole } from "../../../../lib/admin/roles";
 
@@ -82,5 +82,58 @@ describe("middleware · Consultant Portal access", () => {
     const cookie = await cookieFor("super_admin");
     process.env.CRM_JWT_SECRET = "y".repeat(48);
     expect((await middleware(req("/api/consultant/leads", { cookie }))).status).toBe(401);
+  });
+
+  test("read-only oversight roles: see the portal, cannot write pipeline data", async () => {
+    for (const role of ["systems_ops", "acquisition_creative"] as TeamRole[]) {
+      const cookie = await cookieFor(role);
+      expect((await middleware(req("/consultant", { cookie }))).status).toBe(200);
+      expect((await middleware(req("/api/consultant/leads", { cookie }))).status).toBe(200);
+      const write = await middleware(req("/api/consultant/leads/abc", { method: "PATCH", cookie, origin: ORIGIN }));
+      expect(write.status).toBe(403);
+      expect(write.headers.get("cache-control")).toContain("no-store");
+      const search = await middleware(req("/api/consultant/leads/search", { method: "POST", cookie, origin: ORIGIN }));
+      expect(search.status).toBe(200);
+      expect((await middleware(req("/api/crm/clients", { cookie }))).status).toBe(403);
+    }
+    const sys = await cookieFor("systems_ops");
+    expect((await middleware(req("/consultant/admin/systems", { cookie: sys }))).status).toBe(200);
+    expect((await middleware(req("/consultant/admin/growth", { cookie: sys }))).headers.get("location")).toContain("/admin/unauthorized");
+    const acq = await cookieFor("acquisition_creative");
+    expect((await middleware(req("/consultant/admin/growth", { cookie: acq }))).status).toBe(200);
+    expect((await middleware(req("/consultant/admin/systems", { cookie: acq }))).headers.get("location")).toContain("/admin/unauthorized");
+  });
+
+  test("calendar OAuth callback: top-level GET from Google with the Lax cookie passes", async () => {
+    const cookie = await cookieFor("sales_consultant");
+    const res = await middleware(
+      req("/api/consultant/calendar/google/callback?code=x&state=y", { cookie, origin: "https://accounts.google.com" }),
+    );
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("middleware matcher · self-authenticating routes stay outside", () => {
+  /** Next's matcher syntax here is `/prefix/:path*` or an exact path; compare on the static prefix. */
+  const matches = (path: string) =>
+    config.matcher.some((m) => {
+      const prefix = m.replace(/\/:path\*$/, "");
+      return m.endsWith(":path*") ? path === prefix || path.startsWith(`${prefix}/`) : path === m;
+    });
+
+  test.each([
+    "/api/webhooks/n8n-ingress",
+    "/api/webhooks/emma-inbound",
+    "/api/webhooks/emma-status",
+    "/api/cron/consultant-dispatch",
+    "/api/consultant-voice/twiml",
+    "/consultant-sw.js",
+  ])("%s is not matched (no session required)", (path) => {
+    expect(matches(path)).toBe(false);
+  });
+
+  test("the portal itself is matched", () => {
+    expect(matches("/consultant")).toBe(true);
+    expect(matches("/api/consultant/calendar/google/callback")).toBe(true);
   });
 });

@@ -52,3 +52,12 @@ export function backoffDelay(baseMs: number, failures: number, capMs = 15_000): 
 export function isFatalPollStatus(status: number): boolean {
   return status === 401 || status === 403 || status === 404;
 }
+
+/**
+ * Poll interval while realtime nudges are live: polling is only a safety net
+ * for a lost nudge, so it runs at 5× the normal rate (never faster than 5s).
+ */
+export function liveBackstopMs(pollMs: number, override?: number): number {
+  if (override !== undefined && Number.isFinite(override) && override > 0) return Math.max(pollMs, override);
+  return Math.max(5_000, pollMs * 5);
+}

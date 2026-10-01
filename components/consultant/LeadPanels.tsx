@@ -6,9 +6,11 @@ import { SALES_STAGES, SALES_STAGE_LABELS, type Lead, type LeadPatch, type Sales
 import { CallButton } from "./CallButton";
 import { ClaimButton } from "./ClaimButton";
 import { HealthDot } from "./HealthDot";
+import { LeadMeta } from "./lead/LeadMeta";
 import { INPUT_CLASS } from "./MicField";
 import { Button, SURFACE } from "./ui";
-import { cx, fmtDue, fmtZar, FOCUS, fromLocalInput, toLocalInput } from "./utils";
+import { cx, fmtDue, fmtZar, FOCUS } from "./utils";
+import { isoToSast, SastDateTimeField, sastToIso } from "./wave2/SastDateTime";
 
 /** Lead workspace header: who, how to reach them, stage, health, and the big Call button. */
 export function LeadHeader({
@@ -72,6 +74,8 @@ export function LeadHeader({
         )}
       </ul>
 
+      <LeadMeta lead={lead} />
+
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={stageId} className="mb-1.5 block text-xs font-medium uppercase tracking-[0.12em] text-[--cp-muted]">
@@ -82,7 +86,7 @@ export function LeadHeader({
             value={lead.salesStage}
             disabled={readOnly}
             onChange={(e) => onPatch({ salesStage: e.target.value as SalesStage })}
-            className={cx(INPUT_CLASS, "border-[--cp-border]", lead.salesStage === "won" && "text-[--cp-progress]")}
+            className={cx(INPUT_CLASS, "border-[--cp-border]", (lead.salesStage === "won" || lead.salesStage === "paid") && "text-[--cp-progress]")}
           >
             {SALES_STAGES.map((s) => (
               <option key={s} value={s}>
@@ -98,7 +102,7 @@ export function LeadHeader({
         </p>
       </div>
 
-      {(lead.salesStage === "proposal" || lead.salesStage === "won") && (
+      {(lead.salesStage === "proposal" || lead.salesStage === "won" || lead.salesStage === "paid") && (
         <div className="mt-3">
           <label htmlFor={`${stageId}-value`} className="mb-1.5 block text-sm text-[--cp-text]">
             Monthly value (ZAR)
@@ -156,17 +160,17 @@ export function LeadHeader({
 export function NextActionCard({ lead, readOnly, onPatch }: { lead: Lead; readOnly: boolean; onPatch: (p: LeadPatch) => void }) {
   const [editing, setEditing] = useState(false);
   const [what, setWhat] = useState(lead.nextAction ?? "");
-  const [when, setWhen] = useState(toLocalInput(lead.nextActionAt));
+  const [when, setWhen] = useState(isoToSast(lead.nextActionAt));
   const id = useId();
   const due = fmtDue(lead.nextActionAt);
 
   const open = () => {
     setWhat(lead.nextAction ?? "");
-    setWhen(toLocalInput(lead.nextActionAt));
+    setWhen(isoToSast(lead.nextActionAt));
     setEditing(true);
   };
   const save = () => {
-    onPatch({ nextAction: what.trim() || null, nextActionAt: fromLocalInput(when) });
+    onPatch({ nextAction: what.trim() || null, nextActionAt: sastToIso(when) });
     setEditing(false);
   };
 
@@ -181,10 +185,7 @@ export function NextActionCard({ lead, readOnly, onPatch }: { lead: Lead; readOn
             What
           </label>
           <input id={`${id}-what`} value={what} onChange={(e) => setWhat(e.target.value)} placeholder="Call back with pricing" className={cx(INPUT_CLASS, "border-[--cp-border]")} />
-          <label htmlFor={`${id}-when`} className="sr-only">
-            When
-          </label>
-          <input id={`${id}-when`} type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className={cx(INPUT_CLASS, "border-[--cp-border] [color-scheme:dark]")} />
+          <SastDateTimeField label="When" value={when} onChange={setWhen} />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setEditing(false)}>
               Cancel

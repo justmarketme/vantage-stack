@@ -6,6 +6,7 @@ import { UNAUTHORIZED_EVENT } from "../../../lib/consultant/client/api";
 import { useOnline } from "../../../hooks/consultant/useOnline";
 import { useOutbox } from "../../../hooks/consultant/useOutbox";
 import { useCardDeckWarmup } from "../../../hooks/consultant/useCardDeckWarmup";
+import { useServiceWorker } from "../../../hooks/consultant/useServiceWorker";
 import { MeProvider, useMe } from "../MeProvider";
 import { VoiceCallProvider } from "../VoiceCallProvider";
 import { CoachFloat } from "../coach/CoachFloat";
@@ -38,6 +39,8 @@ function Frame({ children }: { children: ReactNode }) {
   const { pending } = useOutbox();
   const { me, error: meError, refresh: refreshMe } = useMe();
   useCardDeckWarmup();
+  // Offline-first: caches the portal shell + static chunks so it opens with no signal.
+  const sw = useServiceWorker();
 
   // 401 anywhere → sign in again and come straight back here.
   useEffect(() => {
@@ -62,10 +65,18 @@ function Frame({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
-      {!immersive && <SideRail pathname={pathname} userName={me?.displayName} />}
+      {!immersive && <SideRail pathname={pathname} userName={me?.displayName} me={me} />}
       <div className={immersive ? undefined : "lg:pl-[88px]"}>
         <div className="sticky top-0 z-20" style={{ paddingTop: immersive ? undefined : "var(--cp-safe-top)" }}>
           <OfflineBanner online={online} pending={pendingCount} />
+          {sw.updateReady && (
+            <div role="status" className="flex items-center justify-between gap-3 bg-[--cp-accent-soft] px-4 py-2 text-sm text-[--cp-text]">
+              <span>A new version of the portal is ready.</span>
+              <button type="button" onClick={() => sw.applyUpdate()} className="min-h-[44px] rounded-lg px-3 font-medium text-[--cp-accent-text]">
+                Update now
+              </button>
+            </div>
+          )}
         </div>
         <main
           id="cp-main"
@@ -85,7 +96,7 @@ function Frame({ children }: { children: ReactNode }) {
         </main>
       </div>
       {!immersive && <OnCallBar />}
-      {!immersive && <BottomTabs pathname={pathname} />}
+      {!immersive && <BottomTabs pathname={pathname} me={me} />}
       {!immersive && <CoachFloat />}
     </>
   );

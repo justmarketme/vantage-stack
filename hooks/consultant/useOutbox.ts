@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
-  OUTBOX_KEY,
+  OUTBOX_PERSIST_NAME,
   Outbox,
   type FlushOutcome,
   type OutboxOp,
   type OutboxOpInput,
   type OutboxResult,
 } from "../../lib/consultant/client/outbox";
-import { storageKey } from "../../lib/consultant/client/storage";
 
 /**
  * Offline-safe writes for notes and lead edits.
@@ -20,7 +19,7 @@ import { storageKey } from "../../lib/consultant/client/storage";
  *   enqueue({ kind: "lead.patch", leadId, patch: { salesStage: "proposal" } });
  *
  * Always safe to call — online, the op is sent immediately; offline it waits in
- * localStorage and replays on `online`, on mount, when the tab becomes visible
+ * localStorage (a Zustand `persist` store, see outbox.ts) and replays on `online`, on mount, when the tab becomes visible
  * and on a backoff timer. One shared queue per tab; a Web Lock (when available)
  * stops two tabs replaying the same op. A 409 on a note edit becomes a
  * `conflict` entry the UI resolves with `resolve(id, { action: "retry" | "discard" })`.
@@ -96,7 +95,7 @@ function install(): void {
     if (document.visibilityState === "visible") void flushShared();
   });
   window.addEventListener("storage", (e: StorageEvent) => {
-    if (e.key === null || e.key === storageKey(OUTBOX_KEY)) box.load();
+    if (e.key === null || e.key === OUTBOX_PERSIST_NAME) box.load();
   });
 }
 

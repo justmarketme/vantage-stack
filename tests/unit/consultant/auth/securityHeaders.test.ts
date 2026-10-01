@@ -2,7 +2,9 @@ import {
   consultantApiHeaders,
   consultantContentSecurityPolicy,
   consultantPageHeaders,
+  consultantSupabaseUrls,
   isCrossOriginWrite,
+  supabaseCspSources,
 } from "../../../../lib/consultant/auth/securityHeaders";
 
 function directives(csp: string): Record<string, string[]> {
@@ -55,11 +57,61 @@ describe("consultant CSP", () => {
   });
 });
 
+describe("consultant CSP · Supabase (wave 2)", () => {
+  const REF = "https://tinkmipmxunwvyemhalu.supabase.co";
+
+  it("pins connect/img/media to the configured project host only", () => {
+    const d = directives(consultantContentSecurityPolicy(false, [REF, `${REF}/`]));
+    expect(d["connect-src"]).toEqual(
+      expect.arrayContaining(["https://tinkmipmxunwvyemhalu.supabase.co", "wss://tinkmipmxunwvyemhalu.supabase.co"]),
+    );
+    expect(d["img-src"]).toContain("https://tinkmipmxunwvyemhalu.supabase.co");
+    expect(d["media-src"]).toContain("https://tinkmipmxunwvyemhalu.supabase.co");
+    expect(d["img-src"]).not.toContain("wss://tinkmipmxunwvyemhalu.supabase.co");
+    const all = Object.values(d).flat();
+    expect(all.filter((s) => s.includes("supabase.co") && s.includes("*"))).toEqual([]);
+    // Deduped: the trailing-slash duplicate adds nothing.
+    expect(d["connect-src"].filter((s) => s === "https://tinkmipmxunwvyemhalu.supabase.co")).toHaveLength(1);
+  });
+
+  it("keeps Twilio, and the service worker is allowed from 'self'", () => {
+    const d = directives(consultantContentSecurityPolicy(false, [REF]));
+    expect(d["connect-src"]).toEqual(expect.arrayContaining(["wss://*.twilio.com", "https://*.twilio.com"]));
+    expect(d["worker-src"]).toContain("'self'");
+  });
+
+  it("drops unset / invalid / plain-http URLs (http only in dev)", () => {
+    expect(supabaseCspSources(["", "not a url", "http://127.0.0.1:54321"])).toEqual({ http: [], ws: [] });
+    expect(supabaseCspSources(["http://127.0.0.1:54321"], true)).toEqual({
+      http: ["http://127.0.0.1:54321"],
+      ws: ["ws://127.0.0.1:54321"],
+    });
+    const d = directives(consultantContentSecurityPolicy(false, []));
+    expect(d["connect-src"].some((s) => s.includes("supabase"))).toBe(false);
+  });
+
+  it("reads the hosts from config (public + server URL)", () => {
+    const saved = { ...process.env };
+    process.env.NEXT_PUBLIC_SUPABASE_URL = REF;
+    process.env.SUPABASE_URL = "https://otherref.supabase.co";
+    try {
+      expect(consultantSupabaseUrls()).toEqual([REF, "https://otherref.supabase.co"]);
+      const h = consultantPageHeaders({ isDev: false, isProd: true, supabaseUrls: consultantSupabaseUrls() });
+      expect(h["Content-Security-Policy"]).toContain("wss://otherref.supabase.co");
+    } finally {
+      process.env = saved;
+    }
+  });
+});
+
 describe("isCrossOriginWrite", () => {
   const host = "www.vantagestack.co.za";
   it("ignores safe methods and requests without Origin", () => {
     expect(isCrossOriginWrite("GET", "https://evil.example", host)).toBe(false);
     expect(isCrossOriginWrite("POST", null, host)).toBe(false);
+  });
+  it("never blocks a GET — e.g. the calendar OAuth callback navigating back from Google", () => {
+    expect(isCrossOriginWrite("GET", "https://accounts.google.com", host)).toBe(false);
   });
   it("allows same-origin writes", () => {
     expect(isCrossOriginWrite("POST", `https://${host}`, host)).toBe(false);

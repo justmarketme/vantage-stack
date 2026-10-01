@@ -1,4 +1,4 @@
-import type { EventType } from "../../lib/consultant/types";
+import type { EventType, StopCondition } from "../../lib/consultant/types";
 
 /**
  * Emma's DEFAULT follow-up sequences — the rules n8n is expected to run. Kept as data so they
@@ -7,8 +7,13 @@ import type { EventType } from "../../lib/consultant/types";
  * How it works end to end:
  *   DB change → outbox trigger → `consultant_events` → dispatcher → signed POST to n8n
  *   → n8n waits `delayMinutes` (relative to the event, or to `data.startsAt` when
- *     `anchor = "startsAt"`), checks `stopIf` via its own reads, then calls back
- *   → POST /api/webhooks/n8n-ingress { action: "emma.send", idempotencyKey, leadId, template, variables }
+ *     `anchor = "startsAt"`), then calls back
+ *   → POST /api/webhooks/n8n-ingress { action: "emma.send", idempotencyKey, leadId, template,
+ *     variables, sinceEventId, stopIf } — the APP evaluates `stopIf` against live data
+ *     (lib/consultant/server/events/stopConditions.ts) and skips the step if one is true.
+ *
+ * The n8n workflow itself is GENERATED from this file: `npm run emma:n8n-export`
+ * writes n8n/vantage-emma-sequences.workflow.json. Edit here, re-export, re-import.
  *
  * Idempotency key convention (so a replayed event never double-sends):
  *   `${event.id}:${step.id}` — the ingress stores it in `consultant_ingress_keys`.
@@ -27,7 +32,7 @@ export type SequenceStep = {
   /** Variables n8n must fill (SAST-formatted), beyond Emma's automatic ones. */
   variables?: Record<string, string>;
   /** Skip the step if any of these became true since the event (n8n evaluates). */
-  stopIf: readonly ("lead_replied" | "meeting_rescheduled" | "meeting_held" | "stage_advanced" | "opted_out" | "lead_lost")[];
+  stopIf: readonly StopCondition[];
 };
 
 export type EmmaSequence = {

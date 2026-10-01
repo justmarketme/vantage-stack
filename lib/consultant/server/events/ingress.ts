@@ -5,6 +5,7 @@ import { audit } from "../audit";
 import { enqueueMessage, TemplateError } from "../emma/sender";
 import { fail, txSql } from "../http";
 import { importLeads } from "../repo/leadImport";
+import { firstStop, loadStopState } from "./stopConditions";
 
 /**
  * n8n → app actions (the only inbound path from n8n; signature checked by the route).
@@ -88,6 +89,22 @@ async function runAction(t: Sql, input: Exclude<N8nIngress, { action: "leads.imp
         select id::text from public.clients where id = ${input.leadId}::uuid and vertical = ${CLINICS_VERTICAL}
       `;
       if (!lead[0]) fail(404, MESSAGES_3A.notClinicsLead);
+      // Sequence step: the app (not n8n) decides whether the message still makes sense.
+      if (input.sinceEventId && input.stopIf.length) {
+        const state = await loadStopState(t, input.leadId, input.sinceEventId);
+        const stop = state ? firstStop(state, input.stopIf) : null;
+        if (stop) {
+          await audit(t, {
+            actorId: null,
+            actorKind: "n8n",
+            action: "n8n.emma.send",
+            entity: "lead",
+            entityId: input.leadId,
+            meta: { template: input.template, skipped: "stop_condition", stop },
+          });
+          return { skipped: "stop_condition", stop };
+        }
+      }
       const r = await enqueueOrBadRequest(() =>
         enqueueMessage(t, {
           audience: "lead",

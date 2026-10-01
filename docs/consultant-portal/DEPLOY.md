@@ -243,9 +243,10 @@ Every hop is signed with `X-VS-Signature: t=<unix>,v1=<hex HMAC-SHA256 of "<t>.<
 
 - [ ] Generate `N8N_SIGNING_SECRET` (`openssl rand -hex 32`); set it in Vercel **and** as an
       n8n credential. Both directions use it.
-- [ ] n8n: create a Webhook-trigger workflow (POST) → its production URL → `N8N_EVENTS_WEBHOOK_URL`.
-      First node: verify the signature over the **raw** body (Code node, `crypto.createHmac`)
-      and stop on mismatch.
+- [ ] n8n: import the generated workflows in `n8n/` (Emma follow-up sequences, EMMA daily digest,
+      Serper lead prospecting) and follow `n8n/README.md`. The sequences workflow's webhook
+      production URL → `N8N_EVENTS_WEBHOOK_URL`. It verifies the signature over the **raw** body
+      and the app re-checks consent and stop conditions before anything is sent.
 - [ ] n8n → app calls go to `POST $PUBLIC_URL/api/webhooks/n8n-ingress`, signed the same way,
       each with an idempotency key (replays are answered from `consultant_ingress_keys`).
 - [ ] Generate `EMMA_EVENTS_SECRET`; set it in Vercel and on the EMMA server; set

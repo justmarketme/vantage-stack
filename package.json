@@ -48,7 +48,8 @@
     "clinic-crm:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/clinic-crm-seed.ts",
     "consultant:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-migrate.ts",
     "consultant:storage": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-storage-setup.ts",
-    "consultant:seed-staging": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-seed-staging.ts"
+    "consultant:seed-staging": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-seed-staging.ts",
+    "emma:n8n-export": "tsx scripts/emma-n8n-export.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

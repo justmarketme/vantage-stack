@@ -8,6 +8,9 @@
  * DATABASE_URL at it, and drops it afterwards. Without the variable every suite is skipped,
  * so CI without Postgres stays green. It deliberately does NOT reuse DATABASE_URL: these
  * tests create and drop databases and must never run against a real project.
+ *
+ * Start that server with `-c max_connections=300`: the suites run in parallel and each opens
+ * its own pool, so the default 100 connections runs out and whole suites fail in beforeAll.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";

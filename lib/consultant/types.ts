@@ -849,6 +849,17 @@ export type EmmaMessage = {
   sentAt: string | null;
 };
 
+/** Conditions that cancel a pending sequence step (evaluated by the app at send time). */
+export const STOP_CONDITIONS = [
+  "lead_replied",
+  "meeting_rescheduled",
+  "meeting_held",
+  "stage_advanced",
+  "opted_out",
+  "lead_lost",
+] as const;
+export type StopCondition = (typeof STOP_CONDITIONS)[number];
+
 // ── n8n ingress (n8n → app). Signed; every action carries an idempotency key. ─
 
 export const N8nIngress = z.discriminatedUnion("action", [
@@ -859,6 +870,12 @@ export const N8nIngress = z.discriminatedUnion("action", [
     template: z.string().min(1).max(80),
     variables: z.record(z.string().max(300)).default({}),
     channel: z.enum(["whatsapp", "sms"]).default("whatsapp"),
+    /**
+     * The platform event that started this sequence. With `stopIf`, the APP (which has the
+     * data) decides whether the message still makes sense — n8n only handles timing.
+     */
+    sinceEventId: z.string().uuid().optional(),
+    stopIf: z.array(z.enum(STOP_CONDITIONS)).max(10).default([]),
   }),
   z.object({
     action: z.literal("emma.notify_consultant"),

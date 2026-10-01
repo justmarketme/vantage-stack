@@ -1,0 +1,189 @@
+{
+  "name": "VantageStack · Emma follow-up sequences",
+  "nodes": [
+    {
+      "id": "fe03dc3f-0000-4000-8000-fe03dc3ffe03",
+      "name": "Portal event (signed)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vantage-events",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "webhookId": "21e43bc2-0000-4000-8000-21e43bc221e4"
+    },
+    {
+      "id": "1db82aac-0000-4000-8000-1db82aac1db8",
+      "name": "Verify + plan steps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst crypto = require('crypto');\nconst SECRET = $env.N8N_SIGNING_SECRET;\nif (!SECRET) throw new Error('N8N_SIGNING_SECRET is not set in the n8n environment');\nfunction sign(raw) {\n  const t = Math.floor(Date.now() / 1000);\n  const v1 = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  return 't=' + t + ',v1=' + v1;\n}\nfunction verify(raw, header, toleranceSec) {\n  if (!header) return false;\n  const parts = Object.fromEntries(String(header).split(',').map((p) => p.trim().split('=')));\n  const t = Number(parts.t);\n  if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > toleranceSec) return false;\n  const expected = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  const got = String(header).split(',').filter((p) => p.trim().startsWith('v1=')).map((p) => p.trim().slice(3));\n  return got.some((g) => g.length === expected.length && crypto.timingSafeEqual(Buffer.from(g), Buffer.from(expected)));\n}\n\n// Generated from ai-configs/emma/sequences.ts — do not edit here; re-run npm run emma:n8n-export.\nconst SEQUENCES = [{\"id\":\"discovery_reminders\",\"trigger\":\"meeting.scheduled\",\"when\":{\"kind\":\"discovery\"},\"audience\":\"lead\",\"description\":\"Remind the clinic of a booked discovery call the day before and an hour before.\",\"steps\":[{\"id\":\"reminder_24h\",\"template\":\"lead_discovery_reminder\",\"delayMinutes\":-1440,\"anchor\":\"startsAt\",\"channel\":\"whatsapp\",\"variables\":{\"meetingTime\":\"data.startsAt as SAST 'ddd D MMM, HH:mm'\"},\"stopIf\":[\"meeting_rescheduled\",\"opted_out\",\"lead_lost\"]},{\"id\":\"reminder_1h\",\"template\":\"lead_discovery_reminder\",\"delayMinutes\":-60,\"anchor\":\"startsAt\",\"channel\":\"whatsapp\",\"variables\":{\"meetingTime\":\"data.startsAt as SAST 'HH:mm'\"},\"stopIf\":[\"meeting_rescheduled\",\"opted_out\",\"lead_lost\"]}]},{\"id\":\"no_show_reengagement\",\"trigger\":\"meeting.no_show\",\"audience\":\"lead\",\"description\":\"Re-engage after a missed meeting: 2 hours later, then a final touch the next day.\",\"steps\":[{\"id\":\"reengage_2h\",\"template\":\"lead_no_show_reengage\",\"delayMinutes\":120,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"stopIf\":[\"lead_replied\",\"meeting_rescheduled\",\"opted_out\",\"lead_lost\"]},{\"id\":\"second_touch_next_day\",\"template\":\"lead_no_show_second_touch\",\"delayMinutes\":1440,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"stopIf\":[\"lead_replied\",\"meeting_rescheduled\",\"opted_out\",\"lead_lost\"]}]},{\"id\":\"post_demo_follow_up\",\"trigger\":\"meeting.held\",\"when\":{\"kind\":\"demo\"},\"audience\":\"lead\",\"description\":\"The morning after a demo, ask what stood out.\",\"steps\":[{\"id\":\"next_day\",\"template\":\"lead_post_demo_follow_up\",\"delayMinutes\":1080,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"stopIf\":[\"lead_replied\",\"stage_advanced\",\"opted_out\",\"lead_lost\"]}]},{\"id\":\"proposal_nudge\",\"trigger\":\"lead.stage_changed\",\"when\":{\"lead.stage\":\"proposal\"},\"audience\":\"lead\",\"description\":\"Three days after a proposal with no movement, a calm nudge.\",\"steps\":[{\"id\":\"day_3\",\"template\":\"lead_proposal_nudge\",\"delayMinutes\":4320,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"stopIf\":[\"lead_replied\",\"stage_advanced\",\"opted_out\",\"lead_lost\"]}]},{\"id\":\"payment_thank_you\",\"trigger\":\"deal.paid\",\"audience\":\"lead\",\"description\":\"Thank the clinic as soon as payment is confirmed.\",\"steps\":[{\"id\":\"immediate\",\"template\":\"lead_payment_thank_you\",\"delayMinutes\":0,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"variables\":{\"amount\":\"data.amount as 'R12 500'\"},\"stopIf\":[\"opted_out\"]}]},{\"id\":\"consultant_new_lead\",\"trigger\":\"lead.claimed\",\"audience\":\"consultant\",\"description\":\"Tell the consultant a lead just landed in their pipeline.\",\"steps\":[{\"id\":\"immediate\",\"template\":\"consultant_new_lead_assigned\",\"delayMinutes\":0,\"anchor\":\"event\",\"channel\":\"whatsapp\",\"stopIf\":[]}]}];\n\n// 1) Verify the portal's signature over the RAW body (X-VS-Signature).\nconst item = $input.first();\nconst headers = item.json.headers || {};\nlet raw;\ntry { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); }\ncatch (e) { raw = JSON.stringify(item.json.body); }\nif (!verify(raw, headers['x-vs-signature'], 300)) throw new Error('Invalid X-VS-Signature — event ignored');\nconst ev = JSON.parse(raw);\n\n// 2) Which sequences does this event start?\nconst get = (obj, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);\nconst matches = SEQUENCES.filter((s) => s.trigger === ev.type &&\n  Object.entries(s.when || {}).every(([k, v]) => (k.includes('.') ? get(ev, k) : get(ev, 'data.' + k)) === v));\n\n// 3) Variables, formatted the South African way (SAST, ZAR).\nconst sast = (iso, withDay) => new Intl.DateTimeFormat('en-ZA', withDay\n  ? { timeZone: 'Africa/Johannesburg', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }\n  : { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));\nconst zar = (n) => 'R' + Math.round(Number(n)).toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, ' ');\nfunction fill(spec) {\n  const out = {};\n  for (const [name, rule] of Object.entries(spec || {})) {\n    const m = /^data\\.(\\w+)/.exec(rule);\n    const value = m ? ev.data && ev.data[m[1]] : undefined;\n    if (value == null) continue;\n    if (rule.includes('SAST')) out[name] = sast(value, rule.includes('ddd'));\n    else if (rule.includes(\"'R\")) out[name] = zar(value);\n    else out[name] = String(value);\n  }\n  return out;\n}\n\n// 4) One item per step, with the absolute time it is due. Past-due reminders are dropped\n//    (e.g. a \"24h before\" reminder for a meeting booked 3 hours ahead).\nconst now = Date.now();\nconst steps = [];\nfor (const s of matches) {\n  for (const step of s.steps) {\n    const anchor = step.anchor === 'startsAt' && ev.data && ev.data.startsAt ? Date.parse(ev.data.startsAt) : Date.parse(ev.occurredAt);\n    const due = anchor + step.delayMinutes * 60000;\n    if (due < now - 5 * 60000) continue;\n    const idempotencyKey = ev.id + ':' + s.id + ':' + step.id;\n    const variables = fill(step.variables);\n    const payload = s.audience === 'consultant'\n      ? (ev.consultant ? { action: 'emma.notify_consultant', idempotencyKey, consultantId: ev.consultant.id, template: step.template, variables } : null)\n      : (ev.lead ? { action: 'emma.send', idempotencyKey, leadId: ev.lead.id, template: step.template, variables, channel: step.channel, sinceEventId: ev.id, stopIf: step.stopIf } : null);\n    if (payload) steps.push({ json: { resumeAt: new Date(Math.max(due, now)).toISOString(), sequence: s.id, step: step.id, payload } });\n  }\n}\nsteps.sort((a, b) => a.json.resumeAt.localeCompare(b.json.resumeAt));\nreturn steps;"
+      }
+    },
+    {
+      "id": "508c3c7f-0000-4000-8000-508c3c7f508c",
+      "name": "One step at a time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "623aa567-0000-4000-8000-623aa567623a",
+      "name": "Wait until due",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.resumeAt }}"
+      },
+      "webhookId": "7119de34-0000-4000-8000-7119de347119"
+    },
+    {
+      "id": "ccceb34c-0000-4000-8000-ccceb34cccce",
+      "name": "Sign request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst crypto = require('crypto');\nconst SECRET = $env.N8N_SIGNING_SECRET;\nif (!SECRET) throw new Error('N8N_SIGNING_SECRET is not set in the n8n environment');\nfunction sign(raw) {\n  const t = Math.floor(Date.now() / 1000);\n  const v1 = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  return 't=' + t + ',v1=' + v1;\n}\nfunction verify(raw, header, toleranceSec) {\n  if (!header) return false;\n  const parts = Object.fromEntries(String(header).split(',').map((p) => p.trim().split('=')));\n  const t = Number(parts.t);\n  if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > toleranceSec) return false;\n  const expected = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  const got = String(header).split(',').filter((p) => p.trim().startsWith('v1=')).map((p) => p.trim().slice(3));\n  return got.some((g) => g.length === expected.length && crypto.timingSafeEqual(Buffer.from(g), Buffer.from(expected)));\n}\n\nconst body = JSON.stringify($json.payload);\nreturn [{ json: { body, signature: sign(body), sequence: $json.sequence, step: $json.step } }];"
+      }
+    },
+    {
+      "id": "d5082218-0000-4000-8000-d5082218d508",
+      "name": "Ask the app to send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.VANTAGE_APP_URL }}/api/webhooks/n8n-ingress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-VS-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Portal event (signed)": {
+      "main": [
+        [
+          {
+            "node": "Verify + plan steps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify + plan steps": {
+      "main": [
+        [
+          {
+            "node": "One step at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One step at a time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait until due",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait until due": {
+      "main": [
+        [
+          {
+            "node": "Sign request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign request": {
+      "main": [
+        [
+          {
+            "node": "Ask the app to send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask the app to send": {
+      "main": [
+        [
+          {
+            "node": "One step at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Africa/Johannesburg",
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

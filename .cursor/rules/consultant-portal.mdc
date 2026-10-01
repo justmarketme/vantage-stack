@@ -1,0 +1,15 @@
+---
+description: Consultant Portal hard rules (VantageStack internal sales portal)
+globs: app/consultant/**,app/api/consultant/**,app/api/consultant-voice/**,app/api/webhooks/**,app/api/cron/consultant-*/**,components/consultant/**,lib/consultant/**,hooks/consultant/**,ai-configs/**,scripts/consultant-*,tests/**/consultant/**,public/consultant-sw.js
+alwaysApply: false
+---
+Read `CLAUDE.md`, `docs/AGENT_ARCHITECTURE.md` (Decisions) and `docs/consultant-portal/SPEC-WAVE2.md` first. They win over this file.
+
+- **No amber anywhere.** No motorsport / pit-wall / telemetry / neon styling. Colours only from `components/consultant/theme.css`: red = risk/errors, brand blue = Coach Alex / info, green = progress, yellow only as the middle deal-health state.
+- **ZAR whole rand** (`R12 500`, `formatZar`), **SA +27 phones only** (`normalizeZaPhone`), **every time in SAST** (`Africa/Johannesburg`, `formatSast*`) regardless of device timezone.
+- **Prompts and Emma / Coach Alex rules live in `/ai-configs/**`**, never in components or route code.
+- **No PII in logs**, URLs, error bodies or event payloads (phones, e-mails, transcript text, message bodies).
+- Tunables in `lib/consultant/config.ts` or the `consultant_settings` table — never inline.
+- `lib/consultant/{types,schema,config}.ts` are **contracts owned by the coordinator** — request changes, don't edit.
+- API routes: `requireConsultant({ manager?, call?, permission? })` first; `consultant_id` for writes comes from the session, never the body. Webhooks verify `X-VS-Signature` (`lib/consultant/auth/signing.ts`) or `X-Twilio-Signature`.
+- Schema changes are additive and backwards-compatible (deploys never interrupt selling hours).

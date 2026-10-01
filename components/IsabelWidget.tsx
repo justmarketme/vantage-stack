@@ -232,7 +232,9 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
 /** The clinic CRM is a staff app with its own bottom navigation; the sales widget would cover it. */
 export function IsabelWidget() {
   const pathname = usePathname();
-  return pathname?.startsWith("/clinic-crm") ? null : <IsabelWidgetPanel />;
+  // Internal apps have their own voice features and a CSP that blocks this widget.
+  const internalApp = pathname?.startsWith("/clinic-crm") || pathname?.startsWith("/consultant");
+  return internalApp ? null : <IsabelWidgetPanel />;
 }
 
 function IsabelWidgetPanel() {

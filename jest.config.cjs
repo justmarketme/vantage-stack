@@ -21,6 +21,8 @@ const base = {
     ],
   },
   moduleFileExtensions: ["ts", "tsx", "js", "json"],
+  // Mirrors tsconfig `paths` so tests can import App Router route handlers (which use `@/…`).
+  moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
   testPathIgnorePatterns: ["/node_modules/", "/.next/", "/dist/"],
   setupFilesAfterEnv: ["<rootDir>/tests/setup/qa-log.ts"],
   collectCoverageFrom: [

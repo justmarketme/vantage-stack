@@ -1,0 +1,171 @@
+{
+  "name": "VantageStack · Lead prospecting (Serper → Clinics pool)",
+  "nodes": [
+    {
+      "id": "f2c0d3d9-0000-4000-8000-f2c0d3d9f2c0",
+      "name": "Mondays 07:00 SAST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "38d20c76-0000-4000-8000-38d20c7638d2",
+      "name": "Searches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Edit the search list freely — every result lands in the Clinics pool, deduped by +27 phone / place id.\nconst cities = ['Cape Town', 'Johannesburg', 'Sandton', 'Pretoria', 'Durban', 'Umhlanga', 'Stellenbosch', 'Port Elizabeth', 'Bloemfontein'];\nconst kinds = ['aesthetic clinic', 'medical spa', 'skin clinic', 'botox and fillers'];\nreturn cities.flatMap((c) => kinds.map((k) => ({ json: { q: k + ' ' + c, gl: 'za', hl: 'en' } })));"
+      }
+    },
+    {
+      "id": "c361e81a-0000-4000-8000-c361e81ac361",
+      "name": "Serper Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/maps",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1200
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Serper API key (X-API-KEY)"
+        }
+      }
+    },
+    {
+      "id": "93ca80f7-0000-4000-8000-93ca80f793ca",
+      "name": "Map to Clinics import + sign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nconst crypto = require('crypto');\nconst SECRET = $env.N8N_SIGNING_SECRET;\nif (!SECRET) throw new Error('N8N_SIGNING_SECRET is not set in the n8n environment');\nfunction sign(raw) {\n  const t = Math.floor(Date.now() / 1000);\n  const v1 = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  return 't=' + t + ',v1=' + v1;\n}\nfunction verify(raw, header, toleranceSec) {\n  if (!header) return false;\n  const parts = Object.fromEntries(String(header).split(',').map((p) => p.trim().split('=')));\n  const t = Number(parts.t);\n  if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > toleranceSec) return false;\n  const expected = crypto.createHmac('sha256', SECRET).update(t + '.' + raw).digest('hex');\n  const got = String(header).split(',').filter((p) => p.trim().startsWith('v1=')).map((p) => p.trim().slice(3));\n  return got.some((g) => g.length === expected.length && crypto.timingSafeEqual(Buffer.from(g), Buffer.from(expected)));\n}\n\n// Serper Maps results → ScrapedLeadImport (provider \"serper\"). Business fields only (POPIA).\nconst day = new Date().toISOString().slice(0, 10);\nconst out = [];\nfor (const item of $input.all()) {\n  const q = item.json.searchParameters ? item.json.searchParameters.q : 'serper';\n  const leads = (item.json.places || []).filter((p) => p.title && p.phoneNumber).map((p) => ({\n    businessName: p.title,\n    phone: p.phoneNumber || null,\n    email: null,\n    website: p.website || null,\n    address: p.address || null,\n    placeId: p.placeId || p.cid || null,\n    ownerName: null,\n    sourceUrl: p.placeId ? 'https://www.google.com/maps/place/?q=place_id:' + p.placeId : (p.website || null),\n  }));\n  if (!leads.length) continue;\n  const payload = { action: 'leads.import', idempotencyKey: 'serper:' + day + ':' + q, batch: { provider: 'serper', leads } };\n  const body = JSON.stringify(payload);\n  out.push({ json: { body, signature: sign(body), query: q, count: leads.length } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "453649a5-0000-4000-8000-453649a54536",
+      "name": "Import into the Clinics pool",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.VANTAGE_APP_URL }}/api/webhooks/n8n-ingress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-VS-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Mondays 07:00 SAST": {
+      "main": [
+        [
+          {
+            "node": "Searches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Searches": {
+      "main": [
+        [
+          {
+            "node": "Serper Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serper Maps": {
+      "main": [
+        [
+          {
+            "node": "Map to Clinics import + sign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to Clinics import + sign": {
+      "main": [
+        [
+          {
+            "node": "Import into the Clinics pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Africa/Johannesburg",
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

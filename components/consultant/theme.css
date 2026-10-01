@@ -1,0 +1,151 @@
+/*
+ * Consultant Portal — design tokens. THE one place the portal's look is defined.
+ * Scoped to `.cp-theme` (the consultant shell root) so nothing leaks into /crm or
+ * the marketing site. Components reference these via Tailwind arbitrary values,
+ * e.g. `bg-[var(--cp-surface)]`, `text-[var(--cp-coach)]`.
+ *
+ * Palette = the standard VantageStack design system (tailwind.config.ts:
+ * background #0B0B0C, surface #1A1A1D, accent #3B82F6, textPrimary #F8F9FA,
+ * textMuted #9CA3AF). The standard VantageStack look only, and no amber — decided by Jono,
+ * 2026-09-30 (see docs/AGENT_ARCHITECTURE.md).
+ *
+ * Contrast (WCAG AA, text on --cp-surface #1A1A1D): text 16.5:1, muted 6.8:1,
+ * coach 6.8:1, health-yellow 11.3:1, progress 9.0:1, risk 6.3:1, accent-text 6.8:1
+ * (all still ≥ 4.8:1 on --cp-surface-3).
+ * White on --cp-accent-strong 5.2:1, on --cp-risk-strong 4.8:1.
+ *
+ * Colour semantics (Rams: colour only where it carries meaning):
+ *   coach     — Coach Alex (VantageStack blue, light)
+ *   stall     — "stall" cards (brand blue; no amber anywhere in this build)
+ *   progress  — deal progression (emerald)
+ *   risk      — high-risk cards, hang up, recording (red)
+ *   health-*  — Red / Yellow / Green deal health, always paired with a label
+ *   accent    — navigation + primary actions (VantageStack blue)
+ */
+.cp-theme {
+  --cp-bg: #0b0b0c;
+  --cp-surface: #1a1a1d;
+  --cp-surface-2: #222226;
+  --cp-surface-3: #2b2b30;
+  --cp-border: rgba(255, 255, 255, 0.08);
+  --cp-border-strong: rgba(255, 255, 255, 0.18);
+  --cp-text: #f8f9fa;
+  --cp-muted: #9ca3af;
+  --cp-on-strong: #ffffff;
+  --cp-scrim: rgba(11, 11, 12, 0.72);
+
+  --cp-accent: #3b82f6;
+  --cp-accent-strong: #2563eb;
+  --cp-accent-text: #60a5fa;
+  --cp-accent-soft: rgba(59, 130, 246, 0.14);
+
+  --cp-coach: #60a5fa;
+  --cp-coach-soft: rgba(96, 165, 250, 0.1);
+  --cp-coach-glow: rgba(96, 165, 250, 0.18);
+
+  --cp-stall: #60a5fa;
+  --cp-stall-soft: rgba(96, 165, 250, 0.12);
+  --cp-stall-glow: rgba(96, 165, 250, 0.2);
+
+  --cp-progress: #34d399;
+  --cp-progress-soft: rgba(52, 211, 153, 0.12);
+
+  --cp-risk: #f87171;
+  --cp-risk-strong: #dc2626;
+  --cp-risk-soft: rgba(248, 113, 113, 0.12);
+  --cp-risk-glow: rgba(248, 113, 113, 0.2);
+
+  --cp-health-red: var(--cp-risk);
+  --cp-health-yellow: #facc15; /* deal health only (Red/Yellow/Green) */
+  --cp-health-green: var(--cp-progress);
+
+  --cp-radius: 16px;
+  --cp-safe-top: env(safe-area-inset-top, 0px);
+  --cp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cp-safe-left: env(safe-area-inset-left, 0px);
+  --cp-safe-right: env(safe-area-inset-right, 0px);
+
+  background-color: var(--cp-bg);
+  color: var(--cp-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Severity edges — a thin coloured edge plus a soft glow. Subtle by design. */
+.cp-theme .cp-edge-high_risk {
+  box-shadow: inset 3px 0 0 var(--cp-risk), 0 0 28px -8px var(--cp-risk-glow);
+}
+.cp-theme .cp-edge-stall {
+  box-shadow: inset 3px 0 0 var(--cp-stall), 0 0 28px -8px var(--cp-stall-glow);
+}
+/* Guide (stage) cards are calm: a neutral edge, no glow, so blue always means "stall". */
+.cp-theme .cp-edge-guide {
+  box-shadow: inset 3px 0 0 var(--cp-border-strong);
+}
+
+/* Coach Alex avatar: one soft ring when new advice lands. */
+@keyframes cp-ping {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.cp-theme .cp-avatar-ping {
+  animation: cp-ping 900ms ease-out 2;
+}
+
+/* Critical card: a single low-opacity flash standing in for haptics. */
+@keyframes cp-flash {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.cp-theme .cp-flash {
+  animation: cp-flash 520ms ease-out 1 both;
+}
+
+/* Recording dot. */
+@keyframes cp-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.cp-theme .cp-rec {
+  animation: cp-rec 1.6s ease-in-out infinite;
+}
+
+/* Skeleton shimmer — static under reduced motion. */
+@keyframes cp-shimmer {
+  0% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+.cp-theme .cp-skeleton {
+  background: var(--cp-surface-2);
+  animation: cp-shimmer 1.4s ease-in-out infinite;
+}
+
+.cp-theme .cp-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Leaderboard: a single, subtle lift when a tier is newly achieved. No confetti. */
+@keyframes cp-celebrate {
+  0% { transform: scale(0.96); opacity: 0; box-shadow: 0 0 0 0 var(--cp-progress-soft); }
+  40% { transform: scale(1.01); opacity: 1; box-shadow: 0 0 0 10px var(--cp-progress-soft); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 transparent; }
+}
+.cp-theme .cp-celebrate {
+  animation: cp-celebrate 900ms ease-out 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-theme .cp-avatar-ping,
+  .cp-theme .cp-flash,
+  .cp-theme .cp-rec,
+  .cp-theme .cp-skeleton,
+  .cp-theme .cp-celebrate {
+    animation: none;
+  }
+  .cp-theme .cp-flash {
+    opacity: 0;
+  }
+}

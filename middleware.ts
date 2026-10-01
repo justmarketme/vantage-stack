@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { parseSessionEdge } from "./lib/admin/session-edge";
-import { roleMayAccessPage } from "./lib/admin/rbac-paths";
+import { readOnlyPortalWriteAllowed, roleMayAccessPage } from "./lib/admin/rbac-paths";
 import type { TeamRole } from "./lib/admin/roles";
 import { can } from "./lib/admin/roles";
 import { crmAuthSecretRaw } from "./lib/auth/crm-jwt";
 import { clinicCrmMiddleware, isClinicCrmPath } from "./lib/clinic-crm/auth/middleware";
+import {
+  consultantApiHeaders,
+  consultantPageHeaders,
+  consultantSupabaseUrls,
+  isCrossOriginWrite,
+} from "./lib/consultant/auth/securityHeaders";
 
 const ADMIN_COOKIE = "vs_admin_session";
 
@@ -20,6 +26,14 @@ export const config = {
     "/api/admin/:path*",
     "/clinic-crm/:path*",
     "/api/clinic-crm/:path*",
+    // Consultant Portal. Deliberately NOT here (no session; each route authenticates itself):
+    //   /api/consultant-voice/**                Twilio voice webhooks — X-Twilio-Signature
+    //   /api/webhooks/n8n-ingress               n8n → app — X-VS-Signature (auth/signing.ts)
+    //   /api/webhooks/emma-inbound, emma-status Twilio WhatsApp/SMS — X-Twilio-Signature
+    //   /api/cron/consultant-dispatch           Vercel Cron — Bearer CRON_SECRET
+    // tests/unit/consultant/auth/middleware.test.ts pins that none of them match.
+    "/consultant/:path*",
+    "/api/consultant/:path*",
   ],
 };
 
@@ -31,6 +45,15 @@ const CLINICS_HOST = "clinics.vantagestack.co.za";
  * not compete as duplicate content, and so there is one URL in analytics.
  */
 const CLINICS_HOST_WWW = `www.${CLINICS_HOST}`;
+
+function under(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+function withHeaders<T extends NextResponse>(res: T, headers: Record<string, string>): T {
+  for (const [k, v] of Object.entries(headers)) res.headers.set(k, v);
+  return res;
+}
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("x-robots-tag", "noindex, nofollow");
@@ -141,6 +164,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const isConsultantPage = under(path, "/consultant");
+  const isConsultantApi = under(path, "/api/consultant");
+  const isProd = process.env.NODE_ENV === "production";
+  const isDev = process.env.NODE_ENV === "development";
+  const apiHeaders = isConsultantApi ? consultantApiHeaders({ isProd }) : {};
+
+  // GET is never a "write", so the calendar OAuth callback (a top-level GET navigation back
+  // from Google / Microsoft, Origin absent or theirs) passes here, and the SameSite=Lax session
+  // cookie IS sent on top-level cross-site GET navigations, so it is authenticated normally.
+  if (isConsultantApi && isCrossOriginWrite(method, request.headers.get("origin"), request.headers.get("host"))) {
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
+  }
+
   const secret = crmAuthSecretRaw();
   const cookie = request.cookies.get(ADMIN_COOKIE)?.value;
   let session = secret ? await parseSessionEdge(cookie, secret) : null;
@@ -150,6 +186,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session) {
+    if (isConsultantApi) {
+      return withHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), apiHeaders);
+    }
     if (path.startsWith("/api/")) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -165,6 +204,22 @@ export async function middleware(request: NextRequest) {
     if (!can(role, "manage_users") && !can(role, "invite_team")) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
+  }
+
+  // The CRM API returns every client; only roles that may view the CRM get it. Closes the
+  // gap where any valid session (e.g. a sales_consultant) could read /api/crm/** directly.
+  if (under(path, "/api/crm") && !can(role, "view_clients")) {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isConsultantApi && !can(role, "use_consultant_portal")) {
+    return withHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), apiHeaders);
+  }
+
+  // Read-only oversight roles (systems_ops, acquisition_creative) may only send the few
+  // permissioned admin writes — never pipeline writes. The handler still checks the permission.
+  if (isConsultantApi && !readOnlyPortalWriteAllowed(role, method, path)) {
+    return withHeaders(NextResponse.json({ error: "Read-only access" }, { status: 403 }), apiHeaders);
   }
 
   if (!path.startsWith("/api/") && !roleMayAccessPage(role, path)) {
@@ -186,5 +241,7 @@ export async function middleware(request: NextRequest) {
   if (!path.startsWith("/api/")) {
     withNoIndex(res);
   }
+  if (isConsultantPage) withHeaders(res, consultantPageHeaders({ isDev, isProd, supabaseUrls: consultantSupabaseUrls() }));
+  if (isConsultantApi) withHeaders(res, apiHeaders);
   return res;
 }

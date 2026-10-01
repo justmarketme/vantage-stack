@@ -28,6 +28,18 @@ function reportDerivedStatus(r: {
   return "draft";
 }
 
+/**
+ * `clients.vertical` is created by the Consultant Portal schema (lib/consultant/schema.ts). The
+ * list / pipeline queries select it, so make sure it exists even if no portal request has run
+ * yet on this database. Same idempotent DDL, once per pool.
+ */
+const verticalEnsured = new WeakSet<object>();
+async function ensureVerticalColumn(db: Sql) {
+  if (verticalEnsured.has(db as unknown as object)) return;
+  await db.unsafe(`alter table public.clients add column if not exists vertical text;`);
+  verticalEnsured.add(db as unknown as object);
+}
+
 export async function listClients(
   db: Sql,
   q: {
@@ -37,12 +49,15 @@ export async function listClients(
     date_from?: string;
     date_to?: string;
     search_text?: string;
+    /** Filter by CRM vertical (e.g. `clinics`); `none` = rows with no vertical. */
+    vertical?: string;
     sort?: "newest" | "oldest" | "name" | "last_activity";
     page?: number;
     per_page?: number;
   },
 ) {
   await ensureCrmSchema(db);
+  await ensureVerticalColumn(db);
   const page = Math.max(1, q.page ?? 1);
   const per = Math.min(100, Math.max(1, q.per_page ?? 20));
   const offset = (page - 1) * per;
@@ -70,6 +85,12 @@ export async function listClients(
   if (q.date_to) {
     conditions.push(`c.created_at <= $${pi++}::timestamptz`);
     params.push(q.date_to);
+  }
+  if (q.vertical === "none") {
+    conditions.push(`c.vertical is null`);
+  } else if (q.vertical) {
+    conditions.push(`c.vertical = $${pi++}`);
+    params.push(q.vertical);
   }
   if (q.search_text?.trim()) {
     const t = `%${q.search_text.trim()}%`;
@@ -108,7 +129,8 @@ export async function listClients(
         c.assigned_to::text as assigned_to,
         c.email::text as email,
         c.website_url::text as website_url,
-        (c.blueprint_markdown is not null) as has_blueprint
+        (c.blueprint_markdown is not null) as has_blueprint,
+        c.vertical::text as vertical
       from public.clients c
       where ${whereSql}
       order by ${sort}
@@ -334,11 +356,16 @@ export async function getClientDetail(db: Sql, id: string) {
   };
 }
 
-export async function getPipeline(db: Sql) {
+export async function getPipeline(db: Sql, opts: { vertical?: string } = {}) {
   await ensureCrmSchema(db);
+  await ensureVerticalColumn(db);
+  // Optional vertical filter (e.g. `clinics`; `none` = rows with no vertical). Additive: no opts → unchanged.
+  const verticalFilter =
+    opts.vertical === "none" ? db`c.vertical is null` : opts.vertical ? db`c.vertical = ${opts.vertical}` : db`true`;
   const counts = await db`
     select c.status::text as status, count(*)::int as count
     from public.clients c
+    where ${verticalFilter}
     group by c.status
   `;
   const byStatus: Record<string, number> = {};
@@ -361,9 +388,10 @@ export async function getPipeline(db: Sql) {
           c.status::text as status,
           c.created_at::text as date_entered_stage,
           c.next_action::text as next_action,
-          c.assigned_to::text as assigned_to
+          c.assigned_to::text as assigned_to,
+          c.vertical::text as vertical
         from public.clients c
-        where c.status = ${st}
+        where c.status = ${st} and ${verticalFilter}
         order by c.created_at desc
         limit 200
       `

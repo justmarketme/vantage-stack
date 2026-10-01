@@ -12,6 +12,7 @@ type PipelineClient = {
   next_action?: string;
   last_activity?: string;
   date_entered_stage?: string;
+  vertical?: string | null;
 };
 
 type Stage = {
@@ -53,6 +54,14 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; dot: string; 
   },
 };
 
+// Vertical filter (additive): Consultant Portal leads are tagged vertical = 'clinics'.
+const VERTICAL_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "clinics", label: "Clinics" },
+  { value: "none", label: "Other" },
+] as const;
+type VerticalFilter = (typeof VERTICAL_OPTIONS)[number]["value"];
+
 const STAGE_ORDER = ["blueprint-submitted", "report-sent", "proposal-sent", "active-client", "upsell-sent"];
 
 function initials(name: string) {
@@ -91,9 +100,12 @@ export default function PipelinePage() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [vertical, setVertical] = useState<VerticalFilter>("");
 
   useEffect(() => {
-    fetch("/api/crm/pipeline", { credentials: "same-origin" })
+    setLoading(true);
+    setErr(null);
+    fetch(`/api/crm/pipeline${vertical ? `?vertical=${vertical}` : ""}`, { credentials: "same-origin" })
       .then((r) => r.json())
       .then((data) => {
         if (!data.ok && data.error) throw new Error(data.error);
@@ -101,7 +113,7 @@ export default function PipelinePage() {
       })
       .catch((e) => setErr(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [vertical]);
 
   // Build a map for quick lookup
   const stageMap: Record<string, PipelineClient[]> = {};
@@ -133,6 +145,20 @@ export default function PipelinePage() {
           <span className="hidden sm:inline">Add Contact</span>
           <span className="sm:hidden">Add</span>
         </Link>
+      </div>
+      {/* Vertical filter */}
+      <div role="group" aria-label="Vertical" className="inline-flex rounded-lg border border-white/[0.08] bg-[#16161A] p-1">
+        {VERTICAL_OPTIONS.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={vertical === o.value}
+            onClick={() => setVertical(o.value)}
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${vertical === o.value ? "bg-white/10 text-textPrimary" : "text-textMuted hover:text-textPrimary"}`}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
       {/* Mobile scroll hint */}
       <p className="text-xs text-textMuted/40 md:hidden">← Swipe to see all stages →</p>
@@ -206,8 +232,15 @@ export default function PipelinePage() {
                           {initials(c.name)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-textPrimary truncate group-hover:text-white transition">
-                            {c.name}
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="text-sm font-semibold text-textPrimary truncate group-hover:text-white transition">
+                              {c.name}
+                            </div>
+                            {c.vertical === "clinics" && (
+                              <span className="flex-shrink-0 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-300">
+                                Clinics
+                              </span>
+                            )}
                           </div>
                           {c.company && (
                             <div className="text-xs text-textMuted truncate">{c.company}</div>

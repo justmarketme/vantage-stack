@@ -39,6 +39,14 @@
     {
       "path": "/api/clinic-crm/cron/dispatch",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/consultant-sweep",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/consultant-dispatch",
+      "schedule": "45 4 * * *"
     }
   ]
 }

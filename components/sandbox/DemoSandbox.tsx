@@ -30,10 +30,10 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
     <span
       className={[
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.14em]",
-        ok ? "border-accent/40 bg-accent/10 text-accent" : "border-amber-400/30 bg-amber-400/10 text-amber-300",
+        ok ? "border-accent/40 bg-accent/10 text-accent" : "border-white/15 bg-white/[0.04] text-textMuted",
       ].join(" ")}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-accent" : "bg-amber-400"}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-accent" : "bg-textMuted"}`} />
       {label}
     </span>
   );
@@ -41,8 +41,8 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 
 function NotConfigured({ reason, envVar }: { reason: string; envVar: string }) {
   return (
-    <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.04] px-4 py-3">
-      <p className="text-sm leading-relaxed text-amber-200/90">{reason}</p>
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+      <p className="text-sm leading-relaxed text-textMuted">{reason}</p>
       <code className="mt-2 inline-block rounded bg-black/40 px-2 py-1 text-[11px] text-textMuted">
         {envVar}
       </code>

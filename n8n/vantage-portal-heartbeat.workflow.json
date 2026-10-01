@@ -1,0 +1,128 @@
+{
+  "name": "VantageStack · Portal heartbeat (every minute)",
+  "nodes": [
+    {
+      "id": "91f04ad9-0000-4000-8000-91f04ad991f0",
+      "name": "Every minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "* * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c85bdeeb-0000-4000-8000-c85bdeebc85b",
+      "name": "Dispatch events, Emma, calendars, tiers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://REPLACE_WITH_YOUR_PORTAL_DOMAIN/api/cron/consultant-dispatch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 58000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "VantageStack CRON_SECRET (Authorization: Bearer …)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b23c1d0f-0000-4000-8000-b23c1d0fb23c",
+      "name": "Every 5 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "731d1962-0000-4000-8000-731d1962731d",
+      "name": "Sweep: summaries, stale calls, retention",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://REPLACE_WITH_YOUR_PORTAL_DOMAIN/api/cron/consultant-sweep",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 58000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "VantageStack CRON_SECRET (Authorization: Bearer …)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Every minute": {
+      "main": [
+        [
+          {
+            "node": "Dispatch events, Emma, calendars, tiers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 5 minutes": {
+      "main": [
+        [
+          {
+            "node": "Sweep: summaries, stale calls, retention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Africa/Johannesburg",
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  },
+  "pinData": {},
+  "active": false
+}

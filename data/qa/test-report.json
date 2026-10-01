@@ -1,212 +1,34 @@
 {
-  "generatedAt": "2026-09-28T10:09:46.165Z",
+  "generatedAt": "2026-09-30T15:03:52.029Z",
   "totals": {
-    "tests": 137,
-    "passed": 137,
-    "failed": 0,
+    "tests": 256,
+    "passed": 255,
+    "failed": 1,
     "pending": 0,
-    "runtimeMs": 13536
+    "runtimeMs": 1502
   },
-  "criticalIssues": [],
+  "criticalIssues": [
+    {
+      "testName": "sales stage → CRM status only proposal and won move the CRM delivery status",
+      "failureMessages": [
+        "Error: expect(received).toBeNull()\n\nReceived: \"active-client\"\n    at Object.<anonymous> (/home/user/vantage-stack/tests/unit/consultant/server/stageMapping.test.ts:13:27)\n    at Promise.finally.completed (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)\n    at _callCircusTest (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:947:3)\n    at /home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:849:7\n    at _runTestsForDescribeBlock (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:862:11)\n    at _runTestsForDescribeBlock (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:857:11)\n    at run (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:761:3)\n    at runAndTransformResultsToJestFormat (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)\n    at jestAdapter (/home/user/vantage-stack/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:497:12)"
+      ]
+    }
+  ],
   "results": [
     {
-      "testName": "public.clients schema drift guard parsers extracted a plausible number of columns",
-      "status": "passed",
+      "testName": "sales stage → CRM status only proposal and won move the CRM delivery status",
+      "status": "failed",
       "expected": null,
       "actual": null,
-      "notes": null,
-      "executionTimeMs": 13,
-      "failureMessages": []
-    },
-    {
-      "testName": "public.clients schema drift guard every INSERTed column is a base column or created by ensureCrmSchema",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "public.clients schema drift guard every UPDATEd column is a base column or created by ensureCrmSchema",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "Cron job scheduling computes next run for daily schedule",
-      "status": "passed",
-      "expected": {
-        "nextIso": "2026-03-18T02:00:00.000Z"
-      },
-      "actual": {
-        "nextIso": "2026-03-18T02:00:00.000Z"
-      },
-      "notes": null,
-      "executionTimeMs": 37,
-      "failureMessages": []
-    },
-    {
-      "testName": "Cron job scheduling computes next run for step schedule (*/5)",
-      "status": "passed",
-      "expected": {
-        "nextIso": "2026-03-18T02:05:00.000Z"
-      },
-      "actual": {
-        "nextIso": "2026-03-18T02:05:00.000Z"
-      },
-      "notes": null,
-      "executionTimeMs": 6,
-      "failureMessages": []
-    },
-    {
-      "testName": "Cron job scheduling rejects genuinely unsupported cron expressions",
-      "status": "passed",
-      "expected": {
-        "throws": true
-      },
-      "actual": {
-        "throws": true
-      },
-      "notes": null,
-      "executionTimeMs": 50,
-      "failureMessages": []
-    },
-    {
-      "testName": "Report score calculation health score trends upward with better metrics",
-      "status": "passed",
-      "expected": {
-        "lowLtHigh": true
-      },
-      "actual": {
-        "low": 12,
-        "high": 98
-      },
       "notes": null,
       "executionTimeMs": 5,
-      "failureMessages": []
+      "failureMessages": [
+        "Error: expect(received).toBeNull()\n\nReceived: \"active-client\"\n    at Object.<anonymous> (/home/user/vantage-stack/tests/unit/consultant/server/stageMapping.test.ts:13:27)\n    at Promise.finally.completed (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)\n    at _callCircusTest (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:947:3)\n    at /home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:849:7\n    at _runTestsForDescribeBlock (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:862:11)\n    at _runTestsForDescribeBlock (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:857:11)\n    at run (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:761:3)\n    at runAndTransformResultsToJestFormat (/home/user/vantage-stack/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)\n    at jestAdapter (/home/user/vantage-stack/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/home/user/vantage-stack/node_modules/jest-runner/build/testWorker.js:497:12)"
+      ]
     },
     {
-      "testName": "Report score calculation handles missing inputs with conservative defaults",
-      "status": "passed",
-      "expected": {
-        "totalBetween": [
-          0,
-          100
-        ]
-      },
-      "actual": {
-        "total": 22,
-        "notes": [
-          "Traffic estimate missing; defaulted traffic score conservatively.",
-          "Speed score missing; defaulted speed score to a mid-range value.",
-          "Backlink/referring-domain data missing; backlink score may be understated."
-        ]
-      },
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "Blueprint form validation valid data passes",
-      "status": "passed",
-      "expected": {
-        "ok": true
-      },
-      "actual": {
-        "ok": true
-      },
-      "notes": null,
-      "executionTimeMs": 23,
-      "failureMessages": []
-    },
-    {
-      "testName": "Blueprint form validation missing fields fails",
-      "status": "passed",
-      "expected": {
-        "ok": false
-      },
-      "actual": {
-        "ok": false,
-        "fields": [
-          "businessName",
-          "industry",
-          "leadSource",
-          "responseSpeed",
-          "biggestChallenge",
-          "name",
-          "email",
-          "phone"
-        ]
-      },
-      "notes": null,
-      "executionTimeMs": 6,
-      "failureMessages": []
-    },
-    {
-      "testName": "Blueprint form validation invalid email fails",
-      "status": "passed",
-      "expected": {
-        "ok": false
-      },
-      "actual": {
-        "ok": false,
-        "emailErrors": [
-          "Invalid email"
-        ]
-      },
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "Blueprint form validation invalid URL fails",
-      "status": "passed",
-      "expected": {
-        "ok": false
-      },
-      "actual": {
-        "ok": false,
-        "websiteUrlErrors": [
-          "Invalid url"
-        ]
-      },
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_industry enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 13,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_websiteExists enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_revenueRange enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_primaryIntent enum == real options",
+      "testName": "sales stage → CRM status every status the portal can write is ensured on the enum",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -215,16 +37,7 @@
       "failureMessages": []
     },
     {
-      "testName": "per-field enum tools mirror the schema exactly set_previousVendorExp enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_enquiryVolume enum == real options",
+      "testName": "sales stage → deals.proposal_status won is accepted, proposal is sent, lost is lost, everything else draft",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -233,232 +46,7 @@
       "failureMessages": []
     },
     {
-      "testName": "per-field enum tools mirror the schema exactly set_followUpMethod enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_missedCallHandling enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_conversionRate enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_speedToContact enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_monthlyBudget enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_currentWebsiteStatus enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_googleMapsStatus enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_websiteGoal enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_serveArea enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_clientAcquisition enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_siteConversionStatus enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_biggestTimeWaste enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_toolsUsed enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_teamSize enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_hoursLostPerWeek enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_biggestFrustration enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_packagePreference enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_avgTransactionValue enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "per-field enum tools mirror the schema exactly set_urgencyTimeline enum == real options",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "tool wiring is consistent no duplicate tool names",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "tool wiring is consistent every definition has a client handler and vice-versa",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "tool wiring is consistent getSubNiches waits for a response; set_subNiche exists",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "tool wiring is consistent free-text fields do NOT get a set_ tool (use generic setBlueprintField)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "tool wiring is consistent every set_<field> enum value is a real option of that field",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 14,
-      "failureMessages": []
-    },
-    {
-      "testName": "blueprint form machine — lifecycle starts idle and enters filling on START, highlighting the first field",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 21,
-      "failureMessages": []
-    },
-    {
-      "testName": "blueprint form machine — progression & validation blocks NEXT on an invalid step and emits validationFailed",
+      "testName": "buildDialTwiml starts both-track final-only transcription on the parent leg before dialling",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -467,25 +55,7 @@
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — progression & validation advances through the LEADS path and emits slideAdvanced + fieldHighlighted",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 5,
-      "failureMessages": []
-    },
-    {
-      "testName": "blueprint form machine — progression & validation step-2 required fields depend on the chosen intent (branch-aware validation)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "blueprint form machine — progression & validation PREV navigates back and emits slideAdvanced(prev)",
+      "testName": "buildDialTwiml dials with dual recording, config limits and absolute callback URLs",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -494,7 +64,43 @@
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — multi-select toggles array values and respects maxItems",
+      "testName": "buildDialTwiml the Number leg plays the whisper and reports status for the clinic leg",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "buildDialTwiml callback URLs carry only the opaque callId (no phone number)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "other TwiML whisper says the configured POPIA notice with the configured voice",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "other TwiML refusal says the message then hangs up",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "other TwiML dial-complete hangs up the browser leg",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -503,34 +109,115 @@
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — submission validates, calls the injected submit, and reaches submitted with a clientId",
+      "testName": "other TwiML voiceUrl encodes the id and omits the query when absent",
       "status": "passed",
       "expected": null,
       "actual": null,
       "notes": null,
-      "executionTimeMs": 14,
+      "executionTimeMs": 1,
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — submission returns to filling with submitError when submit fails",
+      "testName": "call status mapping queued → initiated",
       "status": "passed",
       "expected": null,
       "actual": null,
       "notes": null,
-      "executionTimeMs": 5,
+      "executionTimeMs": 1,
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — submission blocks SUBMIT and surfaces field errors when the last step is invalid",
+      "testName": "call status mapping initiated → initiated",
       "status": "passed",
       "expected": null,
       "actual": null,
       "notes": null,
-      "executionTimeMs": 4,
+      "executionTimeMs": 1,
       "failureMessages": []
     },
     {
-      "testName": "blueprint form machine — serialization produces a JSON-serializable persisted snapshot (no closures in context)",
+      "testName": "call status mapping ringing → ringing",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping in-progress → in_progress",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping answered → in_progress",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping completed → completed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping busy → completed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping no-answer → completed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping canceled → completed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping failed → failed",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping unknown / missing status is ignored",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "call status mapping status only moves forward; completed and failed are final",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -539,7 +226,160 @@
       "failureMessages": []
     },
     {
-      "testName": "detailed form schema — same engine, 4 fixed steps walks all four steps with the detailed schema",
+      "testName": "requestSummary sends the Opus 5.5 request shape",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 25,
+      "failureMessages": []
+    },
+    {
+      "testName": "requestSummary a refusal is a failure that exhausts retries, without reading content",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "requestSummary max_tokens truncation retries",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "requestSummary unparseable output fails",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "requestSummary rate limits are retryable; auth errors exhaust; nothing leaks the SDK message",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "helpers talkSeconds uses answer → end, else 0 when never answered",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "helpers the user turn wraps the transcript and carries call facts only",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest accepts a valid signature over the configured origin + path + query",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest accepts Twilio's with-port form",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest rejects tampered params, query or host",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest fails closed without signature, token or public URL",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest rejects paths that could change the host",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "verifyTwilioRequest honours the dev skip flag outside production only",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CallSummarySchema ↔ CallSummary parity a full CallSummary round-trips unchanged",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "CallSummarySchema ↔ CallSummary parity top-level and nested keys match the contract exactly",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CallSummarySchema ↔ CallSummary parity enums are the contract vocabularies",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CallSummarySchema ↔ CallSummary parity rejects out-of-vocabulary values and missing fields",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CallSummarySchema ↔ CallSummary parity builds a JSON-schema structured-output format for the API",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -548,61 +388,16 @@
       "failureMessages": []
     },
     {
-      "testName": "every choice option in every field round-trips through matchOption industry (E-commerce)",
+      "testName": "Coach Alex system prompt is a stable constant (cacheable): no dates, ids or per-call content",
       "status": "passed",
       "expected": null,
       "actual": null,
       "notes": null,
-      "executionTimeMs": 27,
+      "executionTimeMs": 1,
       "failureMessages": []
     },
     {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (E-commerce)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption websiteExists (E-commerce)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption revenueRange (E-commerce)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption primaryIntent (E-commerce)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption avgTransactionValue (E-commerce)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption urgencyTimeline (E-commerce)",
+      "testName": "mintVoiceToken mints an outgoing-only voice grant for the consultant identity",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -611,268 +406,7 @@
       "failureMessages": []
     },
     {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Professional services)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 5,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Healthcare)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 6,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Real estate)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Construction)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Education)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Hospitality)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Technology)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Financial services)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Retail)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Food & Beverage)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption subNiche (Marketing)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption enquiryVolume (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption followUpMethod (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption missedCallHandling (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption conversionRate (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption speedToContact (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption monthlyBudget (LEADS)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption currentWebsiteStatus (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption googleMapsStatus (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption websiteGoal (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption serveArea (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption clientAcquisition (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption siteConversionStatus (PRESENCE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption biggestTimeWaste (AUTOMATION)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption toolsUsed (AUTOMATION)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 6,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption teamSize (AUTOMATION)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption hoursLostPerWeek (AUTOMATION)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption biggestFrustration (EXPLORE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 4,
-      "failureMessages": []
-    },
-    {
-      "testName": "every choice option in every field round-trips through matchOption packagePreference (EXPLORE)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) E-commerce: has sub-niches",
+      "testName": "mintVoiceToken returns null without accountSid",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -881,34 +415,7 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) E-commerce: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Professional services: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Professional services: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Healthcare: has sub-niches",
+      "testName": "mintVoiceToken returns null without apiKeySid",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -917,43 +424,7 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Healthcare: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Real estate: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Real estate: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Construction: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Construction: every sub-niche resolves from speech",
+      "testName": "mintVoiceToken returns null without apiKeySecret",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -962,7 +433,7 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Education: has sub-niches",
+      "testName": "mintVoiceToken returns null without twimlAppSid",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -971,7 +442,16 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Education: every sub-niche resolves from speech",
+      "testName": "mintVoiceToken refuses a non-uuid member id",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 10,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library card ids are unique and non-empty",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -980,43 +460,7 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Hospitality: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Hospitality: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Technology: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Technology: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 3,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Financial services: has sub-niches",
+      "testName": "Coach Alex card library every NEPQ stage has exactly one stage card",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -1025,16 +469,7 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Financial services: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 2,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Retail: has sub-niches",
+      "testName": "Coach Alex card library every card references a valid NEPQ stage",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -1043,7 +478,25 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Retail: every sub-niche resolves from speech",
+      "testName": "Coach Alex card library has at least 14 objection cards",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library triggers are non-empty, trimmed and lower-case",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 28,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library priorities are integers 1–10",
       "status": "passed",
       "expected": null,
       "actual": null,
@@ -1052,279 +505,1827 @@
       "failureMessages": []
     },
     {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Food & Beverage: has sub-niches",
+      "testName": "Coach Alex card library every card has the full Listen → Ask → Reframe → Confirm framework",
       "status": "passed",
       "expected": null,
       "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Food & Beverage: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Marketing: has sub-niches",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Marketing: every sub-niche resolves from speech",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "sub-niches populate AND resolve for every industry (not just Real estate) Other: no sub-niches (free-text instead)",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'real estate' -> Real estate",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'Real Estate' -> Real estate",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'ecommerce' -> E-commerce",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'e commerce' -> E-commerce",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'food and beverage' -> Food & Beverage",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'financial' -> Financial services",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'professional services' -> Professional services",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'health care' -> Healthcare",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'tech' -> Technology",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "industries resolve from natural speech 'marketing' -> Marketing",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "real-estate sub-niche example resolves from speech 'residential sales' -> Residential Sales",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "real-estate sub-niche example resolves from speech 'commercial' -> Commercial Property",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "real-estate sub-niche example resolves from speech 'property management' -> Property Management",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'leads' -> LEADS",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'I'm losing leads' -> LEADS",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'presence' -> PRESENCE",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'online presence' -> PRESENCE",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'automation' -> AUTOMATION",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'automate the admin' -> AUTOMATION",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "primary intent resolves from speech (value or phrase) 'explore' -> EXPLORE",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "clearly-unrelated answers do not false-match gibberish against industries returns null",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 1,
-      "failureMessages": []
-    },
-    {
-      "testName": "clearly-unrelated answers do not false-match empty string returns null",
-      "status": "passed",
-      "expected": null,
-      "actual": null,
-      "notes": null,
-      "executionTimeMs": 0,
-      "failureMessages": []
-    },
-    {
-      "testName": "Research JSON structuring output matches required sections",
-      "status": "passed",
-      "expected": {
-        "has": [
-          "generated_at",
-          "client",
-          "website-health",
-          "traffic-analysis",
-          "backlink-profile",
-          "competitor-benchmarks",
-          "seo-gaps",
-          "performance-score",
-          "errors"
-        ]
-      },
-      "actual": {
-        "keys": [
-          "generated_at",
-          "client",
-          "website-health",
-          "traffic-analysis",
-          "backlink-profile",
-          "competitor-benchmarks",
-          "seo-gaps",
-          "performance-score",
-          "errors"
-        ]
-      },
       "notes": null,
       "executionTimeMs": 9,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library severity: stage cards are guides, objections are high_risk or stall",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library every card explains its NEPQ theory in 2–4 sentences",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "Coach Alex card library objections outrank stage cards so an objection always wins a tie",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance We CAN'T afford it!! → we cannot afford it",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance we can not afford it → we cannot afford it",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance What’s this regarding? → what is this regarding",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance She's with a patient → she is with a patient",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance The clinic's phones → the clinic phones",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance We're  fine,   thanks. → we are fine thanks",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance I'm not sure — I'll think about it → i am not sure i will think about it",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance We won't be needing it → we will not be needing it",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance We don't need it → we do not need it",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseUtterance gonna wanna → going to want to",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards matches contractions both ways (can't ↔ cannot)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards is word-boundary exact (no partial words)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards ignores negated triggers but keeps negative triggers",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards earlier + longer triggers score higher; severity sorts before score",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards returns one match per card with the matched phrase, and honours exclude",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards memoises compilation by array identity",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "matchCards real deck: compiles and matches fast (offline deck budget <50ms, match <1ms)",
+      "status": "passed",
+      "expected": {
+        "compileMsMax": 50,
+        "matchMsMax": 1
+      },
+      "actual": {
+        "compileMs": 9.571,
+        "matchMs": 0.0464
+      },
+      "notes": "Coach Alex deck compile + per-utterance match time",
+      "executionTimeMs": 31,
+      "failureMessages": []
+    },
+    {
+      "testName": "inferStage starts in connection and floors to situation after a few segments",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "inferStage advances on consultant question patterns and never regresses",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "inferStage jumps to commitment on a prospect buying signal",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "inferStage ignores stage patterns spoken by the prospect",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "withCurrentFirst (GET notes/[id]/revisions) element 0 is the current version even when it is also stored",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 10,
+      "failureMessages": []
+    },
+    {
+      "testName": "withCurrentFirst (GET notes/[id]/revisions) a never-edited note synthesises its v1 from the creator",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail jane dot smith at gmail dot com → jane.smith@gmail.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail my email is j a n e underscore doe at the rate outlook dot com → jane_doe@outlook.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail info at glow clinic dot co dot za → info@glowclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail jane twenty three at gmail → jane23@gmail.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail bookings dash cpt plus spam at mweb → bookings-cpt+spam@mweb.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail reception hyphen one at skin clinic dot co za → reception-1@skinclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail double l a at hotmail dot com → lla@hotmail.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail Jane.Smith@Gmail.com → jane.smith@gmail.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail sarah at gmial dot com → sarah@gmail.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail dr sarah at the skin clinic co za → drsarah@theskinclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail it's thandi at sign telkomsa → thandi@telkomsa.net",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail capital J ane at icloud → jane@icloud.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenEmail  → ",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl www dot glow clinic dot co dot za slash book → https://www.glowclinic.co.za/book",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl glow clinic dot co dot za → https://glowclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl www glow clinic dot co dot za → https://www.glowclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl h t t p s colon slash slash the one clinic dot com → https://theoneclinic.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl http colon slash slash old site dot co dot za → http://oldsite.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl triple w dot skin twenty four seven dot com → https://www.skin247.com",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl dub dub dub dot la belle dash aesthetics dot co dot za slash bookings → https://www.labelle-aesthetics.co.za/bookings",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl the website is glow clinic dot coza → https://glowclinic.co.za",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenUrl https://www.glowclinic.co.za/book. → https://www.glowclinic.co.za/book",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone oh eight two five five five one two three four → +27825551234",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone zero eight two five five five one two three four → +27825551234",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone plus two seven double seven one two three four five six seven → +27771234567",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone zero twenty one, four eight oh, one two three four → +27214801234",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone 082 555 1234 → +27825551234",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone +27 82 555 1234 → +27825551234",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone my number is oh seven two triple five, eight nine oh one → +27725558901",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseSpokenPhone oh eight two five five five one two → 08255512",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms she wants botox and dermal fillas → she wants Botox and dermal fillers",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms some hyaluronic acid → some hyaluronic acid",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms high a luronic acid → hyaluronic acid",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms micro needling or p r p → microneedling or PRP",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms r f micro needling → RF microneedling",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms hydra facials and chemical peals → HydraFacials and chemical peels",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms cool sculpting, morpheus eight and i p l → CoolSculpting, Morpheus8 and IPL",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms lip filla and a thread lift → lip filler and a thread lift",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms juvederm, restylane, pro filo → Juvéderm, Restylane, Profhilo",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms laser hair removal and a c o two laser → laser hair removal and a CO2 laser",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms h i f u and derma planing → HIFU and dermaplaning",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms Profhilo and Botox stay as is → Profhilo and Botox stay as is",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "normaliseMedicalTerms dictation: spoken punctuation + terms + sentence case",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "validateSpoken (contract zod) email",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "validateSpoken (contract zod) url",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "validateSpoken (contract zod) phone",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "validateSpoken (contract zod) text",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "middleware · Consultant Portal access sales_consultant: /crm page → unauthorized redirect; /api/crm/clients → 403",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 15,
+      "failureMessages": []
+    },
+    {
+      "testName": "middleware · Consultant Portal access sales_consultant: portal page passes with CSP / Permissions-Policy / no-store; API passes with no-store",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 11,
+      "failureMessages": []
+    },
+    {
+      "testName": "middleware · Consultant Portal access viewer (CRM read, no portal permission) is kept out of the portal",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "middleware · Consultant Portal access no session: portal API 401, page → login; cross-origin write → 403",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "middleware · Consultant Portal access a forged cookie (wrong secret) is no session",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client sends same-origin JSON and builds paths/query strings",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client live polls with after=seq and encodes ids",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client recordingUrl is a same-origin proxy path",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client 204 resolves undefined",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 6,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client errors carry status, server message and fields",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client non-JSON error bodies fall back to a generic message (never raw text)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client network failure → status 0",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant api client 401 dispatches consultant:unauthorized",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox adds a clientId to note creates, persists, and survives a reload",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox replays FIFO and empties on success",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox offline: keeps the op, backs off exponentially, stops the run (order preserved)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox backoff doubles and caps at 60s with ±20% jitter",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox 409 on note.patch → conflict (kept, not overwritten); later ops still run",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox 409 whose latest revision already equals our body is treated as done (lost response)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox discard removes a conflict",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox 401 stops the run and keeps everything queued",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox other 4xx → failed (kept for the user), not retried",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox coalesces lead patches and note patches (keeping the original baseVersion)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox an offline edit of an offline-created note folds into the create",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox an edit queued while its create is in flight is remapped to the server id",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "Outbox concurrent flush() calls share one run (no duplicate sends)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine only matches NEW prospect segments",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine queues a new card while the active one is within the 4s read-hold, then promotes via tick",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine newest wins after the hold lapses",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine high_risk may interrupt the hold; stall/guide may not; nothing but high_risk displaces high_risk",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine queue is capped at 3, ordered by severity then score",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine used/dismissed cards never return; cooldown blocks re-showing within 90s",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine promotes the queue head when the active card is used",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "CoachEngine buffers shown/used/dismissed events with the trigger phrase, drains and requeues",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "toLead hides the internal placeholder email and defaults the stage",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "toLead health uses the most recent touch (last call here)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "toLead real emails pass through",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "toCall never exposes the recording sid, only whether one exists",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "sales_consultant role exists with a human label",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sales_consultant role gets ONLY use_consultant_portal",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "sales_consultant role portal access is granted to exactly the spec'd roles",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "page RBAC /consultant pages need use_consultant_portal",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "page RBAC a sales_consultant can open the portal but not the CRM",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "page RBAC CRM-only roles cannot open the portal",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "page RBAC post-login home: consultants → /consultant, everyone else → /admin",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "live transcript helpers appends in order and returns the same reference when nothing is new",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "live transcript helpers de-duplicates by seq and sorts out-of-order batches",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "live transcript helpers maxSeq / backoff / fatal statuses",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultantFlags sales_consultant member: can call, not a manager",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultantFlags agent_manager member: can call and manages",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultantFlags legacy admin (no member id): read-only manager",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultantFlags viewer: has view_clients but cannot call (requireConsultant still 403s it)",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "summaryToMarkdown has every section a consultant needs, in order",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "summaryToMarkdown objections show handled state, the exact quote and a better response",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "summaryToMarkdown NEPQ stages are listed in canonical order with checkboxes",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "summaryToMarkdown recommendation uses labels; empty sections are omitted",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "transcriptForPrompt labels speakers, orders by seq and collapses whitespace",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "transcriptForPrompt empty transcript → empty string",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "callCommunication (CRM client_communications row) preview is the summary when ready",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "callCommunication (CRM client_communications row) falls back to the subject and caps the preview length",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "callCommunication (CRM client_communications row) formatDuration",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [NotAllowedError: x] → micDenied",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [NotFoundError: x] → micMissing",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [NotReadableError: x] → micBusy",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → micDenied",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → micMissing",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → token",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → token",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → network",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: twilio] → network",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [ApiClientError: Voice is not configured] → notConfigured",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [ApiClientError: offline] → offline",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [ApiClientError: live] → alreadyLive",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [ApiClientError: no] → forbidden",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [ApiClientError: slow] → rateLimited",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage [Error: ???] → generic",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voiceErrorMessage undefined → generic",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "speakerForTrack (parent / browser leg) inbound_track is the consultant, outbound_track is the clinic",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent final content → normalised text, speaker and Twilio timestamp",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 4,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent partial results are never stored",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 3,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent malformed or empty data is ignored",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent missing timestamp falls back to now",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent transcription-started → started",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent transcription-stopped → stopped",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent transcription-error → error",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "parseTranscriptionEvent something-else → ignored",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant CSP lets the Twilio Voice SDK signal and fetch sounds",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant CSP locks down framing, plugins, base and forms",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant CSP allows eval and ws: only in development",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant CSP page headers grant the microphone to this origin only",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 7,
+      "failureMessages": []
+    },
+    {
+      "testName": "consultant CSP api headers are no-store and carry no CSP",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "isCrossOriginWrite ignores safe methods and requests without Origin",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "isCrossOriginWrite allows same-origin writes",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "isCrossOriginWrite blocks cross-origin (incl. sibling subdomain) and opaque origins",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "rateLimit (fixed window, in-memory) allows `limit` hits per window then blocks",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "rateLimit (fixed window, in-memory) resets after the window",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "rateLimit (fixed window, in-memory) keeps keys independent",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "rateLimit (fixed window, in-memory) fails closed on nonsense limits",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "rateLimit (fixed window, in-memory) never tracks more than MAX_TRACKED_KEYS",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore de-duplicates in-flight requests per key",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 2,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore an optimistic mutate is not clobbered by a fetch that started earlier",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore notifies subscribers and records errors without throwing",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore persists only when asked, redacts sensitive fields, and restores as stale",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore never persists call / live / note keys even with persist:true",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore redactForStorage keeps shapes",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "QueryStore clear() wipes memory + disk and drops late responses",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity round-trips a member id",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity accepts the client: scheme Twilio puts in From",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity normalises case",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"consultant_\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"consultant_3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0bx\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"consultant_3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b\n\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"xconsultant_3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"client:client:consultant_3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"consultant_not-a-uuid\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"+27821234567\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity rejects \"client:someoneelse_3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b\"",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 8,
+      "failureMessages": []
+    },
+    {
+      "testName": "voice identity refuses to build an identity from a non-uuid",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 5,
+      "failureMessages": []
+    },
+    {
+      "testName": "dealHealth won is green and lost is red regardless of activity",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "dealHealth days since last touch: < yellow green, < red yellow, else red",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
+      "failureMessages": []
+    },
+    {
+      "testName": "dealHealth a scheduled future next action keeps the deal green",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "dealHealth an overdue next action is never better than yellow",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "dealHealth no touch data at all is red; ISO strings are accepted",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "note drafts round-trips, removes empties, expires after TTL",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 6,
+      "failureMessages": []
+    },
+    {
+      "testName": "note drafts clear + prune",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 0,
+      "failureMessages": []
+    },
+    {
+      "testName": "note drafts never throws when storage is unavailable",
+      "status": "passed",
+      "expected": null,
+      "actual": null,
+      "notes": null,
+      "executionTimeMs": 1,
       "failureMessages": []
     }
   ]

@@ -1,0 +1,73 @@
+{
+  "name": "VantageStack · EMMA daily digest",
+  "nodes": [
+    {
+      "id": "0cf91c93-0000-4000-8000-0cf91c930cf9",
+      "name": "Weekdays 17:30 SAST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 17 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "795f2027-0000-4000-8000-795f2027795f",
+      "name": "Ask EMMA for the digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EMMA_URL }}/trigger/vantage-digest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Trigger-Secret",
+              "value": "={{ $env.N8N_TRIGGER_SECRET }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 30000
+    }
+  ],
+  "connections": {
+    "Weekdays 17:30 SAST": {
+      "main": [
+        [
+          {
+            "node": "Ask EMMA for the digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Africa/Johannesburg",
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

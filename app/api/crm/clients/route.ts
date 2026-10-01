@@ -10,6 +10,7 @@ async function handler(req: Request) {
     const out = await listClients(db, {
       status: q.get("status") ?? undefined,
       industry: q.get("industry") ?? undefined,
+      vertical: q.get("vertical") ?? undefined,
       revenue_range: q.get("revenue_range") ?? undefined,
       date_from: q.get("date_from") ?? undefined,
       date_to: q.get("date_to") ?? undefined,

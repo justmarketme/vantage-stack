@@ -79,7 +79,18 @@ export function BrokenJourney() {
       { threshold: 0.2 },
     );
     io.observe(el);
-    return () => io.disconnect();
+
+    // SAFETY NET. These cards render at opacity 0 and are revealed by the
+    // observer, so anything that stops it firing — a backgrounded tab, a very
+    // short viewport, heavy zoom, an environment that throttles observers —
+    // leaves the entire problem section blank. Content that depends on JS to
+    // become visible must have a way back. After 1.2s we reveal regardless.
+    const failsafe = window.setTimeout(() => setVisible(true), 1200);
+
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   const shown = reduce || visible;

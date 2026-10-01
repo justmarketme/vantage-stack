@@ -80,7 +80,15 @@ export function RevenueJourney({ className = "" }: { className?: string }) {
       { threshold: 0.25 },
     );
     io.observe(el);
-    return () => io.disconnect();
+
+    // If the observer never reports, the journey would sit frozen on its first
+    // stage forever — the one visual the hero exists to show, not moving.
+    const failsafe = window.setTimeout(() => setRunning(true), 1200);
+
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   useEffect(() => {

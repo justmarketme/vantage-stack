@@ -85,7 +85,9 @@ const TURN_MS = 1700;
 
 export function LiveSystemDemo() {
   const reduce = useReducedMotion();
-  const [shown, setShown] = useState(reduce ? SCRIPT.length : 0);
+  // Starts at 1, not 0: the opening message is always on screen, so the card
+  // never renders as an empty box while waiting for the first tick.
+  const [shown, setShown] = useState(reduce ? SCRIPT.length : 1);
   const [running, setRunning] = useState(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -95,7 +97,15 @@ export function LiveSystemDemo() {
     if (!el) return;
     const io = new IntersectionObserver(([e]) => setRunning(e.isIntersecting), { threshold: 0.3 });
     io.observe(el);
-    return () => io.disconnect();
+
+    // Same safety net as the problem section: if the observer never reports,
+    // the transcript would sit empty behind its chrome and read as broken.
+    const failsafe = window.setTimeout(() => setRunning(true), 1200);
+
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   useEffect(() => {

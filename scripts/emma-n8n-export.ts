@@ -11,6 +11,8 @@
  *  2. vantage-emma-digest     — weekday 17:30 SAST: asks Jono's EMMA to send the daily digest.
  *  3. vantage-lead-prospecting-serper — weekly Serper Maps search for aesthetic clinics in SA
  *     cities → signed `leads.import` into the Clinics pool (template for Apollo/Tavily/Exa too).
+ *  4. vantage-portal-heartbeat — calls the portal's dispatch (every minute) and sweep (every 5
+ *     minutes) jobs, because Vercel Hobby only allows once-a-day scheduled jobs.
  *
  * n8n needs (Settings → environment of the n8n instance):
  *   N8N_SIGNING_SECRET  same value as the portal's N8N_SIGNING_SECRET (HMAC both directions)
@@ -242,6 +244,36 @@ return out;`;
   return { name: "VantageStack · Lead prospecting (Serper → Clinics pool)", nodes, connections, settings: { timezone: "Africa/Johannesburg", executionOrder: "v1" }, pinData: {}, active: false };
 }
 
+// ── 4. Portal heartbeat (replaces sub-daily Vercel Cron on the Hobby plan) ──
+
+/**
+ * Vercel Hobby only runs scheduled jobs once a day (more often fails the deployment), so the
+ * portal's every-minute dispatch and 5-minute sweep are triggered from n8n instead. Vercel
+ * still runs both once a day as a backstop. Safe to overlap: the jobs claim rows with
+ * FOR UPDATE SKIP LOCKED. Uses an n8n Header Auth credential (works on n8n Cloud too).
+ */
+function heartbeatWorkflow() {
+  const call = (name: string, path: string, position: [number, number]) =>
+    node(name, "n8n-nodes-base.httpRequest", 4.2, position, {
+      method: "GET",
+      url: `https://REPLACE_WITH_YOUR_PORTAL_DOMAIN${path}`,
+      authentication: "genericCredentialType",
+      genericAuthType: "httpHeaderAuth",
+      options: { timeout: 58000 },
+    }, { credentials: { httpHeaderAuth: { id: "", name: "VantageStack CRON_SECRET (Authorization: Bearer …)" } }, onError: "continueRegularOutput" });
+  const nodes = [
+    node("Every minute", "n8n-nodes-base.scheduleTrigger", 1.2, [0, 0], { rule: { interval: [{ field: "cronExpression", expression: "* * * * *" }] } }),
+    call("Dispatch events, Emma, calendars, tiers", "/api/cron/consultant-dispatch", [260, 0]),
+    node("Every 5 minutes", "n8n-nodes-base.scheduleTrigger", 1.2, [0, 200], { rule: { interval: [{ field: "cronExpression", expression: "*/5 * * * *" }] } }),
+    call("Sweep: summaries, stale calls, retention", "/api/cron/consultant-sweep", [260, 200]),
+  ];
+  const connections = {
+    "Every minute": { main: [[{ node: "Dispatch events, Emma, calendars, tiers", type: "main", index: 0 }]] },
+    "Every 5 minutes": { main: [[{ node: "Sweep: summaries, stale calls, retention", type: "main", index: 0 }]] },
+  };
+  return { name: "VantageStack · Portal heartbeat (every minute)", nodes, connections, settings: { timezone: "Africa/Johannesburg", executionOrder: "v1", saveDataSuccessExecution: "none" }, pinData: {}, active: false };
+}
+
 // ── Write ───────────────────────────────────────────────────────────────────
 
 export function buildWorkflows() {
@@ -249,6 +281,7 @@ export function buildWorkflows() {
     "vantage-emma-sequences.workflow.json": sequencesWorkflow(),
     "vantage-emma-digest.workflow.json": digestWorkflow(),
     "vantage-lead-prospecting-serper.workflow.json": prospectingWorkflow(),
+    "vantage-portal-heartbeat.workflow.json": heartbeatWorkflow(),
   };
 }
 

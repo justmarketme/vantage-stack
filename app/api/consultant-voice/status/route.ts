@@ -8,7 +8,7 @@ import { handleWebhook, parseSeconds, readTwilioWebhook, scheduleSummary } from 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60; // Vercel Hobby cap — see docs/consultant-portal/DEPLOY.md
 
 /**
  * `<Number statusCallback>` — the CLINIC leg's progress (initiated / ringing / answered /

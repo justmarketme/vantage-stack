@@ -10,7 +10,7 @@ import type { Call } from "@/lib/consultant/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60; // Vercel Hobby cap — see docs/consultant-portal/DEPLOY.md
 
 /**
  * Re-run Coach Alex (idempotent, 202-style). An ended call whose summary failed or was

@@ -1,5 +1,9 @@
 # Consultant Portal — staging
 
+> **Optional — not in use for now** (AGENT_ARCHITECTURE Decision 9). The current plan tests on
+> production with `TEST · ` clinics; see DEPLOY.md → "First run on production". Use this file
+> only if a paid Supabase branch is added later.
+
 Staging is a **Supabase branch of the VantageStack project** (`tinkmipmxunwvyemhalu`) — never a
 separate Supabase project, and never set up through the Supabase MCP (that MCP is connected to a
 different project, `lead-velocity-staging`; see CLAUDE.md → Infra / Deployment). Every step here

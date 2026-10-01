@@ -6,10 +6,11 @@ import { apiError, json, withConsultantDb } from "@/lib/consultant/server/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60; // Vercel Hobby cap — see docs/consultant-portal/DEPLOY.md
 
 /**
- * Every minute (Vercel Cron): deliver events, send Emma messages, retry calendar syncs, award
+ * Every minute (external heartbeat — n8n/vantage-portal-heartbeat.workflow.json; Vercel Cron is a
+ * daily backstop on Hobby): deliver events, send Emma messages, retry calendar syncs, award
  * tiers. `Authorization: Bearer $CRON_SECRET`, compared in constant time; fails CLOSED when no
  * secret is configured (this route sends WhatsApps and posts to n8n).
  */

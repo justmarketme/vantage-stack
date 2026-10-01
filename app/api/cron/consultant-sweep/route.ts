@@ -7,7 +7,7 @@ import { runConsultantSweep } from "@/lib/consultant/server/sweep";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60; // Vercel Hobby cap — see docs/consultant-portal/DEPLOY.md
 
 /**
  * `Authorization: Bearer $CRON_SECRET` (what Vercel Cron sends). Unlike some older crons this

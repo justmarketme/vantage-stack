@@ -49,6 +49,7 @@
     "consultant:migrate": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-migrate.ts",
     "consultant:storage": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-storage-setup.ts",
     "consultant:seed-staging": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-seed-staging.ts",
+    "consultant:test-clinics": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs scripts/consultant-test-clinics.ts",
     "emma:n8n-export": "tsx scripts/emma-n8n-export.ts"
   },
   "dependencies": {

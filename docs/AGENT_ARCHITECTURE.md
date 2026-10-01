@@ -135,6 +135,15 @@ Recorded from Jono, 2026-09-30. These win over the directive above where they co
      + handle), landing-page forms and inbound calls are *inbound*: the clinic contacted us, so
      Emma may follow up on that enquiry. Opt-outs always win.
 
+9. **Hosting stays on Vercel Hobby; no paid Supabase staging branch for now** (Jono,
+   2026-10-01). Vercel crons are daily backstops only; the every-minute dispatch and 5-minute
+   sweep are driven by an external heartbeat (`n8n/vantage-portal-heartbeat.workflow.json`, or
+   any host's cron — it is host-agnostic and independent of where EMMA runs). Every function
+   stays within 60 s, so AI summaries use a quicker setting and the sweep retries any that time
+   out. Testing happens on production with clinics named `TEST · …` that use a team member's
+   own mobile, removed afterwards with `npm run consultant:test-clinics`. `STAGING.md` remains
+   the optional path if a branch is added later.
+
 ## Supplementary directive (2026-09-30) — accepted into the plan
 
 - Supabase (Postgres + Realtime) and Vercel; n8n for multi-step webhook orchestration

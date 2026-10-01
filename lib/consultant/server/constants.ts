@@ -57,8 +57,12 @@ export const TIMINGS = {
   callCloseSlackSec: 300,
   /** Calls summarised per sweep run (each is one Claude request). */
   sweepBatch: 5,
-  /** Stop starting new summaries after this long in one sweep run (route maxDuration is 300s). */
-  sweepSummariseBudgetMs: 150_000,
+  /**
+   * Stop starting new summaries after this long in one sweep run. Every portal route is
+   * capped at 60s (Vercel Hobby); one summary may take up to AI.requestTimeoutMs (45s), so
+   * 10s + 45s stays inside the cap.
+   */
+  sweepSummariseBudgetMs: 10_000,
   /** Twilio recordings deleted per sweep run (retention). */
   retentionRecordingBatch: 50,
   /** Calls whose transcript segments are purged per sweep run (retention). */
@@ -68,14 +72,22 @@ export const TIMINGS = {
 } as const;
 
 export const AI = {
-  /** Claude Opus 5.5: thinking is always on; effort is the depth control (API default is medium). */
-  effort: "medium",
+  /**
+   * Claude Opus 5.5: thinking is always on; effort is the depth control. "low" keeps a call
+   * summary comfortably inside the 60s Vercel Hobby function cap. On Vercel Pro (longer
+   * functions) this can go back to "medium" with a longer requestTimeoutMs.
+   */
+  effort: "low",
   /** Server-side refusal fallback — the scalar "default" form needs this beta header. */
   fallbackBeta: "server-side-fallback-2026-07-01",
-  /** Per-request timeout; the whole summary must finish inside the route's maxDuration. */
-  requestTimeoutMs: 180_000,
-  /** SDK-level retries for 429/5xx/connection errors; the sweep retries anything beyond that. */
-  maxRetries: 1,
+  /**
+   * Per-request timeout. The whole summary (plus the ~8s transcript grace) must finish inside
+   * the route's 60s maxDuration (Vercel Hobby). A timeout marks the summary failed and the
+   * sweep retries it later (up to cfg.ai.maxSummaryAttempts).
+   */
+  requestTimeoutMs: 45_000,
+  /** No in-request SDK retry (it would blow the 60s cap); the sweep retries instead. */
+  maxRetries: 0,
 } as const;
 
 export const TWILIO = {

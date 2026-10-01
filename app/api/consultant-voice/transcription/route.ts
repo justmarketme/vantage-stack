@@ -4,7 +4,7 @@ import { handleWebhook, readTwilioWebhook, scheduleSummary } from "@/lib/consult
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60; // Vercel Hobby cap — see docs/consultant-portal/DEPLOY.md
 
 /**
  * Real-Time Transcription events for the browser (parent) leg. Only FINAL content is stored,

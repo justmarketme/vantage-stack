@@ -33,7 +33,7 @@ jest.mock("@anthropic-ai/sdk", () => {
 import Anthropic from "@anthropic-ai/sdk";
 import { buildUserTurn, requestSummary, talkSeconds } from "../../../../lib/consultant/server/summarise";
 import { COACH_ALEX_SYSTEM } from "../../../../lib/consultant/server/summaryModel";
-import { MESSAGES } from "../../../../lib/consultant/server/constants";
+import { AI, MESSAGES } from "../../../../lib/consultant/server/constants";
 import { SAMPLE_SUMMARY } from "./fixtures";
 
 beforeEach(() => {
@@ -50,7 +50,7 @@ describe("requestSummary", () => {
     expect(req.model).toBe(process.env.CONSULTANT_AI_MODEL?.trim() || "claude-opus-5-5");
     expect(req.betas).toEqual(["server-side-fallback-2026-07-01"]);
     expect(req.fallbacks).toBe("default");
-    expect(req.output_config.effort).toBe("medium");
+    expect(req.output_config.effort).toBe(AI.effort); // "low" on Vercel Hobby (60 s cap)
     expect(req.output_config.format.type).toBe("json_schema");
     expect(req).not.toHaveProperty("thinking");
     expect(JSON.stringify(req)).not.toContain("budget_tokens");

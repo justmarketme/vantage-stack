@@ -10,16 +10,35 @@ Read with: `SPEC.md` (how a call works), `POPIA.md` (what is recorded and why).
 
 ## 0. Prerequisites and one blocker to check first
 
-- [ ] **Vercel plan supports a 5-minute cron.** `vercel.json` declares
-      `GET /api/cron/consultant-sweep` at `*/5 * * * *`. On the Hobby plan Vercel only allows
-      crons that run once a day and **rejects the deployment** otherwise. The project must be
-      on Pro (or the schedule changed to daily, which weakens the summary backstop — the
-      primary summariser still runs from the call-completed callback).
-- [ ] **Wave 2: Vercel Pro is mandatory.** `vercel.json` also declares
-      `GET /api/cron/consultant-dispatch` at `* * * * *` (every minute: event outbox → n8n /
-      EMMA, due Emma messages, calendar retries, reward tiers). Hobby rejects it outright. Pro
-      runs it (cron invocations count against function usage). Crons run on the **production**
-      deployment only — see `STAGING.md` for exercising it on previews.
+- [ ] **Vercel Hobby is enough — no Pro needed.** Hobby only allows crons that run once a day,
+      so `vercel.json` declares the two portal crons as **daily backstops**
+      (`/api/cron/consultant-sweep` 04:30 UTC, `/api/cron/consultant-dispatch` 04:45 UTC).
+      The real cadence comes from an **external heartbeat** that calls the same routes:
+      `GET /api/cron/consultant-dispatch` **every minute** (event outbox → n8n / EMMA, due Emma
+      messages, calendar retries, reward tiers) and `GET /api/cron/consultant-sweep` **every
+      5 minutes** (summaries that missed their first attempt, stale calls). It does not matter
+      where the heartbeat runs — it only needs to reach the portal's public URL with the secret.
+      - **Recommended: n8n.** Import `n8n/vantage-portal-heartbeat.workflow.json`, replace
+        `REPLACE_WITH_YOUR_PORTAL_DOMAIN` in both HTTP nodes, and create the *Header Auth*
+        credential "VantageStack CRON_SECRET (Authorization: Bearer …)" with header
+        `Authorization` and value `Bearer <CRON_SECRET>`. Activate it. Works on n8n Cloud or
+        self-hosted (no `$env` needed).
+      - **Alternative: any Linux / hosting-panel cron** (whichever account — it is independent
+        of EMMA's server). Put `Authorization: Bearer <CRON_SECRET>` in a file readable only by
+        that user (`chmod 600`), then:
+        ```
+        * * * * *   curl -fsS -m 55 -H @/home/<user>/.vantage-cron-header https://<domain>/api/cron/consultant-dispatch >/dev/null
+        */5 * * * * curl -fsS -m 55 -H @/home/<user>/.vantage-cron-header https://<domain>/api/cron/consultant-sweep >/dev/null
+        ```
+      If the heartbeat stops, nothing is lost — events stay in the outbox and are delivered by
+      the next call (at worst the daily backstop), and the lead/call routes also kick a
+      dispatch straight after each change.
+- [ ] **Functions are capped at 60 s** (the Hobby limit, same as the rest of the app). AI call
+      summaries therefore run with a quicker setting (`AI.effort = "low"`, 45 s timeout, no
+      in-request retry); a summary that times out is retried by the 5-minute sweep. On Pro these
+      can go back to `"medium"` with a longer timeout (`lib/consultant/server/constants.ts`).
+- [ ] **Commercial use:** Vercel's Hobby plan is for non-commercial use under their terms. That
+      is a business decision for you, not a technical blocker — nothing in the code needs Pro.
 - [ ] `CRON_SECRET` is already set in Vercel (existing crons use it). Vercel sends it as
       `Authorization: Bearer $CRON_SECRET`; the sweep route rejects anything else.
 - [ ] You know the **public origin** the portal is served on (e.g. `https://www.vantagestack.co.za`).
@@ -162,7 +181,8 @@ Devices: **iPhone Safari** and **Android Chrome** at minimum, plus one desktop b
       a `deals` row with `vertical = clinics`, and the call in the client's communications.
 - [ ] Twilio Console → Monitor → Debugger shows **no 11200 / 12300** errors for the webhooks
       (those mean an unreachable URL or a signature mismatch — usually a wrong `CONSULTANT_PUBLIC_URL`).
-- [ ] Wait 5 minutes → Vercel → Cron Jobs shows `/api/cron/consultant-sweep` returning 200.
+- [ ] Wait 5 minutes → n8n → *VantageStack portal heartbeat* → Executions shows the sweep call
+      returning 200 (or your hosting cron log shows no curl errors).
 
 ## Rollback
 
@@ -175,8 +195,9 @@ if they must lose access entirely. Do **not** "downgrade" a consultant to Viewer
 
 # Wave 2 — payments, meetings, calendars, Emma, events
 
-Do §0 (Pro plan) first. Staging is set up per `STAGING.md`; do every step below on staging,
-smoke-test, then repeat on production.
+Do §0 (heartbeat) first. There is **no paid staging branch for now**: do every step below on
+production and test with labelled test clinics (see "First run on production" at the end).
+`STAGING.md` stays as the optional setup if a Supabase branch is ever added.
 
 ## 10. Environment variables (wave 2)
 
@@ -202,7 +223,7 @@ Redirect URIs must match **exactly** (scheme, host, path, no trailing slash), us
 - Google: `$PUBLIC_URL/api/consultant/calendar/google/callback`
 - Microsoft: `$PUBLIC_URL/api/consultant/calendar/microsoft/callback`
 
-Register the staging preview's URLs too (a stable preview alias — see `STAGING.md`).
+If a staging branch is added later, register its preview URLs too (see `STAGING.md`).
 
 **Google Cloud (Google Calendar)**
 1. console.cloud.google.com → create/select project `vantagestack-consultant` →
@@ -292,7 +313,37 @@ npm run consultant:storage    # private bucket, size + type limits, public-polic
       one `deal.paid`-type event delivered to n8n (check n8n executions) and EMMA.
 - [ ] Log in as **Systems & Operations** → `/consultant/admin/systems` opens; `/crm` is denied;
       editing a lead is refused ("Read-only access").
-- [ ] Vercel → Cron Jobs shows `/api/cron/consultant-dispatch` returning 200 every minute.
+- [ ] n8n heartbeat executions show `/api/cron/consultant-dispatch` returning 200 every minute
+      (a 401 means the credential value is not exactly `Bearer <CRON_SECRET>`).
+
+## First run on production — labelled test clinics
+
+No separate database and no paid Supabase branch: the portal is tested on the real VantageStack
+database with clinics that are clearly marked as tests and easy to remove.
+
+1. **Name every test clinic `TEST · <anything>`** — capital TEST, space, middle dot `·`, space.
+   That exact prefix is what the cleanup looks for; `Test ·`, `TEST -` etc. are treated as real.
+2. **Use your own mobile as the clinic's number** (each consultant their own, since one number
+   can only belong to one Clinics lead). Every call, WhatsApp reminder and calendar invite then
+   reaches someone on the team, never a real clinic.
+3. Pick a source that lets Emma message it, e.g. **Social media enquiry**, or tick
+   "agreed to WhatsApp follow-up" on the call wrap-up — otherwise Emma correctly stays silent.
+4. Run the smoke tests in §9 and §14 against these clinics. Payments confirmed on a test clinic
+   **do** show on the leaderboard and fire a `deal.paid` ping to EMMA — expected, and they go
+   away with the cleanup.
+5. When done:
+   ```bash
+   npm run consultant:test-clinics                         # list test clinics and what hangs off them
+   npm run consultant:test-clinics -- --delete             # dry run
+   npm run consultant:test-clinics -- --delete --confirm   # delete them in one transaction
+   ```
+   It only ever touches Clinics leads whose name starts with `TEST · ` (their calls, notes,
+   meetings, Clinics deal, messages and CRM activity go with them). If anything else still
+   points at one of them, it rolls back and names the table — nothing is half-deleted.
+   Call recordings stay in Twilio until its retention rule removes them (§5).
+
+The staging seed (`consultant:seed-staging`) refuses to run against production by design and is
+**not** used here — its fictional clinics and consultants would pollute the real leaderboard.
 
 ## Operational notes — public-domain (scraped) leads
 

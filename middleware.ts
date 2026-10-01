@@ -23,8 +23,14 @@ export const config = {
   ],
 };
 
-/** Host that should serve the clinics landing page at its root. */
+/** Canonical host for the clinics landing page. */
 const CLINICS_HOST = "clinics.vantagestack.co.za";
+/**
+ * The www variant exists because people type it out of habit. It is NOT a
+ * second home for the page — it redirects to the canonical host so the two do
+ * not compete as duplicate content, and so there is one URL in analytics.
+ */
+const CLINICS_HOST_WWW = `www.${CLINICS_HOST}`;
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("x-robots-tag", "noindex, nofollow");
@@ -80,6 +86,17 @@ export async function middleware(request: NextRequest) {
   // against a marketing page.
   if (path === "/") {
     const host = (request.headers.get("host") || "").toLowerCase().split(":")[0];
+
+    // www.clinics.* → the canonical host, same path. Done before the main
+    // check so it cannot fall through and silently serve the homepage, which
+    // is exactly what it did before this existed.
+    if (host === CLINICS_HOST_WWW) {
+      const url = request.nextUrl.clone();
+      url.host = CLINICS_HOST;
+      url.pathname = "/clinics";
+      return NextResponse.redirect(url, 308);
+    }
+
     if (host === CLINICS_HOST) {
       const url = request.nextUrl.clone();
       url.pathname = "/clinics";

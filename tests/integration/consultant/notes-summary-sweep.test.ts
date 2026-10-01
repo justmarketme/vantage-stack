@@ -36,6 +36,7 @@ import { insertClinicBlueprint } from "@/lib/clinics/store";
 import { ClinicBlueprintSchema } from "@/lib/clinics/schema";
 import { resetRateLimits } from "@/lib/consultant/auth/rateLimit";
 import * as leadsRoute from "@/app/api/consultant/leads/route";
+import * as searchRoute from "@/app/api/consultant/leads/search/route";
 import * as notesRoute from "@/app/api/consultant/notes/route";
 import * as noteRoute from "@/app/api/consultant/notes/[id]/route";
 import * as revisionsRoute from "@/app/api/consultant/notes/[id]/revisions/route";
@@ -464,7 +465,7 @@ describeDb("consultant portal · notes, Coach Alex, sweep, stats, landing feed (
     expect(Number(first.id)).toBeGreaterThan(0);
     const leads = await sql`select id::text, consultant_id, vertical, sales_stage, status::text as status, phone, lead_source, email from public.clients where email = 'owner@radiance.example'`;
     expect(leads.length).toBe(1);
-    expect(leads[0]).toMatchObject({ consultant_id: null, vertical: "clinics", sales_stage: "new", status: "lead", phone: "+27824440101", lead_source: "clinics_landing" });
+    expect(leads[0]).toMatchObject({ consultant_id: null, vertical: "clinics", sales_stage: "new", status: "lead", phone: "+27824440101", lead_source: "landing_page" });
 
     await insertClinicBlueprint(sql, enquiry({ practiceName: "Radiance again" })); // same phone + email
     await insertClinicBlueprint(sql, enquiry({ whatsapp: "+27 82 444 0199" })); // same email, new phone
@@ -476,7 +477,7 @@ describeDb("consultant portal · notes, Coach Alex, sweep, stats, landing feed (
 
     // Visible in the pool to any consultant.
     actAs(consultantSession(B));
-    const pool = await body<Lead[]>(await leadsRoute.GET(jsonReq("GET", "/api/consultant/leads?scope=pool&q=Radiance")));
+    const pool = await body<Lead[]>(await searchRoute.POST(jsonReq("POST", "/api/consultant/leads/search", { scope: "pool", q: "Radiance" })));
     expect(pool.map((l) => l.id)).toContain(leads[0].id);
   });
 

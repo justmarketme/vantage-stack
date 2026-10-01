@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { recordCallInCrm } from "@/lib/consultant/server/crmFeed";
+import { kickDispatch } from "@/lib/consultant/server/events/dispatch";
 import { connectConsultantDb, logError } from "@/lib/consultant/server/http";
 import { applyCallStatus } from "@/lib/consultant/server/repo/callLifecycle";
 import { mapTwilioCallStatus } from "@/lib/consultant/server/voice";
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
         }
       });
       scheduleSummary(callId);
+      kickDispatch(); // call.completed event
     }
   });
 }

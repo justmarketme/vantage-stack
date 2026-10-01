@@ -243,6 +243,35 @@ export type DeadLetter = {
   updatedAt?: string | null;
 };
 
+/** What `GET admin/dead-letters` returns: dead events (deliveries grouped) and dead Emma messages. */
+type DeadLettersResponse = {
+  events?: { id: string; type: string; occurredAt: string; targets: string[]; attempts: number; lastError: string | null }[];
+  messages?: EmmaMessage[];
+};
+
+/** Flatten the server's `{ events, messages }` into the one retryable list the Systems view renders. */
+function toDeadLetters(r: DeadLettersResponse | null | undefined): DeadLetter[] {
+  const events: DeadLetter[] = (r?.events ?? []).map((e) => ({
+    kind: "event",
+    id: e.id,
+    type: e.type,
+    target: e.targets.join(", "),
+    attempts: e.attempts,
+    lastError: e.lastError,
+    createdAt: e.occurredAt,
+  }));
+  const messages: DeadLetter[] = (r?.messages ?? []).map((m) => ({
+    kind: "message",
+    id: m.id,
+    type: m.template,
+    target: m.channel,
+    attempts: m.attempts,
+    lastError: m.lastError,
+    createdAt: m.createdAt,
+  }));
+  return [...events, ...messages];
+}
+
 export type MeetingListParams = { from?: string; to?: string; leadId?: string };
 
 const search = (input: LeadSearchParams, o?: RequestOptions) =>
@@ -387,7 +416,7 @@ export const api = {
   admin: {
     /** Needs `view_system_health`. */
     health: (o?: RequestOptions) => request<SystemHealth>("GET", "/admin/health", undefined, o),
-    deadLetters: (o?: RequestOptions) => request<DeadLetter[]>("GET", "/admin/dead-letters", undefined, o),
+    deadLetters: async (o?: RequestOptions) => toDeadLetters(await request<DeadLettersResponse>("GET", "/admin/dead-letters", undefined, o)),
     retryDeadLetter: (kind: DeadLetterKind, id: string, o?: RequestOptions) =>
       request<void>("POST", `/admin/dead-letters/${enc(kind)}/${enc(id)}/retry`, undefined, o),
   },

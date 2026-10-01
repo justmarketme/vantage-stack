@@ -80,6 +80,7 @@ describeDb("consultant portal · calls & Twilio webhooks (real Postgres)", () =>
     actAs(consultantSession(owner));
     const res = await leadsRoute.POST(jsonReq("POST", "/x", { clinicName: `Clinic ${phoneSeq}`, phone: `+2721555${String(phoneSeq++).padStart(4, "0")}` }));
     expect(res.status).toBe(201);
+    afterTasks.tasks.length = 0; // the create's own dispatch kick — not what these webhook tests count
     return body<Lead>(res);
   }
 
@@ -312,7 +313,7 @@ describeDb("consultant portal · calls & Twilio webhooks (real Postgres)", () =>
     expect((await row(call.id)).status).toBe("in_progress");
 
     await status(call.id, sid, "completed", { CallDuration: "95" });
-    expect(afterTasks.tasks.length).toBe(2); // CRM feed + summary, scheduled exactly once
+    expect(afterTasks.tasks.length).toBe(3); // CRM feed + summary + event dispatch kick, scheduled exactly once
     let r = await row(call.id);
     expect(r).toMatchObject({ status: "completed", duration_sec: 95 });
     expect(r.ended_at).not.toBeNull();
@@ -323,7 +324,7 @@ describeDb("consultant portal · calls & Twilio webhooks (real Postgres)", () =>
     await status(call.id, sid, "in-progress");
     r = await row(call.id);
     expect(r).toMatchObject({ status: "completed", duration_sec: 95 });
-    expect(afterTasks.tasks.length).toBe(2);
+    expect(afterTasks.tasks.length).toBe(3);
     afterTasks.tasks.length = 0;
 
     // A callback for this callId with a foreign parent CallSid is ignored.

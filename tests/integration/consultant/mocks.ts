@@ -3,12 +3,13 @@
  * file (before any route or lib import) so the mocks are registered before those modules load.
  *
  * - `requireConsultant` returns whatever session the test chose with `actAs()` (the real
- *   role → flags logic is covered by the unit suite); the opts gates are honoured.
+ *   role → flags logic is covered by the unit suite); the opts gates (`call`, `manager`,
+ *   `permission`) are honoured exactly like the real guard.
  * - `after()` from next/server is captured instead of needing a request scope.
  * - The Anthropic SDK's `beta.messages.parse` is a controllable fake — no network, ever.
  */
 
-type SessionLike = { canCall: boolean; isManager: boolean } | null;
+type SessionLike = { canCall: boolean; isManager: boolean; permissions?: string[] } | null;
 type ParseFn = (req: unknown) => Promise<unknown>;
 
 export const anthropic = ((globalThis as Record<string, unknown>).__consultantItAnthropic ??= {
@@ -24,7 +25,7 @@ jest.mock("@/lib/consultant/auth/session", () => {
   return {
     __esModule: true,
     consultantFlags: () => ({ isManager: false, canCall: false }),
-    requireConsultant: async (opts?: { manager?: boolean; call?: boolean }) => {
+    requireConsultant: async (opts?: { manager?: boolean; call?: boolean; permission?: string }) => {
       const h = (globalThis as { __consultantItSession?: { session: SessionLike; als: { getStore(): SessionLike | undefined } } })
         .__consultantItSession;
       const scoped = h?.als.getStore();
@@ -32,6 +33,7 @@ jest.mock("@/lib/consultant/auth/session", () => {
       if (!s) return deny(401, "Unauthorized");
       if (opts?.call && !s.canCall) return deny(403, "Calling requires a consultant account");
       if (opts?.manager && !s.isManager) return deny(403, "Managers only");
+      if (opts?.permission && !(s.permissions ?? []).includes(opts.permission)) return deny(403, "Forbidden");
       return s;
     },
   };

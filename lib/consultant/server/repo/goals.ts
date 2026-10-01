@@ -19,6 +19,7 @@ import { deleteObject, isOwnedPath, signedViewUrl } from "../storage";
 import { iso } from "../util";
 import { workingDaysUntil } from "../workingDays";
 import { metricValue } from "./metrics";
+import { getGamificationSettings } from "./settings";
 import { writerId } from "./scope";
 
 /**
@@ -123,13 +124,16 @@ export function dailyPlanFor(
 async function actualRates(db: Sql, consultantId: string, now: Date): Promise<Rates> {
   const from = new Date(now.getTime() - GOALS.ratesLookbackDays * 86_400_000).toISOString();
   const to = now.toISOString();
-  const [dials, connects, paid, revenue] = await Promise.all([
+  const [dials, connects, paid, revenue, settings] = await Promise.all([
     metricValue(db, consultantId, "dials", from, to),
     metricValue(db, consultantId, "connects", from, to),
     metricValue(db, consultantId, "deals_paid", from, to),
     metricValue(db, consultantId, "revenue", from, to),
+    getGamificationSettings(db),
   ]);
-  return ratesFrom({ dials, connects, paid, revenue }, defaultRates());
+  // The close-ratio default is the LIVE target (editable by Acquisition & Creative), exactly as the
+  // Performance calculator uses it — otherwise the two plans disagree after an edit.
+  return ratesFrom({ dials, connects, paid, revenue }, { ...defaultRates(), closeFromConnects: clampRate(settings.closeTargetFromConnects) });
 }
 
 function dateKey(v: Date | string): string {

@@ -1,4 +1,5 @@
 import { MESSAGES } from "@/lib/consultant/server/constants";
+import { kickDispatch } from "@/lib/consultant/server/events/dispatch";
 import { json, parseBody, requireUuid } from "@/lib/consultant/server/http";
 import { listCallsForLead } from "@/lib/consultant/server/repo/calls";
 import { patchLead, requireLead } from "@/lib/consultant/server/repo/leads";
@@ -23,6 +24,8 @@ export async function PATCH(req: Request, ctx: IdContext) {
   return consultantRoute("leads.patch", undefined, async (s, db) => {
     const leadId = requireUuid(id, MESSAGES.leadNotFound);
     const patch = await parseBody(req, LeadPatch);
-    return json<Lead>(await patchLead(db, s, leadId, patch));
+    const lead = await patchLead(db, s, leadId, patch);
+    kickDispatch(); // stage / owner / deal changes wrote outbox events — deliver them within seconds
+    return json<Lead>(lead);
   });
 }

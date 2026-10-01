@@ -26,6 +26,7 @@ import { ensureConsultantSchema } from "@/lib/consultant/schema";
 import { portalStatusValues } from "@/lib/consultant/config";
 import { resetSingletonPool } from "@/lib/crm/db";
 import * as leadsRoute from "@/app/api/consultant/leads/route";
+import * as searchRoute from "@/app/api/consultant/leads/search/route";
 import * as leadRoute from "@/app/api/consultant/leads/[id]/route";
 import * as claimRoute from "@/app/api/consultant/leads/[id]/claim/route";
 import * as callsRoute from "@/app/api/consultant/calls/route";
@@ -75,12 +76,26 @@ describeDb("consultant portal · leads & scope (real Postgres)", () => {
       where relnamespace = 'public'::regnamespace and relkind = 'r' and relname like 'consultant\\_%'
       order by relname
     `;
+    // Every wave-1 and wave-2 consultant_* table — a new table must be added here deliberately.
     expect(rows.map((r) => r.relname)).toEqual([
+      "consultant_audit_log",
+      "consultant_calendar_connections",
       "consultant_call_segments",
       "consultant_calls",
       "consultant_card_events",
+      "consultant_contact_consent",
+      "consultant_event_deliveries",
+      "consultant_events",
+      "consultant_goals",
+      "consultant_ingress_keys",
+      "consultant_meeting_sync",
+      "consultant_meetings",
+      "consultant_messages",
       "consultant_note_revisions",
       "consultant_notes",
+      "consultant_rewards",
+      "consultant_settings",
+      "consultant_training_progress",
     ]);
     expect(rows.every((r) => r.relrowsecurity)).toBe(true);
     // No policies → anon/authenticated PostgREST roles can read nothing.
@@ -245,10 +260,16 @@ describeDb("consultant portal · leads & scope (real Postgres)", () => {
 
   test("list filters, search escaping and max length", async () => {
     actAs(consultantSession(A));
-    const res = await leadsRoute.GET(jsonReq("GET", "/api/consultant/leads?q=%25"));
+    // Free text never travels in a URL (POPIA): GET ?q is a 400, search is POST leads/search.
+    expect((await leadsRoute.GET(jsonReq("GET", "/api/consultant/leads?q=Glow"))).status).toBe(400);
+    const search = (b: unknown) => searchRoute.POST(jsonReq("POST", "/api/consultant/leads/search", b));
+    const res = await search({ q: "%", scope: "all" });
     expect(res.status).toBe(200);
     expect(await body<Lead[]>(res)).toEqual([]); // '%' is escaped, not a wildcard
-    expect((await leadsRoute.GET(jsonReq("GET", `/api/consultant/leads?q=${"x".repeat(101)}`))).status).toBe(400);
+    const glow = await body<Lead[]>(await search({ q: "glow" }));
+    expect(glow.map((l) => l.clinicName)).toContain("Glow Aesthetics");
+    expect(glow.every((l) => l.consultantId === A.id)).toBe(true);
+    expect((await search({ q: "x".repeat(121) })).status).toBe(400);
     const won = await body<Lead[]>(await leadsRoute.GET(jsonReq("GET", "/api/consultant/leads?stage=won&scope=mine")));
     expect(won.every((l) => l.salesStage === "won" && l.consultantId === A.id)).toBe(true);
   });

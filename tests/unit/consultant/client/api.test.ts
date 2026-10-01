@@ -144,6 +144,22 @@ describe("consultant api client — wave 2", () => {
     else expect(c.body).toBeUndefined();
   });
 
+  it("admin.deadLetters flattens the server's { events, messages } into one retryable list", async () => {
+    mockFetch(200, {
+      events: [{ kind: "event", id: "e1", type: "deal.paid", occurredAt: "2026-10-01T08:00:00.000Z", targets: ["emma_owner", "n8n"], attempts: 8, lastError: "http_500" }],
+      messages: [
+        { id: "m1", audience: "lead", leadId: "L1", consultantId: null, channel: "whatsapp", template: "lead_proposal_nudge", status: "dead", attempts: 5, lastError: "twilio_21211", createdAt: "2026-10-01T07:00:00.000Z", sentAt: null },
+      ],
+    });
+    const list = await api.admin.deadLetters();
+    expect(list).toEqual([
+      { kind: "event", id: "e1", type: "deal.paid", target: "emma_owner, n8n", attempts: 8, lastError: "http_500", createdAt: "2026-10-01T08:00:00.000Z" },
+      { kind: "message", id: "m1", type: "lead_proposal_nudge", target: "whatsapp", attempts: 5, lastError: "twilio_21211", createdAt: "2026-10-01T07:00:00.000Z" },
+    ]);
+    mockFetch(200, { events: [], messages: [] });
+    await expect(api.admin.deadLetters()).resolves.toEqual([]);
+  });
+
   it("settings PUT and navigation-only URLs", async () => {
     const f = mockFetch(200, {});
     const settings = { quarterTarget: 1 } as never;

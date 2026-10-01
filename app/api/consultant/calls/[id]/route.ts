@@ -1,5 +1,6 @@
 import { MESSAGES } from "@/lib/consultant/server/constants";
 import { recordCallConsent } from "@/lib/consultant/server/emma/consent";
+import { kickDispatch } from "@/lib/consultant/server/events/dispatch";
 import { json, parseBody, requireUuid } from "@/lib/consultant/server/http";
 import { getCallDetail, patchCall } from "@/lib/consultant/server/repo/calls";
 import { consultantRoute, type IdContext } from "@/lib/consultant/server/route";
@@ -27,6 +28,7 @@ export async function PATCH(req: Request, ctx: IdContext) {
     if (patch.whatsappConsent === true) {
       await recordCallConsent(db, { leadId: call.leadId, callId: call.id, memberId: s.memberId });
     }
+    if (patch.salesStage !== undefined) kickDispatch(); // the wrap-up moved the lead → lead.stage_changed
     return json<Call>(call);
   });
 }

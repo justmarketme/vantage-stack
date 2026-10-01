@@ -1,4 +1,5 @@
 import { MESSAGES } from "@/lib/consultant/server/constants";
+import { kickDispatch } from "@/lib/consultant/server/events/dispatch";
 import { apiError, json, parseBody } from "@/lib/consultant/server/http";
 import { createLead, listLeads, parseLeadListQuery } from "@/lib/consultant/server/repo/leads";
 import { consultantRoute } from "@/lib/consultant/server/route";
@@ -24,6 +25,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   return consultantRoute("leads.create", undefined, async (s, db) => {
     const input = await parseBody(req, LeadInput);
-    return json<Lead>(await createLead(db, s, input), 201);
+    const lead = await createLead(db, s, input);
+    kickDispatch(); // deliver the trigger-written lead.created event now, not at the next cron
+    return json<Lead>(lead, 201);
   });
 }

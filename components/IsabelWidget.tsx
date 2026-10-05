@@ -229,10 +229,17 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
   );
 }
 
-/** The clinic CRM is a staff app with its own bottom navigation; the sales widget would cover it. */
+/**
+ * Hidden on staff surfaces:
+ * - the clinic CRM has its own bottom navigation the widget would cover;
+ * - /sandbox runs its own sessions against the sandbox agent, and this widget is
+ *   production Isabel — it would cover the Test panel and spend live minutes on
+ *   the one page built to avoid that.
+ */
 export function IsabelWidget() {
   const pathname = usePathname();
-  return pathname?.startsWith("/clinic-crm") ? null : <IsabelWidgetPanel />;
+  const hidden = pathname?.startsWith("/clinic-crm") || pathname?.startsWith("/sandbox");
+  return hidden ? null : <IsabelWidgetPanel />;
 }
 
 function IsabelWidgetPanel() {

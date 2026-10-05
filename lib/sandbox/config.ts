@@ -90,8 +90,12 @@ export type DemoPersona = {
   label: string;
   /** Shown on the card so the operator knows what they are about to demo. */
   blurb: string;
-  /** Prompt override sent to the sandbox agent. */
+  /**
+   * Prompt override sent to the sandbox agent. `{business}` and `{city}` are
+   * replaced with the prospect's details (see `interpolate`).
+   */
   prompt: string;
+  /** Opening line; same placeholders as `prompt`. */
   firstMessage: string;
 };
 
@@ -101,24 +105,24 @@ export const DEMO_PERSONAS: DemoPersona[] = [
     label: "Private clinic",
     blurb: "Dental / aesthetic practice reception. Books appointments, never gives clinical advice.",
     prompt:
-      "You are the receptionist for a private dental practice in Cape Town. Your job is to book, move and confirm appointments and answer questions about hours, location and parking. You NEVER give clinical, dental or medical advice of any kind — if asked about symptoms, pain, treatment or whether someone needs care, you say that is for the dentist and offer the earliest appointment. Warm, efficient, South African. Keep replies short.",
-    firstMessage: "Good afternoon, thanks for calling the practice — how can I help?",
+      "You are the receptionist for {business}, a private dental practice in {city}. Your job is to book, move and confirm appointments and answer questions about hours, location and parking. You NEVER give clinical, dental or medical advice of any kind — if asked about symptoms, pain, treatment or whether someone needs care, you say that is for the dentist and offer the earliest appointment. Warm, efficient, South African. Keep replies short.",
+    firstMessage: "Good afternoon, thanks for calling {business} — how can I help?",
   },
   {
     id: "property",
     label: "Estate agency",
     blurb: "Qualifies buyers and books viewings against an agent's diary.",
     prompt:
-      "You are the front desk for a South African estate agency. Qualify the caller — buying or selling, area, budget, timeline — then book a viewing or a valuation. Never quote a property price you were not given and never give financial or legal advice. Friendly, brisk, South African.",
-    firstMessage: "Afternoon! Are you looking to buy, or to sell?",
+      "You are the front desk for {business}, an estate agency in {city}. Qualify the caller — buying or selling, area, budget, timeline — then book a viewing or a valuation. Never quote a property price you were not given and never give financial or legal advice. Friendly, brisk, South African.",
+    firstMessage: "Afternoon, {business} — are you looking to buy, or to sell?",
   },
   {
     id: "trades",
     label: "Trades / home services",
     blurb: "Captures the job, the address and the urgency, then books a site visit.",
     prompt:
-      "You answer the phone for a plumbing and maintenance business. Find out what the problem is, how urgent it is, and where they are, then book a site visit. If it sounds like an emergency — burst pipe, no water, sewage — flag it as urgent and offer the soonest slot. Never quote a fixed price; give a call-out fee only if asked and say the rest depends on the job. Practical, calm, South African.",
-    firstMessage: "Hi, you've reached the workshop — what's the problem?",
+      "You answer the phone for {business}, a plumbing and maintenance business in {city}. Find out what the problem is, how urgent it is, and where they are, then book a site visit. If it sounds like an emergency — burst pipe, no water, sewage — flag it as urgent and offer the soonest slot. Never quote a fixed price; give a call-out fee only if asked and say the rest depends on the job. Practical, calm, South African.",
+    firstMessage: "Hi, you've reached {business} — what's the problem?",
   },
 ];
 
@@ -136,13 +140,28 @@ export const DEFAULT_VARIABLES: DemoVariables = {
 };
 
 /**
+ * Fills `{business}` / `{city}` in persona text. Empty values fall back to
+ * neutral wording so a blank field never produces "calling  —".
+ */
+export function interpolate(text: string, vars: DemoVariables): string {
+  return text
+    .replace(/\{business\}/g, vars.businessName.trim() || "the business")
+    .replace(/\{city\}/g, vars.city.trim() || "South Africa");
+}
+
+/** The opening line the agent speaks, with the prospect's details filled in. */
+export function buildFirstMessage(persona: DemoPersona, vars: DemoVariables): string {
+  return interpolate(persona.firstMessage, vars);
+}
+
+/**
  * Builds the final prompt. Substitution is done here rather than relying on the
  * provider's own templating so the operator can see the exact text that will be
  * sent before starting a session.
  */
 export function buildPrompt(persona: DemoPersona, vars: DemoVariables): string {
   return [
-    persona.prompt,
+    interpolate(persona.prompt, vars),
     "",
     "## THIS DEMO",
     `Business name: ${vars.businessName || "—"}`,

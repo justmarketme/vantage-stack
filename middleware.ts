@@ -18,6 +18,14 @@ export const config = {
     "/crm/:path*",
     "/api/crm/:path*",
     "/api/admin/:path*",
+    // Voice-agent + outbound-call APIs. These read/rewrite the live Isabel
+    // agent, place Twilio calls and spend ElevenLabs/Firecrawl quota, so they
+    // need the CRM session. Only CRM pages call them. /api/demo-call/twiml is
+    // exempted below (Twilio webhook).
+    "/api/elevenlabs/:path*",
+    "/api/demo-call/:path*",
+    // Internal demo sandbox — depends on the gated voices API above.
+    "/sandbox/:path*",
     "/clinic-crm/:path*",
     "/api/clinic-crm/:path*",
   ],
@@ -51,6 +59,9 @@ function isPublicAdminPath(pathname: string) {
 }
 
 function isPublicAdminApi(pathname: string, method: string) {
+  // Twilio fetches this when a demo call connects; it carries no session.
+  // The route itself verifies X-Twilio-Signature.
+  if (pathname === "/api/demo-call/twiml" || pathname === "/api/demo-call/twiml/") return true;
   if (pathname === "/api/admin/login" && method === "POST") return true;
   if (pathname === "/api/admin/logout" && method === "POST") return true;
   if (pathname === "/api/admin/setup" && (method === "GET" || method === "POST")) return true;

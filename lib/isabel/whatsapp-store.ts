@@ -168,7 +168,7 @@ export async function appendTurns(
     ...params.prior,
     { role: "user" as const, content: params.userMessage },
     { role: "assistant" as const, content: params.assistantReply },
-  ].slice(-40); // cap stored history
+  ]; // full history — the CRM inbox (/crm/whatsapp) is the permanent record
 
   await db`
     insert into public.isabel_whatsapp_threads (phone, profile_name, transcript)

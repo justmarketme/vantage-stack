@@ -13,6 +13,7 @@ import {
   type WhatsAppThread,
 } from "../../../../lib/isabel/whatsapp-store";
 import { captureWhatsAppLead } from "../../../../lib/isabel/lead-capture";
+import { notifyInboundWhatsApp } from "../../../../lib/isabel/owner-notify";
 import { validateTwilioSignatureAny, formatForWhatsApp, twimlMessage, twimlEmpty } from "../../../../lib/isabel/twilio";
 import { asyncSendConfigured, sendTypingIndicator, sendBurst } from "../../../../lib/isabel/whatsapp-send";
 import { getUpcomingSlots, createBooking, bookingLink } from "../../../../lib/calcom/booking";
@@ -119,6 +120,8 @@ export async function POST(req: Request) {
   // dev without Twilio creds) fall back to the original synchronous TwiML reply.
   const useAsync = asyncSendConfigured() && !!messageSid;
   const replyWith = (text: string) => {
+    // Every inbound reaches the team (email + EMMA) — see lib/isabel/owner-notify.ts.
+    after(() => notifyInboundWhatsApp({ from, profileName, message, reply: text }));
     if (useAsync) {
       after(() => sendBurst({ to: from, messageSid, text }));
       return xml(twimlEmpty());
@@ -169,7 +172,7 @@ export async function POST(req: Request) {
     }
 
     // ── Normal turn: ask Isabel ────────────────────────────────────────
-    const result = await askIsabel({ message, history: prior });
+    const result = await askIsabel({ message, history: prior.slice(-40) });
     if (!result.ok) {
       console.error("[isabel-whatsapp] askIsabel failed:", result.error);
       return replyWith(FALLBACK_REPLY);

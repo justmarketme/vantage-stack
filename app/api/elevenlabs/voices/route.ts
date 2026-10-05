@@ -1,6 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // ?scope=account -> only the account's own + premade voices (what /sandbox
+  // can use as a session override). Skips the shared-library pages entirely.
+  const accountOnly = req.nextUrl.searchParams.get('scope') === 'account'
+
   const apiKey = process.env.ELEVEN_LABS_API_KEY || process.env.ELEVENLABS_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 500 })
 
@@ -14,6 +18,7 @@ export async function GET() {
   }
   const ownData = await ownRes.json()
   const ownVoices: unknown[] = ownData.voices ?? []
+  if (accountOnly) return NextResponse.json({ voices: ownVoices })
 
   // Fetch shared/public voice library (paginated — fetch up to 3 pages = 300 voices)
   const sharedVoices: unknown[] = []

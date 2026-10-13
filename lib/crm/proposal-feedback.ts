@@ -282,16 +282,24 @@ Return:
 - tasks: every concrete change or request, merged and de-duplicated across speech and written items. One task per distinct change. title is an imperative under 70 characters; detail quotes or paraphrases what the client said and what they pointed at; timestamp_seconds is when it was raised; item_refs lists the ids of related written items. Ignore small talk. Do not invent requests the client did not make.`,
   });
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0.2 },
-    }),
+  const body = JSON.stringify({
+    contents: [{ role: "user", parts }],
+    generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0.2 },
   });
-  const txt = await res.text();
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+  // Gemini returns 503 "high demand" and 429 in bursts; a short backoff usually clears it.
+  let res: Response | null = null;
+  let txt = "";
+  for (let attempt = 0; attempt < 5; attempt++) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+    txt = await res.text();
+    if (res.ok || ![429, 500, 502, 503, 504].includes(res.status)) break;
+    await new Promise((r) => setTimeout(r, 4000 * 2 ** attempt));
+  }
+  if (!res || !res.ok) throw new Error(`Gemini ${res?.status}: ${txt.slice(0, 300)}`);
   const j = JSON.parse(txt) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const out = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
   const parsed = JSON.parse(out) as AiResult;

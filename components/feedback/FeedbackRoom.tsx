@@ -97,7 +97,7 @@ export function FeedbackRoom(props: {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [progress, setProgress] = useState({ label: "", pct: 0 });
-  const [support, setSupport] = useState({ screen: true, captions: false, mobile: false });
+  const [support, setSupport] = useState({ screen: true, captions: false, mobile: false, mac: false });
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [tool, setTool] = useState<Tool>("box");
   const [color, setColor] = useState(brand.highlight);
@@ -108,14 +108,14 @@ export function FeedbackRoom(props: {
   const [tour, setTour] = useState<number | null>(null);
   const [extraNote, setExtraNote] = useState("");
   const [micTest, setMicTest] = useState<"idle" | "on" | "ok" | "blocked">("idle");
-  const [logoWide, setLogoWide] = useState(false);
+  const [logoWide, setLogoWide] = useState(brand.logoWide ?? false);
 
   useEffect(() => {
-    if (!brand.logo) return;
+    if (!brand.logo || brand.logoWide != null) return;
     const img = new Image();
     img.onload = () => setLogoWide(img.naturalWidth / Math.max(1, img.naturalHeight) > 2.2);
     img.src = brand.logo;
-  }, [brand.logo]);
+  }, [brand.logo, brand.logoWide]);
 
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -179,6 +179,7 @@ export function FeedbackRoom(props: {
       screen: !!navigator.mediaDevices && "getDisplayMedia" in navigator.mediaDevices && !/Android|iPhone|iPad/i.test(navigator.userAgent),
       captions: !!(w.SpeechRecognition || w.webkitSpeechRecognition),
       mobile: /Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 640,
+      mac: /Macintosh|Mac OS X/i.test(navigator.userAgent),
     });
     fetch(`/api/feedback/${token}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "opened" }) }).catch(() => {});
   }, [token]);
@@ -438,8 +439,8 @@ export function FeedbackRoom(props: {
       g.arc(px, py, 15 * sx, 0, Math.PI * 2);
       g.fill();
       g.stroke();
-      g.fillStyle = "#ffffff";
-      g.font = `700 ${14 * sx}px sans-serif`;
+      g.fillStyle = highlightText(brand);
+      g.font = `700 ${14 * sx}px "${brand.bodyFont}", sans-serif`;
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillText(mark.pin.n, px, py);
@@ -685,7 +686,7 @@ export function FeedbackRoom(props: {
 
   const tourSteps = [
     { key: "rec", title: "Talk us through it", body: support.screen ? "Press Record and pick “This tab”. Then scroll and talk, like you would in a meeting." : "Press Record and talk while you scroll. On phones we record your voice." },
-    { key: "pin", title: "Point at anything", body: "Press Pin, tap the exact spot, and say what should change." },
+    { key: "pin", title: "Point at anything", body: `Press Pin, ${support.mobile ? "tap" : "click"} the exact spot, and say what should change.` },
     { key: "draw", title: "Draw on the page", body: "Box a section or add an arrow, then add a short note." },
     { key: "send", title: "Send when you're done", body: "You'll see everything before it goes. That's it." },
   ];
@@ -782,7 +783,7 @@ export function FeedbackRoom(props: {
           <label className="fb-consent" htmlFor="fb-consent">
             <input id="fb-consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>
-              I agree that Vantage Stack may record my screen and voice while I review this proposal, and use AI (Google Gemini) to turn it into a list of changes. It’s only used for this proposal, stored privately, and deleted on request. Recording is optional.
+              I agree that Vantage Stack may record my {support.screen ? "screen and voice" : "voice"} while I review this proposal, and use AI (Google Gemini) to turn it into a list of changes. It’s only used for this proposal, stored privately, and deleted on request. Recording is optional.
             </span>
           </label>
 
@@ -857,7 +858,7 @@ export function FeedbackRoom(props: {
           {mode === "pin" && !draft ? (
             <div className="fb-pinlayer" onClick={onPinClick} role="presentation">
               <p className="fb-hint">
-                <MapPin size={15} /> Click the spot you want to comment on · Esc to cancel
+                <MapPin size={15} /> {support.mobile ? "Tap the spot you want to comment on" : "Click the spot you want to comment on · Esc to cancel"}
               </p>
             </div>
           ) : null}
@@ -880,7 +881,7 @@ export function FeedbackRoom(props: {
                     </button>
                   ))}
                   <span className="fb-sep" />
-                  {[brand.highlight, brand.accent, "#f5c400", brand.mode === "light" ? "#111111" : "#ffffff"].map((c) => (
+                  {[...new Set([brand.highlight, brand.accent, brand.mode === "light" ? brand.text : "#ffffff"])].map((c) => (
                     <button key={c} type="button" aria-label={`Colour ${c}`} className={`fb-swatch ${color === c ? "is-on" : ""}`} style={{ background: c }} onClick={() => setColor(c)} />
                   ))}
                   <span className="fb-sep" />
@@ -918,7 +919,7 @@ export function FeedbackRoom(props: {
               style={
                 draft.kind === "pin" && draft.x != null && !support.mobile
                   ? {
-                      left: `clamp(16px, calc(${draft.x}% - 170px), calc(100% - 356px))`,
+                      left: `clamp(16px, calc(${draft.x}% - 180px), calc(100% - 376px))`,
                       top: draft.y! > 40 ? undefined : `calc(${draft.y}% + 28px)`,
                       bottom: draft.y! > 40 ? `calc(${100 - draft.y!}% + 28px)` : undefined,
                     }
@@ -949,9 +950,13 @@ export function FeedbackRoom(props: {
                 placeholder={draft.kind === "note" ? "Type your feedback" : "Optional, but it helps us get it right"}
               />
               <div className="fb-composer-f">
-                <span className="fb-kbd-hint">
-                  <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to save
-                </span>
+                {support.mobile ? (
+                  <span />
+                ) : (
+                  <span className="fb-kbd-hint">
+                    <kbd>{support.mac ? "⌘" : "Ctrl"}</kbd> + <kbd>Enter</kbd> to save
+                  </span>
+                )}
                 <div className="fb-row">
                   <button type="button" className="fb-btn fb-btn-ghost fb-btn-sm" onClick={cancelDraft}>
                     Cancel
@@ -1070,7 +1075,7 @@ export function FeedbackRoom(props: {
                 title="Record (R)"
               >
                 <span className="fb-recdot-idle" />
-                <span>{support.screen ? "Record" : "Record voice"}</span>
+                <span>{support.screen || support.mobile ? "Record" : "Record voice"}</span>
               </button>
             )}
             <span className="fb-sep" />
@@ -1233,7 +1238,7 @@ function Tour({ step, index, total, anchor, onNext, onSkip }: { step: { title: s
   const r = anchor?.getBoundingClientRect();
   const left = r ? Math.min(Math.max(16, r.left + r.width / 2 - 150), window.innerWidth - 316) : window.innerWidth / 2 - 150;
   const bottom = r ? window.innerHeight - r.top + 14 : 110;
-  const arrow = r ? Math.min(284, Math.max(16, r.left + r.width / 2 - left)) : 150;
+  const arrow = r ? Math.min(268, Math.max(32, r.left + r.width / 2 - left)) : 150;
   return (
     <div className="fb-tour" style={{ left, bottom, ["--fb-arrow" as string]: `${arrow}px` }} role="dialog" aria-label="Quick tour">
       <p className="fb-eyebrow fb-accent-text">
@@ -1242,9 +1247,11 @@ function Tour({ step, index, total, anchor, onNext, onSkip }: { step: { title: s
       <p className="fb-tour-h">{step.title}</p>
       <p className="fb-tour-b">{step.body}</p>
       <div className="fb-row fb-row-end">
-        <button type="button" className="fb-link" onClick={onSkip}>
-          Skip
-        </button>
+        {index + 1 < total ? (
+          <button type="button" className="fb-link" onClick={onSkip}>
+            Skip
+          </button>
+        ) : null}
         <button type="button" className="fb-btn fb-btn-primary fb-btn-sm" onClick={onNext}>
           {index + 1 === total ? "Got it" : "Next"}
         </button>
@@ -1318,7 +1325,7 @@ function paint(g: CanvasRenderingContext2D, strokes: Stroke[]) {
 const CSS = `
 .fb-root{position:fixed;inset:0;overflow:auto;background:var(--fb-bg);color:var(--fb-text);font-family:var(--fb-body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 .fb-root *{box-sizing:border-box}
-.fb-root button{font:inherit;color:inherit;cursor:pointer}
+:where(.fb-root) button{font:inherit;color:inherit;cursor:pointer}
 .fb-root button:disabled{cursor:not-allowed;opacity:.45}
 .fb-root :focus-visible{outline:2px solid var(--fb-hl);outline-offset:2px}
 .fb-accent-text{color:var(--fb-hl)}
@@ -1333,7 +1340,7 @@ const CSS = `
 .fb-ok{display:inline-flex;align-items:center;gap:6px;color:#2f9e5b}
 .fb-warn{color:#c0292b;font-size:13.5px}
 .fb-chip{font-style:normal;font-size:11px;font-variant-numeric:tabular-nums;border:1px solid var(--fb-border);border-radius:999px;padding:1px 8px;color:var(--fb-muted);margin-left:6px}
-kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var(--fb-border);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--fb-surface);color:var(--fb-text)}
+kbd{font-family:var(--fb-body);font-size:11px;border:1px solid var(--fb-border);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--fb-surface);color:var(--fb-text)}
 
 .fb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--fb-radius);border:1px solid transparent;padding:10px 16px;font-weight:600;font-size:14px;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;white-space:nowrap}
 .fb-btn:active{transform:translateY(1px)}
@@ -1346,11 +1353,12 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-icon{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:calc(var(--fb-radius) + 2px);background:transparent;border:0;color:var(--fb-text)}
 .fb-icon:hover,.fb-icon.is-on{background:color-mix(in srgb,var(--fb-text) 9%,transparent)}
 .fb-icon.is-on{color:var(--fb-hl)}
+.fb-swatch{flex:none}
 .fb-sep{width:1px;align-self:stretch;margin:6px 2px;background:var(--fb-border)}
 
 /* intro */
 .fb-intro{max-width:1080px;margin:0 auto;padding:28px 20px 40px;display:grid;gap:28px}
-.fb-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid color-mix(in srgb,var(--fb-text) 70%,transparent)}
+.fb-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--fb-border)}
 .fb-brandline{display:flex;gap:12px;align-items:center}
 .fb-brandname{font-family:var(--fb-display);font-weight:700;font-size:17px;letter-spacing:-.01em}
 .fb-logo{object-fit:contain;border-radius:calc(var(--fb-radius) + 2px)}
@@ -1407,15 +1415,16 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-noembed{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:16px;text-align:center;padding:24px;max-width:520px;margin:0 auto;color:var(--fb-muted)}
 .fb-pinlayer{position:absolute;inset:0;cursor:crosshair;background:color-mix(in srgb,var(--fb-hl) 6%,transparent)}
 .fb-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
-.fb-hint{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;gap:7px;align-items:center;background:var(--fb-text);color:var(--fb-bg);padding:8px 14px;border-radius:999px;font-size:13px;margin:0;pointer-events:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+.fb-hint{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);display:flex;gap:7px;align-items:center;background:var(--fb-text);color:var(--fb-bg);padding:8px 14px;border-radius:999px;font-size:13px;margin:0;pointer-events:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
 .fb-drawbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:2px;align-items:center;background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 6px);padding:5px;box-shadow:0 16px 40px -16px rgba(0,0,0,.45)}
+.fb-hint svg{flex:none}
 .fb-swatch{width:22px;height:22px;border-radius:50%;border:2px solid var(--fb-surface);box-shadow:0 0 0 1px var(--fb-border);margin:0 3px}
 .fb-swatch.is-on{box-shadow:0 0 0 2px var(--fb-text)}
 .fb-pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:var(--fb-hl);color:var(--fb-hl-text);font-weight:700;font-size:13px;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 6px 16px -4px rgba(0,0,0,.5);pointer-events:none;animation:fbPop .3s cubic-bezier(.3,1.6,.5,1)}
 .fb-pin-fade{animation:fbPop .3s cubic-bezier(.3,1.6,.5,1),fbFade 4s 1s forwards}
 @keyframes fbPop{from{transform:translate(-50%,-50%) scale(0)}to{transform:translate(-50%,-50%) scale(1)}}
 @keyframes fbFade{to{opacity:0}}
-.fb-composer{position:absolute;left:50%;bottom:96px;transform:none;width:min(340px,calc(100vw - 32px));max-height:calc(100vh - 120px);overflow:auto;background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 6px);padding:14px;display:grid;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55);animation:fbRise .2s ease both}
+.fb-composer{position:absolute;left:50%;bottom:96px;transform:none;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 120px);overflow:auto;background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 6px);padding:14px;display:grid;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55);animation:fbRise .2s ease both}
 .fb-composer:not([style]){left:50%;transform:translateX(-50%)}
 .fb-composer-h{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px}
 .fb-composer-f{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -1426,12 +1435,14 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-tags .fb-tag.is-on{background:var(--fb-accent);color:var(--fb-accent-text);border-color:transparent}
 .fb-input{width:100%;resize:vertical;font:inherit;font-size:14px;color:var(--fb-text);background:var(--fb-bg);border:1px solid color-mix(in srgb,var(--fb-border),var(--fb-text) 35%);border-radius:min(var(--fb-radius),12px);padding:10px 12px;outline:none}
 .fb-input:focus{border-color:var(--fb-hl);box-shadow:0 0 0 3px color-mix(in srgb,var(--fb-hl) 18%,transparent)}
+.fb-input:focus-visible{outline:none}
+.fb-input::placeholder{color:var(--fb-muted);opacity:1}
 .fb-label{font-size:13.5px;font-weight:600}
 .fb-dock{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:2px;align-items:center;background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 10px);padding:6px;box-shadow:0 20px 50px -18px rgba(0,0,0,.55);max-width:calc(100vw - 16px)}
-.fb-tool{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;border-radius:calc(var(--fb-radius) + 4px);background:transparent;border:0;font-size:13.5px;font-weight:600;color:var(--fb-text);position:relative}
+.fb-tool{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;border-radius:calc(var(--fb-radius) + 4px);background:transparent;border:0;font-size:13.5px;font-weight:600;color:var(--fb-text);position:relative;white-space:nowrap;flex:none}
 .fb-tool:hover:not(:disabled),.fb-tool.is-on{background:color-mix(in srgb,var(--fb-text) 9%,transparent)}
-.fb-tool.is-on{color:var(--fb-hl)}
-.fb-recdot-idle{width:11px;height:11px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 3px color-mix(in srgb,#e5484d 22%,transparent)}
+.fb-tool.is-on svg{color:var(--fb-hl)}
+.fb-recdot-idle{flex:none;width:11px;height:11px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 3px color-mix(in srgb,#e5484d 22%,transparent)}
 .fb-recgroup{display:flex;align-items:center;gap:6px;padding:0 4px 0 10px}
 .fb-recdot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:fbBlink 1.1s infinite}
 .fb-recdot.is-paused{animation:none;background:var(--fb-muted)}
@@ -1443,7 +1454,9 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-meter i:nth-child(2){height:45%}.fb-meter i:nth-child(3){height:60%}.fb-meter i:nth-child(4){height:75%}.fb-meter i:nth-child(n+5){height:90%}
 .fb-meter i.is-on{background:#2f9e5b}
 .fb-meter.is-small{height:14px}.fb-meter.is-small i{width:3px}
-.fb-shortcuts{position:absolute;right:14px;bottom:24px;display:flex;gap:5px;align-items:center;font-size:11.5px;color:var(--fb-muted);background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:999px;padding:4px 10px;opacity:.85}
+.fb-shortcuts{position:absolute;right:14px;bottom:24px;display:flex;gap:5px;align-items:center;font-size:11.5px;color:var(--fb-muted);background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:999px;padding:4px 10px;opacity:.85;pointer-events:none}
+/* Shortcuts only matter with a keyboard and room beside the dock. */
+@media (max-width:1100px),(pointer:coarse){.fb-shortcuts{display:none}}
 .fb-caption{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);max-width:min(680px,calc(100vw - 32px));background:rgba(0,0,0,.72);color:#fff;font-size:15px;padding:7px 14px;border-radius:8px;text-align:center}
 .fb-countdown{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:10px;background:color-mix(in srgb,var(--fb-bg) 70%,transparent);backdrop-filter:blur(4px)}
 .fb-countdown span{font-family:var(--fb-display);font-weight:800;font-size:120px;line-height:1;color:var(--fb-hl);animation:fbCount .8s ease both}
@@ -1502,7 +1515,14 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 }
 @media (max-width:640px){
   .fb-steps{grid-template-columns:1fr}
-  .fb-dock{left:8px;right:8px;transform:none;justify-content:space-between;overflow-x:auto}
+  .fb-dock{left:8px;right:8px;transform:none;justify-content:space-between;overflow-x:auto;padding:5px;gap:0}
+  .fb-tool{padding:0 9px}
+  .fb-dock .fb-sep{margin:6px 1px}
+  .fb-dock .fb-btn{padding:9px 13px}
+  .fb-drawbar{left:8px;right:8px;transform:none;justify-content:space-between;overflow-x:auto;gap:0;padding:4px}
+  .fb-drawbar .fb-icon{width:34px;height:34px;flex:none}
+  .fb-drawbar .fb-swatch{width:20px;height:20px;margin:0 2px}
+  .fb-drawbar .fb-sep{margin:6px 1px}
   .fb-tool span:not(.fb-badge):not(.fb-ok):not(.fb-recdot-idle){display:none}
   .fb-tool-rec span:last-child{display:inline!important}
   .fb-drawer{left:8px;right:8px;width:auto;top:auto;max-height:60vh}

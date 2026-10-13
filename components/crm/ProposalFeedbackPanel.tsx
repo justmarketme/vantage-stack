@@ -102,9 +102,16 @@ export function ProposalFeedbackPanel({ clientId, clientName, whatsapp }: { clie
   }
 
   async function saveBrand(l: Link) {
-    const brand: Record<string, string> = {};
+    // Start from the saved override so editing these three fields keeps the rest (fonts, band, icon...).
+    const brand: Record<string, unknown> = { ...(l.brand_override ?? {}) };
+    delete brand.accent;
+    delete brand.logo;
+    delete brand.name;
     if (editAccent) brand.accent = editAccent;
+    // A new accent needs its own button text colour; the server picks one when this is absent.
+    if (editAccent !== (l.brand_override?.accent ?? "")) delete brand.accentText;
     if (editLogo.trim()) brand.logo = editLogo.trim();
+    if (editLogo.trim() !== (l.brand_override?.logo ?? "")) delete brand.logoWide;
     if (editName.trim()) brand.name = editName.trim();
     const r = await fetch(`/api/crm/clients/${clientId}/feedback/${l.id}`, {
       method: "PATCH",

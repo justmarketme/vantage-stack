@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import { cache } from "react";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { connectCrmDb } from "@/lib/crm/db";
 import { getLinkByToken } from "@/lib/crm/proposal-feedback";
@@ -7,25 +8,42 @@ import { googleFontsHref } from "@/lib/crm/feedback-brand";
 
 export const dynamic = "force-dynamic";
 
+// One lookup per request, shared by metadata, viewport and the page.
+const loadLink = cache(async (token: string) => {
+  const db = await connectCrmDb();
+  if (!db) throw new Error("Database unavailable");
+  return getLinkByToken(db, token);
+});
+
+const isHex = (v: string) => /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
+
+/** The mobile browser bar takes the client's page colour, not our app's dark shell. */
+export async function generateViewport({ params }: { params: Promise<{ token: string }> }): Promise<Viewport> {
+  const { token } = await params;
+  const link = await loadLink(token);
+  const bg = link && isHex(link.brand.bg) ? link.brand.bg : "#0b0b0c";
+  return { themeColor: bg, colorScheme: link?.brand.mode ?? "dark", viewportFit: "cover", width: "device-width", initialScale: 1 };
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
   const { token } = await params;
-  const db = await connectCrmDb();
-  const link = db ? await getLinkByToken(db, token) : null;
+  const link = await loadLink(token);
   // WhatsApp/iMessage build the link preview from these tags without running JS, so this never marks the link opened.
   const title = link ? `${link.title} · Feedback` : "Proposal feedback";
   const description = link
     ? `Your private feedback room for the ${link.title}. Talk us through it, pin or draw on anything you'd like changed.`
     : "Private proposal feedback room.";
+  const mark = link?.brand.icon ?? link?.brand.logo;
   return {
     title,
     description,
     robots: { index: false, follow: false },
-    icons: link?.brand.logo ? { icon: link.brand.logo } : undefined,
+    icons: mark ? { icon: mark, apple: mark } : undefined,
     openGraph: {
       title,
       description,
       siteName: link?.brand.name ?? "Vantage Stack",
-      images: link?.brand.logo ? [{ url: link.brand.logo }] : undefined,
+      images: mark ? [{ url: mark }] : undefined,
     },
   };
 }
@@ -46,15 +64,16 @@ async function canEmbed(url: string) {
 
 export default async function FeedbackPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const db = await connectCrmDb();
-  if (!db) throw new Error("Database unavailable");
-  const link = await getLinkByToken(db, token);
+  const link = await loadLink(token);
   if (!link) notFound();
   const embeddable = await canEmbed(link.proposal_url);
   const firstName = link.client_name.trim().split(/\s+/)[0] || "there";
 
   return (
-    <FeedbackRoom
+    <>
+      {/* Overscroll and the area behind the browser bars show the client's colour, not our dark app shell. */}
+      {isHex(link.brand.bg) ? <style>{`html,body{background:${link.brand.bg}!important}`}</style> : null}
+      <FeedbackRoom
       token={token}
       linkId={link.id}
       firstName={firstName}
@@ -63,6 +82,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ token
       embeddable={embeddable}
       brand={link.brand}
       fontsHref={googleFontsHref(link.brand)}
-    />
+      />
+    </>
   );
 }

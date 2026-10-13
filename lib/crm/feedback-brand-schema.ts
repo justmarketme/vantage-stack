@@ -14,6 +14,8 @@ export const BrandOverride = z
       .max(20000)
       .refine((v) => /^https:\/\//i.test(v) || /^data:image\/(svg\+xml|png|jpeg|webp)[;,]/i.test(v), "Logo must be an https URL or an image data URL")
       .optional(),
+    logoWide: z.boolean().optional(),
+    icon: z.string().trim().max(2000).refine((v) => /^https:\/\//i.test(v), "Icon must be an https URL").optional(),
     mode: z.enum(["light", "dark"]).optional(),
     bg: hex.optional(),
     surface: hex.optional(),

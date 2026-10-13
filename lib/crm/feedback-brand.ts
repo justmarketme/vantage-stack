@@ -6,6 +6,10 @@
 export type FeedbackBrand = {
   name: string;
   logo: string | null;
+  /** Set when the logo is a wide wordmark, so the server renders it at full width on first paint. */
+  logoWide?: boolean;
+  /** Square brand mark for the favicon and link previews (a wide wordmark becomes an unreadable sliver there). */
+  icon?: string;
   mode: "light" | "dark";
   bg: string;
   surface: string;

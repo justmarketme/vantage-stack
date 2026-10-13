@@ -108,6 +108,14 @@ export function FeedbackRoom(props: {
   const [tour, setTour] = useState<number | null>(null);
   const [extraNote, setExtraNote] = useState("");
   const [micTest, setMicTest] = useState<"idle" | "on" | "ok" | "blocked">("idle");
+  const [logoWide, setLogoWide] = useState(false);
+
+  useEffect(() => {
+    if (!brand.logo) return;
+    const img = new Image();
+    img.onload = () => setLogoWide(img.naturalWidth / Math.max(1, img.naturalHeight) > 2.2);
+    img.src = brand.logo;
+  }, [brand.logo]);
 
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -649,8 +657,11 @@ export function FeedbackRoom(props: {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  // Wordmark logos (e.g. a 1000x110 header logo) render at full width instead of squashed into a square.
   const Logo = ({ size = 36 }: { size?: number }) =>
-    brand.logo ? (
+    brand.logo && logoWide ? (
+      <img src={brand.logo} alt={brand.name} className="fb-logo-wide" style={{ height: Math.round(size * 0.62) }} />
+    ) : brand.logo ? (
       <img src={brand.logo} alt={brand.name} width={size} height={size} className="fb-logo" style={{ width: size, height: size }} />
     ) : (
       <span className="fb-mono" style={{ width: size, height: size, fontSize: size * 0.38 }} aria-hidden>
@@ -683,7 +694,7 @@ export function FeedbackRoom(props: {
             <div className="fb-brandline">
               <Logo />
               <div>
-                <div className="fb-brandname">{brand.name}</div>
+                {logoWide ? null : <div className="fb-brandname">{brand.name}</div>}
                 <div className="fb-eyebrow">Proposal feedback</div>
               </div>
             </div>
@@ -1320,6 +1331,8 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-brandline{display:flex;gap:12px;align-items:center}
 .fb-brandname{font-family:var(--fb-display);font-weight:700;font-size:17px;letter-spacing:-.01em}
 .fb-logo{object-fit:contain;border-radius:calc(var(--fb-radius) + 2px)}
+.fb-logo-wide{width:auto;max-width:min(260px,60vw);object-fit:contain;display:block}
+.fb-brandline:has(.fb-logo-wide){flex-direction:column;align-items:flex-start;gap:8px}
 .fb-mono{display:inline-grid;place-items:center;border-radius:999px;background:var(--fb-hl);color:#fff;font-family:var(--fb-display);font-weight:700}
 .fb-powered{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--fb-muted);border:1px solid var(--fb-border);border-radius:999px;padding:5px 11px}
 .fb-hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding-top:12px}

@@ -89,14 +89,28 @@ export function feedbackUrl(token: string) {
   return `${feedbackBase()}/f/${token}`;
 }
 
+const slugPart = (v: string) =>
+  v.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20).replace(/-+$/, "");
+
+/**
+ * Readable but unguessable: "<brand>-<client first name>-<12 random chars>", e.g. neuro-link-tiaan-x7Kp2Qm9aB3z.
+ * The random tail (72 bits) is what keeps the link private; the prefix only tells people what it is.
+ */
+export function feedbackToken(brandName: string, clientName: string) {
+  const prefix = [slugPart(brandName), slugPart(clientName.trim().split(/\s+/)[0] ?? "")].filter(Boolean).join("-");
+  const tail = randomBytes(9).toString("base64url");
+  return (prefix ? `${prefix}-${tail}` : randomBytes(18).toString("base64url")).slice(0, 64);
+}
+
 export async function createFeedbackLink(
   db: Sql,
   input: { clientId: string; proposalUrl: string; title: string; createdBy: string; brandOverride?: Partial<FeedbackBrand> | null },
 ) {
   await ensureFeedbackSchema(db);
-  const token = randomBytes(18).toString("base64url");
   const detected = await detectBrand(input.proposalUrl);
   const override = input.brandOverride ?? null;
+  const [client] = await db<{ name: string }[]>`select coalesce(name, '') as name from public.clients where id = ${input.clientId}::uuid`;
+  const token = feedbackToken(override?.name ?? detected.name, client?.name ?? "");
   const rows = await db<{ id: string; token: string }[]>`
     insert into public.proposal_feedback_links (client_id, token, proposal_url, title, created_by, brand, brand_override)
     values (${input.clientId}::uuid, ${token}, ${input.proposalUrl}, ${input.title}, ${input.createdBy},

@@ -888,8 +888,8 @@ export function FeedbackRoom(props: {
                 draft.kind === "pin" && draft.x != null && !support.mobile
                   ? {
                       left: `clamp(16px, calc(${draft.x}% - 170px), calc(100% - 356px))`,
-                      top: draft.y! > 55 ? undefined : `calc(${draft.y}% + 28px)`,
-                      bottom: draft.y! > 55 ? `calc(${100 - draft.y!}% + 28px)` : undefined,
+                      top: draft.y! > 40 ? undefined : `calc(${draft.y}% + 28px)`,
+                      bottom: draft.y! > 40 ? `calc(${100 - draft.y!}% + 28px)` : undefined,
                     }
                   : undefined
               }
@@ -1379,7 +1379,7 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-pin-fade{animation:fbPop .3s cubic-bezier(.3,1.6,.5,1),fbFade 4s 1s forwards}
 @keyframes fbPop{from{transform:translate(-50%,-50%) scale(0)}to{transform:translate(-50%,-50%) scale(1)}}
 @keyframes fbFade{to{opacity:0}}
-.fb-composer{position:absolute;left:50%;bottom:96px;transform:none;width:min(340px,calc(100vw - 32px));background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 6px);padding:14px;display:grid;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55);animation:fbRise .2s ease both}
+.fb-composer{position:absolute;left:50%;bottom:96px;transform:none;width:min(340px,calc(100vw - 32px));max-height:calc(100vh - 120px);overflow:auto;background:var(--fb-surface);border:1px solid var(--fb-border);border-radius:calc(var(--fb-radius) + 6px);padding:14px;display:grid;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55);animation:fbRise .2s ease both}
 .fb-composer:not([style]){left:50%;transform:translateX(-50%)}
 .fb-composer-h{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px}
 .fb-composer-f{display:flex;justify-content:space-between;align-items:center;gap:8px}

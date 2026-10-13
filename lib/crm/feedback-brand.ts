@@ -18,6 +18,14 @@ export type FeedbackBrand = {
   displayFont: string;
   bodyFont: string;
   radius: number;
+  /** Optional brand-specific finishing touches; the room falls back to neutral defaults. */
+  headingCase?: "none" | "uppercase";
+  headingWeight?: number;
+  numeralFont?: string;
+  /** Decorative-only colour (outlines, ornaments) that may be too light for text. */
+  ornament?: string;
+  /** A dark "band" for the thank-you page: background, text, headline colour, and a logo that reads on it. */
+  band?: { bg: string; text: string; headline: string; logo?: string };
 };
 
 export const DEFAULT_BRAND: FeedbackBrand = {
@@ -170,14 +178,21 @@ export async function detectBrand(url: string): Promise<FeedbackBrand> {
 export function mergeBrand(detected: FeedbackBrand, override: Partial<FeedbackBrand> | null | undefined): FeedbackBrand {
   const b = { ...detected, ...(override ?? {}) };
   if (override?.accent && HEX.test(override.accent)) {
-    b.accentText = onColor(override.accent);
+    if (!override.accentText) b.accentText = onColor(override.accent);
     if (!override.highlight) b.highlight = override.accent;
   }
   return b;
 }
 
+/** Text colour for small labels sitting on the highlight colour (pin numbers): whichever of the brand ink or white reads better. */
+export function highlightText(b: FeedbackBrand) {
+  if (!HEX.test(b.highlight)) return "#ffffff";
+  const ink = HEX.test(b.text) && b.mode === "light" ? b.text : "#111111";
+  return contrast(b.highlight, ink) >= contrast(b.highlight, "#ffffff") ? ink : "#ffffff";
+}
+
 export function googleFontsHref(b: FeedbackBrand) {
-  const fams = [...new Set([b.displayFont, b.bodyFont].filter(Boolean))];
+  const fams = [...new Set([b.displayFont, b.bodyFont, b.numeralFont].filter(Boolean) as string[])];
   const q = fams.map((f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;500;600;700`).join("&");
   return `https://fonts.googleapis.com/css2?${q}&display=swap`;
 }

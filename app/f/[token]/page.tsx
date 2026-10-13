@@ -11,10 +11,22 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const { token } = await params;
   const db = await connectCrmDb();
   const link = db ? await getLinkByToken(db, token) : null;
+  // WhatsApp/iMessage build the link preview from these tags without running JS, so this never marks the link opened.
+  const title = link ? `${link.title} · Feedback` : "Proposal feedback";
+  const description = link
+    ? `Your private feedback room for the ${link.title}. Talk us through it, pin or draw on anything you'd like changed.`
+    : "Private proposal feedback room.";
   return {
-    title: link ? `${link.title} · Feedback` : "Proposal feedback",
+    title,
+    description,
     robots: { index: false, follow: false },
     icons: link?.brand.logo ? { icon: link.brand.logo } : undefined,
+    openGraph: {
+      title,
+      description,
+      siteName: link?.brand.name ?? "Vantage Stack",
+      images: link?.brand.logo ? [{ url: link.brand.logo }] : undefined,
+    },
   };
 }
 

@@ -718,7 +718,7 @@ export function FeedbackRoom(props: {
           <ol className="fb-steps">
             {[
               [Mic, "Talk", support.screen ? "Press Record, share this tab, and talk while you scroll." : "Press Record and talk while you scroll."],
-              [MapPin, "Point", "Pin the exact spot that needs to change."],
+              [MapPin, "Pin", "Pin the exact spot that needs to change."],
               [PenLine, "Draw", "Box or arrow anything, then add a quick note."],
               [Send, "Send", "Review everything, then send it to the team."],
             ].map(([Icon, h, d], i) => {

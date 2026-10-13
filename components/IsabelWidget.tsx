@@ -238,7 +238,7 @@ function IsabelAvatar({ className = "h-10 w-10", isActive }: { className?: strin
  */
 export function IsabelWidget() {
   const pathname = usePathname();
-  const hidden = pathname?.startsWith("/clinic-crm") || pathname?.startsWith("/sandbox");
+  const hidden = pathname?.startsWith("/clinic-crm") || pathname?.startsWith("/sandbox") || pathname?.startsWith("/f/");
   return hidden ? null : <IsabelWidgetPanel />;
 }
 

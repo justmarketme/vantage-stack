@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { statusBadgeClass } from "../../../../components/crm/statusStyles";
+import { ProposalFeedbackPanel } from "../../../../components/crm/ProposalFeedbackPanel";
 
 export default function ClientProfilePage() {
   const params = useParams();
@@ -134,9 +135,9 @@ export default function ClientProfilePage() {
           <button type="button" onClick={() => triggerResearch()} className="vs-button-ghost text-sm">
             Trigger research
           </button>
-          <span className="vs-button-ghost text-sm opacity-50 cursor-not-allowed" title="Wire to proposals agent">
-            Send proposal
-          </span>
+          <a href="#proposal-feedback" className="vs-button-ghost text-sm">
+            Send proposal for feedback
+          </a>
           <Link href={`/crm/clients/${clientId}/edit`} className="vs-button-ghost text-sm">
             Schedule follow-up
           </Link>
@@ -237,6 +238,8 @@ export default function ClientProfilePage() {
           </ul>
         </section>
       ) : null}
+
+      <ProposalFeedbackPanel clientId={clientId} clientName={p.name ?? ""} whatsapp={p.whatsapp} />
 
       <section className="vs-card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

@@ -52,6 +52,7 @@
     "@modelcontextprotocol/sdk": "^1.6.0",
     "@sentry/nextjs": "^10.44.0",
     "@supabase/supabase-js": "^2.99.3",
+    "@vercel/blob": "^2.8.1",
     "@xstate/react": "^6.1.0",
     "bcryptjs": "^3.0.3",
     "canvg": "^4.0.3",

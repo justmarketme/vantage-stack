@@ -714,7 +714,17 @@ export function FeedbackRoom(props: {
           <section className="fb-hero">
             <div className="fb-hero-copy">
               <p className="fb-eyebrow fb-accent-text">For {firstName}</p>
-              <h1 className="fb-h1">Walk us through {/^(the|your|our)\b/i.test(title) ? title : `your ${title}`}.</h1>
+              <h1 className="fb-h1">
+                Walk us through{" "}
+                {(/^(the|your|our)\b/i.test(title) ? title : `your ${title}`).split(" ").map((w, i) => (
+                  // Keep hyphenated brand names like "Neuro-Link" on one line.
+                  <span key={i} style={w.includes("-") ? { whiteSpace: "nowrap" } : undefined}>
+                    {i ? " " : ""}
+                    {w}
+                  </span>
+                ))}
+                .
+              </h1>
               <p className="fb-lead">Go through it the way you would in a meeting. Talk, point and draw. Everything you share comes straight to the team as a clear list of changes.</p>
               <p className="fb-meta">
                 <Clock size={15} /> About 5 to 10 minutes · nothing to install
@@ -1327,7 +1337,7 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 
 .fb-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--fb-radius);border:1px solid transparent;padding:10px 16px;font-weight:600;font-size:14px;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;white-space:nowrap}
 .fb-btn:active{transform:translateY(1px)}
-.fb-btn-primary{background:var(--fb-accent);color:var(--fb-accent-text)}
+.fb-btn.fb-btn-primary{background:var(--fb-accent);color:var(--fb-accent-text)}
 .fb-btn-primary:hover:not(:disabled){box-shadow:0 6px 20px -8px var(--fb-accent)}
 .fb-btn-ghost{background:transparent;border-color:var(--fb-border);color:var(--fb-text)}
 .fb-btn-ghost:hover{background:color-mix(in srgb,var(--fb-text) 6%,transparent)}
@@ -1412,8 +1422,8 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-kbd-hint{font-size:11.5px;color:var(--fb-muted)}
 .fb-shot{width:100%;max-height:150px;object-fit:cover;object-position:top;border-radius:var(--fb-radius);border:1px solid var(--fb-border)}
 .fb-tags{display:flex;flex-wrap:wrap;gap:6px}
-.fb-tag{font-size:12px;border:1px solid var(--fb-border);background:transparent;border-radius:999px;padding:3px 10px;color:var(--fb-muted)}
-.fb-tag.is-on{background:var(--fb-accent);color:var(--fb-accent-text);border-color:transparent}
+.fb-tags .fb-tag{font-size:12px;border:1px solid var(--fb-border);background:transparent;border-radius:999px;padding:3px 10px;color:var(--fb-muted)}
+.fb-tags .fb-tag.is-on{background:var(--fb-accent);color:var(--fb-accent-text);border-color:transparent}
 .fb-input{width:100%;resize:vertical;font:inherit;font-size:14px;color:var(--fb-text);background:var(--fb-bg);border:1px solid color-mix(in srgb,var(--fb-border),var(--fb-text) 35%);border-radius:min(var(--fb-radius),12px);padding:10px 12px;outline:none}
 .fb-input:focus{border-color:var(--fb-hl);box-shadow:0 0 0 3px color-mix(in srgb,var(--fb-hl) 18%,transparent)}
 .fb-label{font-size:13.5px;font-weight:600}
@@ -1426,7 +1436,7 @@ kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid var
 .fb-recdot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:fbBlink 1.1s infinite}
 .fb-recdot.is-paused{animation:none;background:var(--fb-muted)}
 .fb-timer{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;min-width:42px}
-.fb-stop{color:#e5484d}
+.fb-icon.fb-stop{color:#e5484d}
 .fb-badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--fb-accent);color:var(--fb-accent-text);font-size:11.5px;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
 .fb-meter{display:inline-flex;gap:2px;align-items:flex-end;height:18px}
 .fb-meter i{width:4px;border-radius:2px;background:var(--fb-border);height:30%;transition:background .08s}
